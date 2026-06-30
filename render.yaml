@@ -1,0 +1,14 @@
+# Render.com Static Site blueprint for the Cable Dashboard (React + Vite).
+# You can either commit this file (Render auto-detects it) OR enter the same
+# values manually in the Render dashboard when creating the Static Site.
+services:
+  - type: web
+    name: cable-dashboard
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    # SPA fallback — serves index.html for any path that is not a real file
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
