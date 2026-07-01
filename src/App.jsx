@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { supabase } from './lib/supabase'
-import { fetchAllFieldData, fetchAllDaily, subscribeRealtime, unsubscribeRealtime, resetCaches } from './lib/dataStore'
+import { fetchAllFieldData, fetchAllDaily, fetchAllVendors, subscribeRealtime, unsubscribeRealtime, resetCaches, setCurrentEmail } from './lib/dataStore'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import CableSchedule from './components/CableSchedule'
 import CableMaterial from './components/CableMaterial'
 import CableActuals from './components/CableActuals'
 import DailyReport from './components/DailyReport'
+import Settings from './components/Settings'
 import Login from './components/Login'
 
 function App() {
@@ -27,9 +28,11 @@ function App() {
 
   // Fetch + subscribe when logged in; reset on logout
   useEffect(() => {
-    if (!session) { resetCaches(); unsubscribeRealtime(); return }
+    if (!session) { setCurrentEmail(null); resetCaches(); unsubscribeRealtime(); return }
+    setCurrentEmail(session.user?.email)
     fetchAllFieldData()
     fetchAllDaily()
+    fetchAllVendors()
     subscribeRealtime()
     return () => { /* keep subscription across page nav */ }
   }, [session])
@@ -46,6 +49,7 @@ function App() {
         {page === 'material' && <CableMaterial />}
         {page === 'actuals' && <CableActuals />}
         {page === 'daily' && <DailyReport />}
+        {page === 'settings' && session?.user?.user_metadata?.role === 'admin' && <Settings session={session} />}
       </main>
     </div>
   )

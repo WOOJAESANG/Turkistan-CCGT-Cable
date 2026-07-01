@@ -85,6 +85,26 @@ create policy "authenticated_all" on public.daily_manpower
   for all to authenticated using (true) with check (true);
 
 -- =========================================================
+-- 4c) vendors master (Settings 페이지에서 관리)
+-- =========================================================
+create table if not exists public.vendors (
+  id         bigserial primary key,
+  name       text not null unique,
+  active     boolean not null default true,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update, delete on public.vendors to authenticated;
+alter table public.vendors enable row level security;
+drop policy if exists "vendors_all" on public.vendors;
+create policy "vendors_all" on public.vendors for all to authenticated using (true) with check (true);
+
+-- Ensure updated_by is text (email) — used by Activity Log
+alter table public.cable_actuals  drop column if exists updated_by;
+alter table public.cable_actuals  add  column updated_by text;
+alter table public.daily_manpower drop column if exists updated_by;
+alter table public.daily_manpower add  column updated_by text;
+
+-- =========================================================
 -- 5) Realtime — 다른 사용자의 변경 사항 실시간 반영
 -- =========================================================
 do $$ begin
@@ -94,6 +114,11 @@ end $$;
 
 do $$ begin
   alter publication supabase_realtime add table public.daily_manpower;
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter publication supabase_realtime add table public.vendors;
 exception when duplicate_object then null;
 end $$;
 

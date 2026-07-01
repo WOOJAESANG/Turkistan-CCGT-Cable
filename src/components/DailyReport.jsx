@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData, loadDaily, saveDailyEntry, deleteDailyEntry } from '../lib/dataStore'
+import { loadFieldData, loadDaily, saveDailyEntry, deleteDailyEntry, loadVendors } from '../lib/dataStore'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -29,9 +29,10 @@ export default function DailyReport() {
     }
   }, [])
 
-  // distinct vendors seen in cable records (for datalist)
+  // distinct vendors — master list (active) + auto-discovered from records
   const vendors = useMemo(() => {
     const s = new Set()
+    for (const v of loadVendors()) if (v.active) s.add(v.name)
     for (const e of Object.values(fieldData)) if (e.vendor && e.vendor.trim()) s.add(e.vendor.trim())
     for (const m of Object.values(daily)) if (m.vendor && m.vendor !== NO_VENDOR) s.add(m.vendor)
     return [...s].sort()

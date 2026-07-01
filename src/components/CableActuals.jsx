@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData, updateFieldEntry, deleteFieldEntry } from '../lib/dataStore'
+import { loadFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -263,22 +263,22 @@ export default function CableActuals() {
     ws['!cols'] = [{ wch: 26 }, { wch: 9 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 13 },
       { wch: 13 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 18 }, { wch: 12 }, { wch: 14 }]
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: EXPORT_COLS.length - 1, r: records.length } }) }
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cable Actuals')
-    XLSX.writeFile(wb, `Cable Actuals_${stamp()}.xlsx`)
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Work Log')
+    XLSX.writeFile(wb, `Work Log_${stamp()}.xlsx`)
   }
   const exportCSV = () => {
     const ws = XLSX.utils.aoa_to_sheet([EXPORT_COLS, ...buildRows()])
     const csv = XLSX.utils.sheet_to_csv(ws)
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `Cable Actuals_${stamp()}.csv`; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = `Work Log_${stamp()}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
   if (loading) {
     return (
       <div className="cs-page"><div className="cs-body">
-        <div className="page-header"><h2>Cable Actuals</h2></div>
+        <div className="page-header"><h2>Work Log</h2></div>
         <div className="cs-loading">Loading data…</div>
       </div></div>
     )
@@ -292,7 +292,7 @@ export default function CableActuals() {
       <div className="cs-body">
         <div className="page-header">
           <div className="cm-header-left">
-            <h2>Cable Actuals</h2>
+            <h2>Work Log</h2>
             <div className="cm-subtitle">Field Records · 실적 입력</div>
           </div>
           <span className="cs-total">{records.length} records</span>
@@ -321,8 +321,11 @@ export default function CableActuals() {
             </div>
             <div className="ca-field ca-field-vendor">
               <label>Vendor (업체명)</label>
-              <input className="ca-input" type="text" placeholder="Subcontractor / 업체명"
+              <input className="ca-input" type="text" list="ca-vendors" placeholder="Subcontractor / 업체명"
                 value={form.vendor} onChange={e => setField('vendor', e.target.value)} />
+              <datalist id="ca-vendors">
+                {loadVendors().filter(v => v.active).map(v => <option key={v.id} value={v.name} />)}
+              </datalist>
             </div>
           </div>
 

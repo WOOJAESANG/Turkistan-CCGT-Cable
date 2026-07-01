@@ -1,6 +1,11 @@
 import { supabase } from '../lib/supabase'
 
+export function isAdmin(session) {
+  return session?.user?.user_metadata?.role === 'admin'
+}
+
 export default function Sidebar({ activePage, onNavigate, session }) {
+  const admin = isAdmin(session)
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -40,7 +45,7 @@ export default function Sidebar({ activePage, onNavigate, session }) {
             <path d="M9 4h6" />
             <path d="m9 14 2 2 4-4" />
           </svg>
-          Cable Actuals
+          Work Log
         </button>
         <button className={`nav-item${activePage === 'daily' ? ' active' : ''}`} onClick={() => onNavigate('daily')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -50,20 +55,23 @@ export default function Sidebar({ activePage, onNavigate, session }) {
           </svg>
           Daily Report
         </button>
-        <button className={`nav-item${activePage === 'settings' ? ' active' : ''}`} onClick={() => onNavigate('settings')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14" />
-            <line x1="4" y1="10" x2="4" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12" y2="3" />
-            <line x1="20" y1="21" x2="20" y2="16" />
-            <line x1="20" y1="12" x2="20" y2="3" />
-            <line x1="1" y1="14" x2="7" y2="14" />
-            <line x1="9" y1="8" x2="15" y2="8" />
-            <line x1="17" y1="16" x2="23" y2="16" />
-          </svg>
-          Settings
-        </button>
+        {admin && (
+          <button className={`nav-item${activePage === 'settings' ? ' active' : ''}`} onClick={() => onNavigate('settings')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14" />
+              <line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" />
+              <line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" />
+              <line x1="9" y1="8" x2="15" y2="8" />
+              <line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+            Settings
+            <span className="nav-admin-badge">Admin</span>
+          </button>
+        )}
       </nav>
       <div className="sidebar-footer">
         {session?.user?.email && (
