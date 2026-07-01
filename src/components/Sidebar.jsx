@@ -1,4 +1,6 @@
-export default function Sidebar({ activePage, onNavigate }) {
+import { supabase } from '../lib/supabase'
+
+export default function Sidebar({ activePage, onNavigate, session }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -48,22 +50,6 @@ export default function Sidebar({ activePage, onNavigate }) {
           </svg>
           Daily Report
         </button>
-        <button className={`nav-item${activePage === 'pulling' ? ' active' : ''}`} onClick={() => onNavigate('pulling')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
-          Cable Pulling
-        </button>
-        <button className={`nav-item${activePage === 'termination' ? ' active' : ''}`} onClick={() => onNavigate('termination')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-            <path d="m9 12 2 2 4-4" />
-          </svg>
-          Termination
-        </button>
         <button className={`nav-item${activePage === 'settings' ? ' active' : ''}`} onClick={() => onNavigate('settings')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="4" y1="21" x2="4" y2="14" />
@@ -80,6 +66,13 @@ export default function Sidebar({ activePage, onNavigate }) {
         </button>
       </nav>
       <div className="sidebar-footer">
+        {session?.user?.email && (
+          <div className="sidebar-user">
+            <div className="sidebar-user-label">Signed in</div>
+            <div className="sidebar-user-email" title={session.user.email}>{session.user.email}</div>
+            <button className="sidebar-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          </div>
+        )}
         <p>Turkistan CCGT Project</p>
         <p>v1.0.0</p>
       </div>

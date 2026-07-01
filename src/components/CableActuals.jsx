@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData, updateFieldEntry, deleteFieldEntry } from './CableSchedule'
+import { loadFieldData, updateFieldEntry, deleteFieldEntry } from '../lib/dataStore'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'

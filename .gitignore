@@ -19,6 +19,12 @@ public/rawdata.json
 # Claude preview dev-server config (local only)
 .claude/
 
+# Environment variables — never commit real keys
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

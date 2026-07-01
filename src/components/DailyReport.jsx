@@ -1,29 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData } from './CableSchedule'
+import { loadFieldData, loadDaily, saveDailyEntry, deleteDailyEntry } from '../lib/dataStore'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
-const DM_KEY = 'cable-daily-manpower'
 const NO_VENDOR = '(미지정)'
-
-function loadDaily() {
-  try { return JSON.parse(localStorage.getItem(DM_KEY) || '{}') } catch { return {} }
-}
-function saveDailyEntry(date, vendor, patch) {
-  const key = `${date}|${vendor}`
-  const prev = loadDaily()
-  const next = { ...prev, [key]: { date, vendor, ...prev[key], ...patch } }
-  localStorage.setItem(DM_KEY, JSON.stringify(next))
-  window.dispatchEvent(new CustomEvent('cable-daily-update'))
-}
-function deleteDailyEntry(key) {
-  const prev = loadDaily()
-  if (!(key in prev)) return
-  const next = { ...prev }; delete next[key]
-  localStorage.setItem(DM_KEY, JSON.stringify(next))
-  window.dispatchEvent(new CustomEvent('cable-daily-update'))
-}
 
 const num = v => { const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n }
 function stamp() {

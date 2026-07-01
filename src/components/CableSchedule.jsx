@@ -88,25 +88,9 @@ function ScheduleExportMenu({ rows, fieldData }) {
   )
 }
 
-const LS_KEY = 'cable-field-data'
-export function loadFieldData() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') }
-  catch { return {} }
-}
-export function updateFieldEntry(cno, patch) {
-  const prev = loadFieldData()
-  const next = { ...prev, [cno]: { ...prev[cno], ...patch } }
-  localStorage.setItem(LS_KEY, JSON.stringify(next))
-  window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { cno, data: next[cno] } }))
-}
-export function deleteFieldEntry(cno) {
-  const prev = loadFieldData()
-  if (!(cno in prev)) return
-  const next = { ...prev }
-  delete next[cno]
-  localStorage.setItem(LS_KEY, JSON.stringify(next))
-  window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { cno, data: null } }))
-}
+// Re-export the Supabase-backed data API so existing import paths keep working.
+export { loadFieldData, updateFieldEntry, deleteFieldEntry } from '../lib/dataStore'
+import { loadFieldData } from '../lib/dataStore'
 // Derive Pulling/Termination status from entered field actuals (실적 연동)
 export function derivePullStatus(base, fd = {}) {
   return fd.pullingDate ? 'Done' : (base?.p || 'Pending')

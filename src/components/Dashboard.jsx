@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getTotals, getCategoryProgress, getPriorityChartData, rollupActuals } from '../data/cableData'
-import { loadFieldData } from './CableSchedule'
+import { loadFieldData } from '../lib/dataStore'
 import KpiCards from './KpiCards'
 import CategoryCards from './CategoryCards'
 import BarChartSection from './BarChartSection'
