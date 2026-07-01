@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
-import { getTotals, getCategoryProgress, getPriorityChartData, rollupActuals } from '../data/cableData'
+import { getTotals, getCategoryProgress, getPriorityChartData, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
 import { loadFieldData } from '../lib/dataStore'
 import KpiCards from './KpiCards'
-import CategoryCards from './CategoryCards'
 import BarChartSection from './BarChartSection'
 import PieChartSection from './PieChartSection'
+import MonthlyPullingChart from './MonthlyPullingChart'
+import TerminationGauges from './TerminationGauges'
 
 export default function Dashboard() {
   const [master, setMaster] = useState(null)
+  const [fieldData, setFieldData] = useState({})
   const [actuals, setActuals] = useState(null)
 
   useEffect(() => {
@@ -16,7 +18,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!master) return
-    const recompute = () => setActuals(rollupActuals(loadFieldData(), master))
+    const recompute = () => {
+      const fd = loadFieldData()
+      setFieldData(fd)
+      setActuals(rollupActuals(fd, master))
+    }
     recompute()
     window.addEventListener('cable-field-update', recompute)
     return () => window.removeEventListener('cable-field-update', recompute)
@@ -25,12 +31,12 @@ export default function Dashboard() {
   const totals = getTotals(actuals)
   const categoryProgress = getCategoryProgress(actuals)
   const priorityChartData = getPriorityChartData()
+  const priorityPulled = master ? rollupPriorityActuals(fieldData, master) : {}
+  const inspection = master ? rollupInspection(fieldData, master) : { power: 0, control: 0, iac: 0, pkg: 0 }
 
   const today = new Date()
   const dateStr = today.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    year: 'numeric', month: '2-digit', day: '2-digit',
   })
 
   return (
@@ -45,11 +51,17 @@ export default function Dashboard() {
           <span className="date-label">{dateStr} 기준</span>
         </div>
       </div>
+
       <KpiCards totals={totals} />
-      <CategoryCards categories={categoryProgress} />
+
+      <div className="charts-row">
+        <MonthlyPullingChart fieldData={fieldData} master={master} />
+        <PieChartSection data={priorityChartData} pulled={priorityPulled} />
+      </div>
+
       <div className="charts-row">
         <BarChartSection categories={categoryProgress} />
-        <PieChartSection data={priorityChartData} />
+        <TerminationGauges categories={categoryProgress} inspection={inspection} />
       </div>
     </div>
   )

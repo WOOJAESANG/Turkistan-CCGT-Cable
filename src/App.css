@@ -513,23 +513,85 @@
   }
 }
 
+/* Hamburger button (mobile only) */
+.mobile-hamburger {
+  display: none;
+  position: fixed; top: 12px; left: 12px; z-index: 90;
+  width: 40px; height: 40px;
+  align-items: center; justify-content: center;
+  background: #fff; border: 1px solid var(--hairline, #e3e6ef);
+  border-radius: 9px; box-shadow: 0 2px 10px rgba(28,30,84,0.10);
+  color: var(--ink, #1c1e54);
+  cursor: pointer;
+}
+.mobile-hamburger:hover { background: var(--canvas-soft, #f6f9fc); }
+.mobile-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(15, 20, 60, 0.45);
+  z-index: 99;
+  animation: mob-fade 0.2s ease;
+}
+@keyframes mob-fade { from { opacity: 0; } to { opacity: 1; } }
+
 @media (max-width: 768px) {
+  .mobile-hamburger { display: flex; }
+  .mobile-backdrop { display: block; }
+
   .sidebar {
-    display: none;
+    display: flex !important; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.24s cubic-bezier(.4,0,.2,1);
+    box-shadow: 6px 0 26px rgba(28,30,84,0.18);
+    width: min(280px, 82vw);
   }
-  .main-content {
-    margin-left: 0;
-    padding: 24px 16px;
-  }
-  .kpi-row {
-    grid-template-columns: 1fr;
-  }
-  .progress-row {
-    grid-template-columns: 1fr;
-  }
-  .category-row {
-    grid-template-columns: 1fr;
-  }
+  .sidebar.mobile-open { transform: translateX(0); }
+
+  .main-content { margin-left: 0; padding: 60px 12px 24px; }
+  .content-body, .cs-body { padding: 12px 12px 32px !important; }
+  .page-header { flex-wrap: wrap; gap: 8px; }
+  .page-header h2 { font-size: 20px; }
+  .cs-total { font-size: 12px; }
+
+  .kpi-row { grid-template-columns: 1fr; gap: 12px; }
+  .category-row { grid-template-columns: 1fr; }
+  .charts-row { grid-template-columns: 1fr !important; }
+  .progress-row { grid-template-columns: 1fr; }
+
+  /* Tables scroll horizontally instead of clipping */
+  .cs-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .cs-table { min-width: 640px; }
+
+  /* Toolbar & filters wrap nicely */
+  .cs-toolbar { gap: 8px; }
+  .cs-search { flex: 1 1 100%; min-width: 0; }
+  .cs-toolbar select { flex: 1 0 auto; }
+
+  /* Settings tabs — allow horizontal scroll */
+  .st-tabs { overflow-x: auto; scrollbar-width: thin; }
+  .st-tab { white-space: nowrap; flex-shrink: 0; padding: 10px 12px; font-size: 12.5px; }
+  .st-panel { padding: 16px 14px; }
+  .st-form { grid-template-columns: 1fr; }
+
+  /* Work Log / Daily Report form grids stack */
+  .ca-top-row { grid-template-columns: 1fr; }
+  .ca-grid { grid-template-columns: 1fr; }
+  .ca-block-fields { grid-template-columns: 1fr; }
+  .dr-entry-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Termination gauges - 1 column on very small, 2 on regular mobile */
+  .tg-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Sidebar footer more visible on mobile drawer */
+  .sidebar-footer { padding-bottom: 20px; }
+}
+
+@media (max-width: 480px) {
+  .tg-grid { grid-template-columns: 1fr; }
+  .dr-entry-grid { grid-template-columns: 1fr; }
+  .kpi-value { font-size: 30px; }
 }
 
 /* ── Cable Schedule Page ── */
@@ -1171,6 +1233,87 @@
 }
 .st-kind-badge.cable { background: #ede9fe; color: #6d28d9; }
 .st-kind-badge.daily { background: #dbeafe; color: #1e40af; }
+
+/* ---- Priority Distribution — progress in donut center + rows ---- */
+.pie-shell { position: relative; }
+.pie-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.pie-center-pct {
+  font-size: 28px; font-weight: 700; color: var(--ink, #1c1e54);
+  letter-spacing: -0.5px; line-height: 1;
+  font-feature-settings: "tnum";
+}
+.pie-center-pct span {
+  font-size: 15px; margin-left: 2px; color: var(--ink-secondary, #64748d); font-weight: 500;
+}
+.pie-center-label {
+  margin-top: 3px; font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--ink-mute, #9498ad);
+}
+
+.pri-row { flex-direction: column !important; align-items: stretch !important; gap: 4px; padding: 6px 0; }
+.pri-row-head { display: flex; align-items: center; gap: 8px; }
+.pri-pct {
+  margin-left: auto; font-size: 13px; font-weight: 700;
+  font-feature-settings: "tnum";
+}
+.pri-bar-track {
+  width: 100%; height: 5px;
+  background: #eef0f6; border-radius: 9999px; overflow: hidden;
+}
+.pri-bar-fill {
+  height: 100%; border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+.pri-nums {
+  font-size: 11.5px; color: var(--ink-mute, #9498ad);
+  font-feature-settings: "tnum"; padding-left: 16px;
+}
+.pri-done { font-weight: 600; color: var(--ink-secondary, #5b5f77); }
+.pri-slash { opacity: 0.4; }
+.pri-total { color: var(--ink-secondary, #5b5f77); }
+.pri-lines { margin-left: 6px; opacity: 0.7; }
+.pri-total-row { border-top: 1px solid var(--hairline, #eef0f6); margin-top: 4px; padding-top: 8px; }
+
+/* ---- Termination Gauges (semi-circle) ---- */
+.tg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 20px;
+  padding: 12px 4px 4px;
+}
+.tg-card {
+  padding: 14px 12px 10px;
+  border: 1px solid var(--hairline, #eceef5);
+  border-radius: 12px;
+  background: var(--canvas-soft, #f6f9fc);
+  display: flex; flex-direction: column; align-items: center;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.tg-card:hover { border-color: var(--gc); box-shadow: 0 6px 20px rgba(28,30,84,0.08); }
+.tg-wrap { position: relative; width: 100%; max-width: 200px; }
+.tg-center {
+  position: absolute; left: 0; right: 0; bottom: 6px;
+  display: flex; justify-content: center;
+  font-feature-settings: "tnum";
+}
+.tg-pct {
+  font-size: 24px; font-weight: 700; color: var(--gc);
+  letter-spacing: -0.5px; line-height: 1;
+}
+.tg-pct-sym { font-size: 14px; font-weight: 500; margin-left: 2px; color: var(--ink-secondary, #64748d); }
+.tg-meta { margin-top: 6px; text-align: center; width: 100%; }
+.tg-label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+  text-transform: uppercase; color: var(--gc);
+}
+.tg-nums { margin-top: 2px; font-size: 11.5px; color: var(--ink-mute, #9498ad); font-feature-settings: "tnum"; }
+.tg-done { font-weight: 600; color: var(--ink-secondary, #5b5f77); }
+.tg-slash { opacity: 0.5; }
 
 .nav-admin-badge {
   margin-left: auto; padding: 1px 7px;

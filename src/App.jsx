@@ -15,6 +15,7 @@ function App() {
   const [page, setPage] = useState('dashboard')
   const [session, setSession] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   // Auth state
   useEffect(() => {
@@ -42,7 +43,25 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activePage={page} onNavigate={setPage} session={session} />
+      <button
+        type="button"
+        className="mobile-hamburger"
+        aria-label="Open menu"
+        onClick={() => setMobileOpen(true)}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      {mobileOpen && <div className="mobile-backdrop" onClick={() => setMobileOpen(false)} />}
+      <Sidebar
+        activePage={page}
+        onNavigate={p => { setPage(p); setMobileOpen(false) }}
+        session={session}
+        mobileOpen={mobileOpen}
+      />
       <main className="main-content">
         {page === 'dashboard' && <Dashboard />}
         {page === 'schedule' && <CableSchedule />}

@@ -4,10 +4,10 @@ export function isAdmin(session) {
   return session?.user?.user_metadata?.role === 'admin'
 }
 
-export default function Sidebar({ activePage, onNavigate, session }) {
+export default function Sidebar({ activePage, onNavigate, session, mobileOpen }) {
   const admin = isAdmin(session)
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-brand">
         <h1>Turkistan CCGT</h1>
         <span>Cable Management</span>

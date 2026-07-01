@@ -157,3 +157,41 @@ export function getPriorityChartData() {
     color: p.color,
   }));
 }
+
+// Roll up pulled length by priority (PR / Simple Cycle / ETC).
+// Uses each cable's own priority field from master (single source of truth).
+// Returns: { 'PR (수전)': pulledMeters, 'Simple Cycle': pulledMeters, '잔여 (ETC)': pulledMeters }
+const PRIORITY_MAP = {
+  PR: 'PR (수전)',
+  'Simple Cycle': 'Simple Cycle',
+  ETC: '잔여 (ETC)',
+};
+
+// Roll up "Line Check Done" counts per category → gauge shows inspection progress.
+// A cable counts as inspected when field_data[cable_no].lc === 'Done'.
+export function rollupInspection(fieldData, master) {
+  const out = { power: 0, control: 0, iac: 0, pkg: 0 };
+  if (!fieldData || !master) return out;
+  const mmap = new Map(master.map((c) => [c.n, c]));
+  for (const [cno, e] of Object.entries(fieldData)) {
+    if (e?.lc !== 'Done') continue;
+    const cab = mmap.get(cno);
+    const id = CAT_ID_BY_LABEL[cab?.g];
+    if (id && out[id] !== undefined) out[id]++;
+  }
+  return out;
+}
+export function rollupPriorityActuals(fieldData, master) {
+  const out = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  if (!fieldData || !master) return out;
+  const mmap = new Map(master.map((c) => [c.n, c]));
+  for (const [cno, e] of Object.entries(fieldData)) {
+    if (!e?.pullingDate) continue;
+    const cab = mmap.get(cno);
+    const bucket = PRIORITY_MAP[cab?.pri];
+    if (!bucket) continue;
+    const pl = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''));
+    out[bucket] += !isNaN(pl) ? pl : (cab.l || 0);
+  }
+  return out;
+}
