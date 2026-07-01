@@ -5,7 +5,7 @@ function formatNumber(n) {
 export default function KpiCards({ totals }) {
   return (
     <div className="kpi-row">
-      <div className="kpi-card">
+      <div className="kpi-card" data-kpi="total">
         <div className="kpi-label">
           <svg className="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
@@ -21,7 +21,7 @@ export default function KpiCards({ totals }) {
         </div>
       </div>
 
-      <div className="kpi-card">
+      <div className="kpi-card" data-kpi="pulling">
         <div className="kpi-label">
           <svg className="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -47,7 +47,7 @@ export default function KpiCards({ totals }) {
         </div>
       </div>
 
-      <div className="kpi-card">
+      <div className="kpi-card" data-kpi="termination">
         <div className="kpi-label">
           <svg className="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
