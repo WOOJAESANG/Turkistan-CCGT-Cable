@@ -330,6 +330,14 @@ export default function CableSchedule() {
             <span className="cs-page-info">Page {currentPage} / {totalPages}</span>
           </div>
         )}
+
+        <p className="cm-note">
+          <strong>Drum No.</strong> is the assigned drum from the master schedule — paste it into <strong>Cable Material</strong>'s
+          search to find which packing list it ships in. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
+          <strong> Packing List</strong> number instead. AIS, DCS and FFC are not yet covered here (each ships across multiple packing
+          lists with no reliable per-cable key yet). <strong>Used Drum</strong> is the actual drum entered in Work Log after pulling —
+          compare the two to catch cases where a different drum was used than planned.
+        </p>
       </div>
     </div>
   )
