@@ -156,12 +156,14 @@ export default function CableSchedule() {
       if (priFilter !== 'All' && c.pri !== priFilter) return false
       if (pullFilter !== 'All' && derivePullStatus(c, fieldData[c.n]) !== pullFilter) return false
       if (q) {
+        const drum = fieldData[c.n]?.usedDrum || ''
         return (
           c.n.toLowerCase().includes(q) ||
           c.s.toLowerCase().includes(q) ||
           (c.sys && c.sys.toLowerCase().includes(q)) ||
           c.f.toLowerCase().includes(q) ||
-          c.t.toLowerCase().includes(q)
+          c.t.toLowerCase().includes(q) ||
+          drum.toLowerCase().includes(q)
         )
       }
       return true
@@ -205,7 +207,7 @@ export default function CableSchedule() {
             </svg>
             <input
               type="text"
-              placeholder="Search Cable No / Spec / System / From / To"
+              placeholder="Search Cable No / Spec / System / From / To / Drum No"
               value={search}
               onChange={e => handleSearch(e.target.value)}
             />
@@ -242,6 +244,7 @@ export default function CableSchedule() {
                 <th>FROM</th>
                 <th>TO</th>
                 <th>PULLING</th>
+                <th>DRUM NO.</th>
                 <th>TERMINATION</th>
                 <th>LINE CHECK</th>
                 <th>ACT NO.</th>
@@ -281,6 +284,7 @@ export default function CableSchedule() {
                     <td>
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
                     </td>
+                    <td className="cs-kks">{fd.usedDrum || '—'}</td>
                     <td>
                       <span className="cs-badge" style={{ background: termC.bg, color: termC.text }}>{termStatus}</span>
                     </td>
