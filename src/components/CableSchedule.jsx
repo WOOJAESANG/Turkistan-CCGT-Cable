@@ -3,15 +3,15 @@ import * as XLSX from 'xlsx'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Priority',
-  'From', 'To', 'Pulling', 'Termination', 'Line Check', 'Act No.',
+  'From', 'To', 'Drum No.', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
 ]
 
-function buildScheduleRows(rows, fieldData) {
+function buildScheduleRows(rows, fieldData, drumMap) {
   return rows.map(c => {
     const fd = fieldData[c.n] || {}
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
-      c.f || '', c.t || '', c.p || '', c.e || '', fd.lc || 'Pending', fd.act || '',
+      c.f || '', c.t || '', drumMap[c.n] || '', c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
     ]
   })
 }
@@ -22,12 +22,12 @@ function stamp() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-function exportScheduleExcel(rows, fieldData) {
-  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData)]
+function exportScheduleExcel(rows, fieldData, drumMap) {
+  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap)]
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = [
     { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 13 },
-    { wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+    { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
   ]
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: EXPORT_COLS.length - 1, r: aoa.length - 1 } }) }
   ws['!freeze'] = { xSplit: 0, ySplit: 1 }
@@ -36,8 +36,8 @@ function exportScheduleExcel(rows, fieldData) {
   XLSX.writeFile(wb, `Cable Schedule_${stamp()}.xlsx`)
 }
 
-function exportScheduleCSV(rows, fieldData) {
-  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData)]
+function exportScheduleCSV(rows, fieldData, drumMap) {
+  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap)]
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   const csv = XLSX.utils.sheet_to_csv(ws)
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -49,7 +49,7 @@ function exportScheduleCSV(rows, fieldData) {
   URL.revokeObjectURL(url)
 }
 
-function ScheduleExportMenu({ rows, fieldData }) {
+function ScheduleExportMenu({ rows, fieldData, drumMap }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -59,7 +59,7 @@ function ScheduleExportMenu({ rows, fieldData }) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
 
-  const run = fn => { fn(rows, fieldData); setOpen(false) }
+  const run = fn => { fn(rows, fieldData, drumMap); setOpen(false) }
   const disabled = !rows || rows.length === 0
 
   return (
@@ -135,12 +135,17 @@ export default function CableSchedule() {
   const [pullFilter, setPullFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const [fieldData, setFieldData] = useState(loadFieldData)
+  const [drumMap, setDrumMap] = useState({})
 
   useEffect(() => {
     fetch('/cable-data.json')
       .then(r => r.json())
       .then(data => { setAllData(data); setLoading(false) })
       .catch(() => setLoading(false))
+    fetch('/cable-drum-map.json')
+      .then(r => r.json())
+      .then(setDrumMap)
+      .catch(() => setDrumMap({}))
   }, [])
 
   useEffect(() => {
@@ -156,19 +161,21 @@ export default function CableSchedule() {
       if (priFilter !== 'All' && c.pri !== priFilter) return false
       if (pullFilter !== 'All' && derivePullStatus(c, fieldData[c.n]) !== pullFilter) return false
       if (q) {
-        const drum = fieldData[c.n]?.usedDrum || ''
+        const assignedDrum = drumMap[c.n] || ''
+        const usedDrum = fieldData[c.n]?.usedDrum || ''
         return (
           c.n.toLowerCase().includes(q) ||
           c.s.toLowerCase().includes(q) ||
           (c.sys && c.sys.toLowerCase().includes(q)) ||
           c.f.toLowerCase().includes(q) ||
           c.t.toLowerCase().includes(q) ||
-          drum.toLowerCase().includes(q)
+          assignedDrum.toLowerCase().includes(q) ||
+          usedDrum.toLowerCase().includes(q)
         )
       }
       return true
     })
-  }, [allData, search, catFilter, priFilter, pullFilter, fieldData])
+  }, [allData, search, catFilter, priFilter, pullFilter, fieldData, drumMap])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -207,7 +214,7 @@ export default function CableSchedule() {
             </svg>
             <input
               type="text"
-              placeholder="Search Cable No / Spec / System / From / To / Drum No"
+              placeholder="Search Cable No / Spec / System / From / To / Drum No / Used Drum"
               value={search}
               onChange={e => handleSearch(e.target.value)}
             />
@@ -228,7 +235,7 @@ export default function CableSchedule() {
               <option key={s} value={s}>{s === 'All' ? 'All Pulling' : s}</option>
             ))}
           </select>
-          <ScheduleExportMenu rows={filtered} fieldData={fieldData} />
+          <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} />
         </div>
 
         <div className="cs-table-wrap">
@@ -243,8 +250,9 @@ export default function CableSchedule() {
                 <th>PRIORITY</th>
                 <th>FROM</th>
                 <th>TO</th>
-                <th>PULLING</th>
                 <th>DRUM NO.</th>
+                <th>PULLING</th>
+                <th>USED DRUM</th>
                 <th>TERMINATION</th>
                 <th>LINE CHECK</th>
                 <th>ACT NO.</th>
@@ -281,6 +289,7 @@ export default function CableSchedule() {
                     </td>
                     <td className="cs-kks">{c.f || '—'}</td>
                     <td className="cs-kks">{c.t || '—'}</td>
+                    <td className="cs-kks">{drumMap[c.n] || '—'}</td>
                     <td>
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
                     </td>
