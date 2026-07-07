@@ -126,16 +126,17 @@ const CATEGORIES = ['All', 'Power', 'Control', 'I&C', 'PKG']
 const PRIORITIES = ['All', 'PR', 'Simple Cycle', 'ETC']
 const STATUSES = ['All', 'Pending', 'In Progress', 'Done']
 
+// Per-column header filters (Excel-style filter row under the column titles)
+const EMPTY_COLF = {
+  cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: '', pri: 'All',
+  from: '', to: '', drum: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
+}
+
 export default function CableSchedule() {
   const [allData, setAllData] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [catFilter, setCatFilter] = useState('All')
-  const [priFilter, setPriFilter] = useState('All')
-  const [sysFilter, setSysFilter] = useState('All')
-  const [pullFilter, setPullFilter] = useState('All')
-  const [termFilter, setTermFilter] = useState('All')
-  const [lcFilter, setLcFilter] = useState('All')
+  const [colF, setColF] = useState(EMPTY_COLF)
   const [currentPage, setCurrentPage] = useState(1)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [drumMap, setDrumMap] = useState({})
@@ -157,24 +158,31 @@ export default function CableSchedule() {
     return () => window.removeEventListener('cable-field-update', handler)
   }, [])
 
-  const systems = useMemo(() => {
-    const s = new Set()
-    for (const c of allData) if (c.sys) s.add(c.sys)
-    return ['All', ...[...s].sort()]
-  }, [allData])
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
+    const inc = (val, f) => !f || String(val || '').toLowerCase().includes(f.toLowerCase())
+    const lmin = colF.lmin !== '' ? parseFloat(colF.lmin) : null
+    const lmax = colF.lmax !== '' ? parseFloat(colF.lmax) : null
     return allData.filter(c => {
-      if (catFilter !== 'All' && c.g !== catFilter) return false
-      if (priFilter !== 'All' && c.pri !== priFilter) return false
-      if (sysFilter !== 'All' && c.sys !== sysFilter) return false
-      if (pullFilter !== 'All' && derivePullStatus(c, fieldData[c.n]) !== pullFilter) return false
-      if (termFilter !== 'All' && deriveTermStatus(c, fieldData[c.n]) !== termFilter) return false
-      if (lcFilter !== 'All' && (fieldData[c.n]?.lc || 'Pending') !== lcFilter) return false
+      const fd = fieldData[c.n] || {}
+      if (colF.cat !== 'All' && c.g !== colF.cat) return false
+      if (colF.pri !== 'All' && c.pri !== colF.pri) return false
+      if (!inc(c.n, colF.cn)) return false
+      if (!inc(c.s, colF.spec)) return false
+      if (lmin != null && !((c.l || 0) >= lmin)) return false
+      if (lmax != null && !((c.l || 0) <= lmax)) return false
+      if (!inc(c.sys, colF.sys)) return false
+      if (!inc(c.f, colF.from)) return false
+      if (!inc(c.t, colF.to)) return false
+      if (!inc(drumMap[c.n], colF.drum)) return false
+      if (!inc(fd.usedDrum, colF.used)) return false
+      if (!inc(fd.act, colF.act)) return false
+      if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) return false
+      if (colF.term !== 'All' && deriveTermStatus(c, fd) !== colF.term) return false
+      if (colF.lc !== 'All' && (fd.lc || 'Pending') !== colF.lc) return false
       if (q) {
         const assignedDrum = drumMap[c.n] || ''
-        const usedDrum = fieldData[c.n]?.usedDrum || ''
+        const usedDrum = fd.usedDrum || ''
         return (
           c.n.toLowerCase().includes(q) ||
           c.s.toLowerCase().includes(q) ||
@@ -187,7 +195,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, catFilter, priFilter, sysFilter, pullFilter, termFilter, lcFilter, fieldData, drumMap])
+  }, [allData, search, colF, fieldData, drumMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
@@ -195,13 +203,28 @@ export default function CableSchedule() {
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleSearch = v => { setSearch(v); setCurrentPage(1) }
-  const mkHandler = setter => v => { setter(v); setCurrentPage(1) }
-  const handleCat = mkHandler(setCatFilter)
-  const handlePri = mkHandler(setPriFilter)
-  const handleSys = mkHandler(setSysFilter)
-  const handlePull = mkHandler(setPullFilter)
-  const handleTerm = mkHandler(setTermFilter)
-  const handleLc = mkHandler(setLcFilter)
+  const setCF = (k, v) => { setColF(f => ({ ...f, [k]: v })); setCurrentPage(1) }
+  const anyColF = Object.keys(EMPTY_COLF).some(k => colF[k] !== EMPTY_COLF[k])
+  const resetColF = () => { setColF(EMPTY_COLF); setCurrentPage(1) }
+
+  const cfText = (key, ph = 'Filter') => (
+    <input
+      type="text"
+      className={`cs-cf${colF[key] ? ' active' : ''}`}
+      placeholder={ph}
+      value={colF[key]}
+      onChange={e => setCF(key, e.target.value)}
+    />
+  )
+  const cfSelect = (key, options) => (
+    <select
+      className={`cs-cf${colF[key] !== 'All' ? ' active' : ''}`}
+      value={colF[key]}
+      onChange={e => setCF(key, e.target.value)}
+    >
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  )
 
   if (loading) {
     return (
@@ -243,36 +266,11 @@ export default function CableSchedule() {
             />
             {search && <button className="cs-clear" onClick={() => handleSearch('')}>✕</button>}
           </div>
-          <select value={catFilter} onChange={e => handleCat(e.target.value)}>
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>
-            ))}
-          </select>
-          <select value={priFilter} onChange={e => handlePri(e.target.value)}>
-            {PRIORITIES.map(p => (
-              <option key={p} value={p}>{p === 'All' ? 'All Priorities' : p}</option>
-            ))}
-          </select>
-          <select value={sysFilter} onChange={e => handleSys(e.target.value)} className="cs-sys-filter">
-            {systems.map(s => (
-              <option key={s} value={s}>{s === 'All' ? 'All Systems' : s}</option>
-            ))}
-          </select>
-          <select value={pullFilter} onChange={e => handlePull(e.target.value)}>
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{s === 'All' ? 'All Pulling' : `Pulling: ${s}`}</option>
-            ))}
-          </select>
-          <select value={termFilter} onChange={e => handleTerm(e.target.value)}>
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{s === 'All' ? 'All Termination' : `Term: ${s}`}</option>
-            ))}
-          </select>
-          <select value={lcFilter} onChange={e => handleLc(e.target.value)}>
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{s === 'All' ? 'All Line Check' : `LC: ${s}`}</option>
-            ))}
-          </select>
+          {anyColF && (
+            <button type="button" className="cs-reset-filters" onClick={resetColF}>
+              ✕ Reset Filters
+            </button>
+          )}
           <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} />
         </div>
 
@@ -294,6 +292,29 @@ export default function CableSchedule() {
                 <th>TERMINATION</th>
                 <th>LINE CHECK</th>
                 <th>ACT NO.</th>
+              </tr>
+              <tr className="cs-filter-row">
+                <th>{cfSelect('cat', CATEGORIES)}</th>
+                <th>{cfText('cn')}</th>
+                <th>{cfText('spec')}</th>
+                <th>
+                  <div className="cs-cf-len">
+                    <input type="number" className={`cs-cf${colF.lmin ? ' active' : ''}`} placeholder="Min"
+                      value={colF.lmin} onChange={e => setCF('lmin', e.target.value)} />
+                    <input type="number" className={`cs-cf${colF.lmax ? ' active' : ''}`} placeholder="Max"
+                      value={colF.lmax} onChange={e => setCF('lmax', e.target.value)} />
+                  </div>
+                </th>
+                <th>{cfText('sys')}</th>
+                <th>{cfSelect('pri', PRIORITIES)}</th>
+                <th>{cfText('from')}</th>
+                <th>{cfText('to')}</th>
+                <th>{cfText('drum')}</th>
+                <th>{cfSelect('pull', STATUSES)}</th>
+                <th>{cfText('used')}</th>
+                <th>{cfSelect('term', STATUSES)}</th>
+                <th>{cfSelect('lc', STATUSES)}</th>
+                <th>{cfText('act')}</th>
               </tr>
             </thead>
             <tbody>

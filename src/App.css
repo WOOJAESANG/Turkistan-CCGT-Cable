@@ -1582,3 +1582,49 @@ td.du-over { font-weight: 700; color: #dc2626; }
 .du-bar-fill { height: 100%; border-radius: 9999px; background: #533afd; }
 .du-bar-fill.low { background: #f59e0b; }
 .du-bar-fill.over { background: #dc2626; }
+
+/* ---- Column-header filter row (Cable Schedule / Material) ---- */
+.cs-filter-row th {
+  padding: 4px 6px 8px;
+  background: #f8fafc;
+  border-bottom: 2px solid var(--hairline, #e3e8ee);
+}
+.cs-cf {
+  width: 100%;
+  min-width: 52px;
+  box-sizing: border-box;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--hairline, #e3e8ee);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink, #1c1e54);
+}
+.cs-cf::placeholder { color: #b6bcce; }
+.cs-cf:focus { outline: none; border-color: var(--primary, #533afd); }
+.cs-cf.active {
+  border-color: var(--primary, #533afd);
+  background: #f4f2ff;
+  font-weight: 600;
+}
+select.cs-cf { padding: 4px 2px; }
+.cs-cf-len { display: flex; gap: 3px; }
+.cs-cf-len .cs-cf { min-width: 44px; width: 58px; }
+.cs-cf-len input::-webkit-outer-spin-button,
+.cs-cf-len input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cs-reset-filters {
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 0 14px;
+  height: 38px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.cs-reset-filters:hover { background: #fee2e2; }
+@media print { .cs-filter-row { display: none; } }

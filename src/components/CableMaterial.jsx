@@ -67,6 +67,13 @@ const STATUS_COLORS = {
   'Sailing':     { bg: '#e0f2fe', text: '#0369a1' },
 }
 const CATEGORIES = ['All', 'Power Cable', 'Control Cable', 'I&C Cable', 'PKG Cable']
+const DELIVERY = ['All', 'On-Site', 'Cargo Ready', 'Sailing']
+
+// Per-column header filters (Excel-style filter row under the column titles)
+const EMPTY_CMF = {
+  cat: 'All', type: '', title: '', charge: '', doc: '',
+  packing: '', detail: '', drum: '', status: 'All', eta: '', remark: '',
+}
 
 function DownloadIcon() {
   return (
@@ -355,10 +362,7 @@ export default function CableMaterial() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [catFilter, setCatFilter] = useState('All')
-  const [typeFilter, setTypeFilter] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [chargeFilter, setChargeFilter] = useState('All')
+  const [colF, setColF] = useState(EMPTY_CMF)
   const [view, setView] = useState('packing')
   const [capacity, setCapacity] = useState({})
 
@@ -373,28 +377,41 @@ export default function CableMaterial() {
       .catch(() => setCapacity({}))
   }, [])
 
-  const uniq = key => {
-    const s = new Set()
-    for (const r of data) if (r[key] && String(r[key]).trim()) s.add(String(r[key]).trim())
-    return ['All', ...[...s].sort()]
-  }
-  const types = useMemo(() => uniq('cableType'), [data])
-  const statuses = useMemo(() => uniq('status'), [data])
-  const charges = useMemo(() => uniq('inCharge'), [data])
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
+    const inc = (val, f) => !f || String(val || '').toLowerCase().includes(f.toLowerCase())
     return data.filter(r => {
-      if (catFilter !== 'All' && r.category !== catFilter) return false
-      if (typeFilter !== 'All' && (r.cableType || '').trim() !== typeFilter) return false
-      if (statusFilter !== 'All' && (r.status || '').trim() !== statusFilter) return false
-      if (chargeFilter !== 'All' && (r.inCharge || '').trim() !== chargeFilter) return false
+      if (colF.cat !== 'All' && r.category !== colF.cat) return false
+      if (colF.status !== 'All' && (r.status || '').trim() !== colF.status) return false
+      if (!inc(r.cableType, colF.type)) return false
+      if (!inc(r.title, colF.title)) return false
+      if (!inc(r.inCharge, colF.charge)) return false
+      if (!inc(r.docNo, colF.doc)) return false
+      if (!inc(r.packingList, colF.packing)) return false
+      if (!inc(r.packingDetail, colF.detail)) return false
+      if (colF.drum && !(r.drumNo || '').toLowerCase().includes(colF.drum.toLowerCase())
+        && !(r.drumList || []).some(d => d.toLowerCase().includes(colF.drum.toLowerCase()))) return false
+      if (!inc(r.eta, colF.eta)) return false
+      if (!inc(r.remark, colF.remark)) return false
       if (!q) return true
       const fields = [r.title, r.drumNo, r.packingList, r.docNo, r.inCharge, r.packingDetail, r.cableType]
       if (fields.some(v => v && String(v).toLowerCase().includes(q))) return true
       return (r.drumList || []).some(d => d.toLowerCase().includes(q))
     })
-  }, [data, search, catFilter, typeFilter, statusFilter, chargeFilter])
+  }, [data, search, colF])
+
+  const setCF = (k, v) => setColF(f => ({ ...f, [k]: v }))
+  const anyColF = Object.keys(EMPTY_CMF).some(k => colF[k] !== EMPTY_CMF[k])
+  const cfText = key => (
+    <input type="text" className={`cs-cf${colF[key] ? ' active' : ''}`} placeholder="Filter"
+      value={colF[key]} onChange={e => setCF(key, e.target.value)} />
+  )
+  const cfSelect = (key, options) => (
+    <select className={`cs-cf${colF[key] !== 'All' ? ' active' : ''}`} value={colF[key]}
+      onChange={e => setCF(key, e.target.value)}>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  )
 
   if (loading) {
     return (
@@ -428,7 +445,7 @@ export default function CableMaterial() {
         <div className="cm-print-head">
           <div className="cm-print-title">Cable Material Information — Packing &amp; Drum</div>
           <div className="cm-print-meta">
-            Turkistan CCGT · {catFilter === 'All' ? 'All Categories' : catFilter}
+            Turkistan CCGT · {colF.cat === 'All' ? 'All Categories' : colF.cat}
             {search ? ` · Filter: “${search}”` : ''} · {filtered.length} items · {stamp()}
           </div>
         </div>
@@ -442,18 +459,11 @@ export default function CableMaterial() {
               value={search} onChange={e => setSearch(e.target.value)} />
             {search && <button className="cs-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
-          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
-          </select>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-            {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {statuses.map(s => <option key={s} value={s}>{s === 'All' ? 'All Delivery' : s}</option>)}
-          </select>
-          <select value={chargeFilter} onChange={e => setChargeFilter(e.target.value)}>
-            {charges.map(c => <option key={c} value={c}>{c === 'All' ? 'All In-Charge' : c}</option>)}
-          </select>
+          {anyColF && (
+            <button type="button" className="cs-reset-filters" onClick={() => setColF(EMPTY_CMF)}>
+              ✕ Reset Filters
+            </button>
+          )}
           <ExportMenu rows={filtered} />
         </div>
 
@@ -473,6 +483,20 @@ export default function CableMaterial() {
                 <th>Delivery</th>
                 <th>ETA</th>
                 <th>Remark</th>
+              </tr>
+              <tr className="cs-filter-row">
+                <th />
+                <th>{cfSelect('cat', CATEGORIES)}</th>
+                <th>{cfText('type')}</th>
+                <th>{cfText('title')}</th>
+                <th>{cfText('charge')}</th>
+                <th>{cfText('doc')}</th>
+                <th>{cfText('packing')}</th>
+                <th>{cfText('detail')}</th>
+                <th>{cfText('drum')}</th>
+                <th>{cfSelect('status', DELIVERY)}</th>
+                <th>{cfText('eta')}</th>
+                <th>{cfText('remark')}</th>
               </tr>
             </thead>
             <tbody>
