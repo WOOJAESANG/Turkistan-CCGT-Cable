@@ -111,7 +111,7 @@ function PlanTooltip({ active, payload, label: lb, unit }) {
   )
 }
 
-function MilestoneRows({ rows, targets, onTarget }) {
+function MilestoneRows({ rows, targets, onTarget, admin }) {
   return rows.map(r => {
     const override = targets[r.name]
     const isDefault = !override
@@ -130,11 +130,11 @@ function MilestoneRows({ rows, targets, onTarget }) {
             onChange={e => e.target.value && onTarget(r.name, e.target.value)}
             title={isDefault ? 'Default: L3 cable due (L3 event − 90 days)' : 'Edited target date'}
           />
-          {!isDefault && (
+          {!isDefault && admin && (
             <button
               type="button"
               className="mpl-target-reset"
-              title="Reset to default (L3 cable due)"
+              title="Reset to default (L3 cable due) — admin only"
               onClick={() => onTarget(r.name, null)}
             >↺</button>
           )}
@@ -145,7 +145,8 @@ function MilestoneRows({ rows, targets, onTarget }) {
   })
 }
 
-export default function MasterPlan() {
+export default function MasterPlan({ session }) {
+  const admin = session?.user?.user_metadata?.role === 'admin'
   const [targets, setTargets] = useState(() => ({ ...loadMilestoneTargets() }))
 
   useEffect(() => {
@@ -218,9 +219,9 @@ export default function MasterPlan() {
             </thead>
             <tbody>
               <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 1 (GT#11 / GT#12 / ST#10)</td></tr>
-              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} />
+              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} admin={admin} />
               <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 2 (GT#21 / GT#22 / ST#20)</td></tr>
-              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} />
+              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} admin={admin} />
             </tbody>
           </table>
         </div>

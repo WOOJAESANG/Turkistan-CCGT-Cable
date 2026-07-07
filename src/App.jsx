@@ -66,11 +66,11 @@ function App() {
       />
       <main className="main-content">
         {page === 'dashboard' && <Dashboard />}
-        {page === 'masterplan' && <MasterPlan />}
+        {page === 'masterplan' && <MasterPlan session={session} />}
         {page === 'schedule' && <CableSchedule />}
         {page === 'material' && <CableMaterial />}
-        {page === 'actuals' && <CableActuals />}
-        {page === 'daily' && <DailyReport />}
+        {page === 'actuals' && <CableActuals session={session} />}
+        {page === 'daily' && <DailyReport session={session} />}
         {page === 'settings' && session?.user?.user_metadata?.role === 'admin' && <Settings session={session} />}
       </main>
     </div>

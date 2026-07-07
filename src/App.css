@@ -1543,3 +1543,42 @@
   line-height: 1;
 }
 .mpl-target-reset:hover { background: #f0fdfa; border-color: #0d9488; }
+
+/* ---- Cable Schedule header meters ---- */
+.cs-header-stats { display: flex; align-items: baseline; gap: 14px; }
+.cs-meters {
+  font-size: 22px; font-weight: 800; color: var(--primary, #533afd);
+  font-feature-settings: "tnum"; letter-spacing: -0.4px;
+}
+.cs-meters-unit { font-size: 14px; font-weight: 600; color: var(--ink-secondary, #64748d); }
+.cs-sys-filter { max-width: 190px; }
+
+/* ---- Cable Material view toggle ---- */
+.cm-header-right { display: flex; align-items: center; gap: 14px; }
+.cm-view-toggle {
+  display: inline-flex; border: 1px solid var(--hairline, #e3e8ee);
+  border-radius: 9px; overflow: hidden; background: #fff;
+}
+.cm-view-toggle button {
+  border: none; background: transparent; padding: 7px 14px;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-secondary, #64748d);
+  cursor: pointer; font-family: inherit;
+}
+.cm-view-toggle button.active { background: var(--primary, #533afd); color: #fff; }
+
+/* ---- Drum Usage ---- */
+.du-totals { font-size: 12.5px; color: var(--ink-secondary, #64748d); white-space: nowrap; }
+.du-totals b { color: var(--ink, #1c1e54); font-feature-settings: "tnum"; }
+.du-totals b.du-remain { color: #047857; }
+.du-used { font-weight: 600; color: var(--primary, #533afd); }
+td.du-remain { font-weight: 600; color: #047857; }
+td.du-low { font-weight: 700; color: #b45309; }
+td.du-over { font-weight: 700; color: #dc2626; }
+.du-bar-cell { min-width: 130px; }
+.du-bar-track {
+  width: 120px; height: 7px; background: #eef0f6;
+  border-radius: 9999px; overflow: hidden;
+}
+.du-bar-fill { height: 100%; border-radius: 9999px; background: #533afd; }
+.du-bar-fill.low { background: #f59e0b; }
+.du-bar-fill.over { background: #dc2626; }

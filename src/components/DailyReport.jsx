@@ -13,7 +13,8 @@ function stamp() {
 }
 const EMPTY = { date: '', vendor: '', pullManpower: '', termManpower: '' }
 
-export default function DailyReport() {
+export default function DailyReport({ session }) {
+  const admin = session?.user?.user_metadata?.role === 'admin'
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [daily, setDaily] = useState(loadDaily)
   const [form, setForm] = useState(EMPTY)
@@ -182,7 +183,7 @@ export default function DailyReport() {
                     <td className="num dr-prod">{tp != null ? (Math.round(tp * 10) / 10) : '—'}</td>
                     <td className="ca-row-actions">
                       <button className="ca-act ca-act-edit" onClick={() => editRow(r)}>Edit</button>
-                      <button className="ca-act ca-act-del" onClick={() => removeRow(r)}>✕</button>
+                      {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRow(r)}>✕</button>}
                     </td>
                   </tr>
                 )

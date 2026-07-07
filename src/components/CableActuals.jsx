@@ -167,7 +167,8 @@ function DrumInput({ value, onChange, master, cat, invalid }) {
   )
 }
 
-export default function CableActuals() {
+export default function CableActuals({ session }) {
+  const admin = session?.user?.user_metadata?.role === 'admin'
   const [master, setMaster] = useState([])
   const [masterMap, setMasterMap] = useState(new Map())
   const [drumMaster, setDrumMaster] = useState([])
@@ -468,7 +469,7 @@ export default function CableActuals() {
                     <td className="ca-mono">{r.act || '—'}</td>
                     <td className="ca-row-actions">
                       <button className="ca-act ca-act-edit" title="Edit" onClick={() => editRecord(r.cno)}>Edit</button>
-                      <button className="ca-act ca-act-del" title="Delete" onClick={() => removeRecord(r.cno)}>✕</button>
+                      {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRecord(r.cno)}>✕</button>}
                     </td>
                   </tr>
                 )

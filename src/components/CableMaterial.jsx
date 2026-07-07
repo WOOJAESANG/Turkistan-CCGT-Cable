@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
+import { loadFieldData } from '../lib/dataStore'
 
 const EXPORT_COLS = [
   'No.', 'Category', 'Type', 'Title', 'In-Charge', 'Document No.',
@@ -226,29 +227,174 @@ function ExportMenu({ rows }) {
   )
 }
 
+// ── Drum Usage: per-drum consumption from Work Log vs packing-list capacity ──
+function num(v) {
+  const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g, ''))
+  return isNaN(n) ? 0 : n
+}
+
+function DrumUsage({ capacity }) {
+  const [fieldData, setFieldData] = useState(loadFieldData)
+  const [q, setQ] = useState('')
+
+  useEffect(() => {
+    const h = () => setFieldData(loadFieldData())
+    window.addEventListener('cable-field-update', h)
+    return () => window.removeEventListener('cable-field-update', h)
+  }, [])
+
+  const capUpper = useMemo(() => {
+    const m = new Map()
+    for (const [tag, v] of Object.entries(capacity || {})) m.set(tag.toUpperCase(), { tag, ...v })
+    return m
+  }, [capacity])
+
+  const rows = useMemo(() => {
+    const byDrum = new Map()
+    for (const [cno, e] of Object.entries(fieldData || {})) {
+      const drum = (e?.usedDrum || '').trim()
+      if (!drum) continue
+      const key = drum.toUpperCase()
+      if (!byDrum.has(key)) byDrum.set(key, { drum, used: 0, cables: [] })
+      const r = byDrum.get(key)
+      r.used += num(e.pulledLength)
+      r.cables.push(cno)
+    }
+    const out = [...byDrum.values()].map(r => {
+      const cap = capUpper.get(r.drum.toUpperCase())
+      return {
+        ...r,
+        capacity: cap?.m ?? null,
+        pk: cap?.pk || '—',
+        remaining: cap ? cap.m - r.used : null,
+        pct: cap && cap.m > 0 ? Math.min(100, (r.used / cap.m) * 100) : null,
+      }
+    })
+    out.sort((a, b) => b.used - a.used)
+    const ql = q.trim().toLowerCase()
+    return ql ? out.filter(r => r.drum.toLowerCase().includes(ql) || r.pk.toLowerCase().includes(ql)) : out
+  }, [fieldData, capUpper, q])
+
+  const totals = useMemo(() => ({
+    drums: rows.length,
+    used: rows.reduce((s, r) => s + r.used, 0),
+    remaining: rows.reduce((s, r) => s + (r.remaining ?? 0), 0),
+  }), [rows])
+
+  return (
+    <>
+      <div className="cs-toolbar">
+        <div className="cs-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" placeholder="Search Drum No / Packing List" value={q} onChange={e => setQ(e.target.value)} />
+          {q && <button className="cs-clear" onClick={() => setQ('')}>✕</button>}
+        </div>
+        <span className="du-totals">
+          {totals.drums} drums in use · <b>{Math.round(totals.used).toLocaleString()} m</b> pulled ·{' '}
+          <b className="du-remain">{Math.round(totals.remaining).toLocaleString()} m</b> remaining
+        </span>
+      </div>
+
+      <div className="cs-table-wrap">
+        <table className="cs-table">
+          <thead>
+            <tr>
+              <th>DRUM NO.</th>
+              <th>PACKING LIST</th>
+              <th className="num">CAPACITY (M)</th>
+              <th className="num">USED (M)</th>
+              <th className="num">REMAINING (M)</th>
+              <th>USAGE</th>
+              <th className="num">CABLES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => {
+              const over = r.remaining != null && r.remaining < 0
+              const low = !over && r.remaining != null && r.capacity > 0 && r.remaining / r.capacity < 0.1
+              return (
+                <tr key={r.drum}>
+                  <td className="cs-cable-no">{r.drum}</td>
+                  <td className="cs-kks">{r.pk}</td>
+                  <td className="num">{r.capacity != null ? Math.round(r.capacity).toLocaleString() : '—'}</td>
+                  <td className="num du-used">{Math.round(r.used).toLocaleString()}</td>
+                  <td className={`num ${over ? 'du-over' : low ? 'du-low' : 'du-remain'}`}>
+                    {r.remaining != null ? Math.round(r.remaining).toLocaleString() : '—'}
+                  </td>
+                  <td className="du-bar-cell">
+                    {r.pct != null ? (
+                      <div className="du-bar-track" title={`${r.pct.toFixed(1)}%`}>
+                        <div className={`du-bar-fill${over ? ' over' : low ? ' low' : ''}`} style={{ width: `${r.pct}%` }} />
+                      </div>
+                    ) : <span className="cm-muted">no capacity data</span>}
+                  </td>
+                  <td className="num" title={r.cables.join(', ')}>{r.cables.length}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {rows.length === 0 && (
+          <div className="cs-empty">No drums recorded yet — enter a Used Drum in Work Log and it will appear here.</div>
+        )}
+      </div>
+
+      <p className="cm-note">
+        <strong>Used (m)</strong> = sum of pulled lengths entered in Work Log for each drum. <strong>Capacity</strong> comes
+        from the packing lists (Detail PL sheets). Rows without capacity data are drums whose packing file does not state
+        a length (e.g. ACC, FFC-CAB, DCS cabinets) or free-text drum names that don't match a packing tag — check spelling
+        against the Drum No. dropdown on the Packing List view. Remaining under 10% is highlighted amber; negative (over-pulled) red.
+      </p>
+    </>
+  )
+}
+
 export default function CableMaterial() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('All')
+  const [typeFilter, setTypeFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [chargeFilter, setChargeFilter] = useState('All')
+  const [view, setView] = useState('packing')
+  const [capacity, setCapacity] = useState({})
 
   useEffect(() => {
     fetch('/cable-material.json')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
+    fetch('/drum-capacity.json')
+      .then(r => r.json())
+      .then(setCapacity)
+      .catch(() => setCapacity({}))
   }, [])
+
+  const uniq = key => {
+    const s = new Set()
+    for (const r of data) if (r[key] && String(r[key]).trim()) s.add(String(r[key]).trim())
+    return ['All', ...[...s].sort()]
+  }
+  const types = useMemo(() => uniq('cableType'), [data])
+  const statuses = useMemo(() => uniq('status'), [data])
+  const charges = useMemo(() => uniq('inCharge'), [data])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return data.filter(r => {
       if (catFilter !== 'All' && r.category !== catFilter) return false
+      if (typeFilter !== 'All' && (r.cableType || '').trim() !== typeFilter) return false
+      if (statusFilter !== 'All' && (r.status || '').trim() !== statusFilter) return false
+      if (chargeFilter !== 'All' && (r.inCharge || '').trim() !== chargeFilter) return false
       if (!q) return true
       const fields = [r.title, r.drumNo, r.packingList, r.docNo, r.inCharge, r.packingDetail, r.cableType]
       if (fields.some(v => v && String(v).toLowerCase().includes(q))) return true
       return (r.drumList || []).some(d => d.toLowerCase().includes(q))
     })
-  }, [data, search, catFilter])
+  }, [data, search, catFilter, typeFilter, statusFilter, chargeFilter])
 
   if (loading) {
     return (
@@ -267,9 +413,18 @@ export default function CableMaterial() {
             <h2>Cable Material Information</h2>
             <div className="cm-subtitle">Packing &amp; Drum</div>
           </div>
-          <span className="cs-total">{filtered.length} of {data.length} items</span>
+          <div className="cm-header-right">
+            <div className="cm-view-toggle">
+              <button className={view === 'packing' ? 'active' : ''} onClick={() => setView('packing')}>Packing List</button>
+              <button className={view === 'drums' ? 'active' : ''} onClick={() => setView('drums')}>Drum Usage</button>
+            </div>
+            {view === 'packing' && <span className="cs-total">{filtered.length} of {data.length} items</span>}
+          </div>
         </div>
 
+        {view === 'drums' && <DrumUsage capacity={capacity} />}
+
+        {view === 'packing' && <>
         <div className="cm-print-head">
           <div className="cm-print-title">Cable Material Information — Packing &amp; Drum</div>
           <div className="cm-print-meta">
@@ -289,6 +444,15 @@ export default function CableMaterial() {
           </div>
           <select value={catFilter} onChange={e => setCatFilter(e.target.value)}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+          </select>
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+            {types.map(t => <option key={t} value={t}>{t === 'All' ? 'All Types' : t}</option>)}
+          </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {statuses.map(s => <option key={s} value={s}>{s === 'All' ? 'All Delivery' : s}</option>)}
+          </select>
+          <select value={chargeFilter} onChange={e => setChargeFilter(e.target.value)}>
+            {charges.map(c => <option key={c} value={c}>{c === 'All' ? 'All In-Charge' : c}</option>)}
           </select>
           <ExportMenu rows={filtered} />
         </div>
@@ -356,6 +520,7 @@ export default function CableMaterial() {
           Click a <strong>Document No.</strong> or <strong>Packing List</strong> number to download the source Excel file.
           Open the <strong>Drum No.</strong> dropdown to browse or search every individual drum tag; the top search box also matches drum numbers across all rows.
         </p>
+        </>}
       </div>
     </div>
   )

@@ -132,7 +132,10 @@ export default function CableSchedule() {
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('All')
   const [priFilter, setPriFilter] = useState('All')
+  const [sysFilter, setSysFilter] = useState('All')
   const [pullFilter, setPullFilter] = useState('All')
+  const [termFilter, setTermFilter] = useState('All')
+  const [lcFilter, setLcFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [drumMap, setDrumMap] = useState({})
@@ -154,12 +157,21 @@ export default function CableSchedule() {
     return () => window.removeEventListener('cable-field-update', handler)
   }, [])
 
+  const systems = useMemo(() => {
+    const s = new Set()
+    for (const c of allData) if (c.sys) s.add(c.sys)
+    return ['All', ...[...s].sort()]
+  }, [allData])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return allData.filter(c => {
       if (catFilter !== 'All' && c.g !== catFilter) return false
       if (priFilter !== 'All' && c.pri !== priFilter) return false
+      if (sysFilter !== 'All' && c.sys !== sysFilter) return false
       if (pullFilter !== 'All' && derivePullStatus(c, fieldData[c.n]) !== pullFilter) return false
+      if (termFilter !== 'All' && deriveTermStatus(c, fieldData[c.n]) !== termFilter) return false
+      if (lcFilter !== 'All' && (fieldData[c.n]?.lc || 'Pending') !== lcFilter) return false
       if (q) {
         const assignedDrum = drumMap[c.n] || ''
         const usedDrum = fieldData[c.n]?.usedDrum || ''
@@ -175,15 +187,21 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, catFilter, priFilter, pullFilter, fieldData, drumMap])
+  }, [allData, search, catFilter, priFilter, sysFilter, pullFilter, termFilter, lcFilter, fieldData, drumMap])
+
+  const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleSearch = v => { setSearch(v); setCurrentPage(1) }
-  const handleCat = v => { setCatFilter(v); setCurrentPage(1) }
-  const handlePri = v => { setPriFilter(v); setCurrentPage(1) }
-  const handlePull = v => { setPullFilter(v); setCurrentPage(1) }
+  const mkHandler = setter => v => { setter(v); setCurrentPage(1) }
+  const handleCat = mkHandler(setCatFilter)
+  const handlePri = mkHandler(setPriFilter)
+  const handleSys = mkHandler(setSysFilter)
+  const handlePull = mkHandler(setPullFilter)
+  const handleTerm = mkHandler(setTermFilter)
+  const handleLc = mkHandler(setLcFilter)
 
   if (loading) {
     return (
@@ -203,7 +221,12 @@ export default function CableSchedule() {
       <div className="cs-body">
         <div className="page-header">
           <h2>Cable Schedule</h2>
-          <span className="cs-total">{filtered.length.toLocaleString()} cables</span>
+          <div className="cs-header-stats">
+            <span className="cs-meters">
+              {Math.round(totalMeters).toLocaleString()}<span className="cs-meters-unit"> m</span>
+            </span>
+            <span className="cs-total">{filtered.length.toLocaleString()} cables</span>
+          </div>
         </div>
 
         <div className="cs-toolbar">
@@ -230,9 +253,24 @@ export default function CableSchedule() {
               <option key={p} value={p}>{p === 'All' ? 'All Priorities' : p}</option>
             ))}
           </select>
+          <select value={sysFilter} onChange={e => handleSys(e.target.value)} className="cs-sys-filter">
+            {systems.map(s => (
+              <option key={s} value={s}>{s === 'All' ? 'All Systems' : s}</option>
+            ))}
+          </select>
           <select value={pullFilter} onChange={e => handlePull(e.target.value)}>
             {STATUSES.map(s => (
-              <option key={s} value={s}>{s === 'All' ? 'All Pulling' : s}</option>
+              <option key={s} value={s}>{s === 'All' ? 'All Pulling' : `Pulling: ${s}`}</option>
+            ))}
+          </select>
+          <select value={termFilter} onChange={e => handleTerm(e.target.value)}>
+            {STATUSES.map(s => (
+              <option key={s} value={s}>{s === 'All' ? 'All Termination' : `Term: ${s}`}</option>
+            ))}
+          </select>
+          <select value={lcFilter} onChange={e => handleLc(e.target.value)}>
+            {STATUSES.map(s => (
+              <option key={s} value={s}>{s === 'All' ? 'All Line Check' : `LC: ${s}`}</option>
             ))}
           </select>
           <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} />
