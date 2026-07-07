@@ -7,7 +7,7 @@ import {
 const UNIT1 = [
   { name: 'Power Receiving',         cust: '2026-10-30', custCable: '2026-08-01', l3: '2027-02-05', l3Cable: '2026-11-07', gap: '~3.2 mo' },
   { name: 'GTG #11 Initial Firing',  cust: '2026-11-23', custCable: '2026-08-25', l3: '2027-04-06', l3Cable: '2027-01-06', gap: '~4.4 mo' },
-  { name: 'GTG #11 Synchronization', cust: '2026-12-22', custCable: '2026-09-23', l3: '2027-05-05', l3Cable: '2027-02-04', gap: '~4.5 mo' },
+  { name: 'GTG #11 Synchronization', cust: '2026-12-22', custCable: '2026-09-23', l3: '2027-05-05', l3Cable: '2027-02-04', gap: '~4.4 mo' },
   { name: 'GTG #12 Synchronization', cust: '2027-01-20', custCable: '2026-10-22', l3: '2027-06-03', l3Cable: '2027-03-05', gap: '~4.4 mo' },
   { name: 'STG #10 Synchronization', cust: '2027-07-11', custCable: '2027-04-12', l3: '2027-11-22', l3Cable: '2027-08-24', gap: '~4.4 mo', finish: true },
 ]
@@ -134,7 +134,8 @@ export default function MasterPlan() {
         ⚠️ <div>
           <b>The Customer Required schedule needs all Power Receiving cables done by 2026-08-01</b> — 25 days from now.
           Cable work for the full scope (through STG #20 Synchronization) must finish by <b>2027-06-21</b> under Customer
-          Required vs <b>2027-11-02</b> under the L3 schedule — a consistent <b>~4.4 month gap</b> across all nine milestones.
+          Required vs <b>2027-11-02</b> under the L3 schedule. The Customer→L3 gap is <b>~3.2 months</b> for Power
+          Receiving and a consistent <b>~4.4 months</b> for the other eight milestones.
         </div>
       </div>
 
@@ -187,9 +188,10 @@ export default function MasterPlan() {
           </table>
         </div>
         <p className="mpl-note">
-          <b>Cable Due</b> = date by which all cable work for that milestone must be completed (approx. 3 months lead
-          before the event date). Gap = difference between Customer Required and L3 Schedule event dates.
-          Source: completion schedule file · 2026-07-04
+          <b>Cable Due</b> = date by which all cable work for that milestone must be completed — exactly 90 days
+          before the event date in every row, for both scenarios. Gap = difference between Customer Required and
+          L3 Schedule event dates. Source: completion schedule file · 2026-07-04
+          (its "Estimated Date" column is still empty — can be wired to actual progress later.)
         </p>
       </div>
 
