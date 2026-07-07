@@ -102,17 +102,35 @@ export function rollupActuals(fieldData, master) {
   return out;
 }
 
-function withActuals(actuals) {
-  if (!actuals) return cableCategories;
+// Derive per-category and per-priority designed lengths from the per-cable
+// master (cable-data.json) so the Dashboard always matches Cable Schedule sums.
+// Line/termination counts stay on the report values (they use the Line × 2 rule).
+export function masterLengths(master) {
+  if (!master || !master.length) return null;
+  const byCat = { power: 0, control: 0, iac: 0, pkg: 0 };
+  const byPri = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  for (const c of master) {
+    const id = CAT_ID_BY_LABEL[c.g];
+    if (id) byCat[id] += c.l || 0;
+    const bucket = PRIORITY_MAP[c.pri];
+    if (bucket) byPri[bucket] += c.l || 0;
+  }
+  for (const k in byCat) byCat[k] = Math.round(byCat[k]);
+  for (const k in byPri) byPri[k] = Math.round(byPri[k]);
+  return { byCat, byPri };
+}
+
+function withActuals(actuals, lengths) {
   return cableCategories.map((c) => ({
     ...c,
-    pulledLength: Math.round(actuals[c.id]?.pulled || 0),
-    terminatedCount: actuals[c.id]?.term || 0,
+    designedLength: lengths?.byCat?.[c.id] ?? c.designedLength,
+    pulledLength: Math.round(actuals?.[c.id]?.pulled || 0),
+    terminatedCount: actuals?.[c.id]?.term || 0,
   }));
 }
 
-export function getTotals(actuals) {
-  const cats = withActuals(actuals);
+export function getTotals(actuals, lengths) {
+  const cats = withActuals(actuals, lengths);
   const totalDesignedLength = cats.reduce((s, c) => s + c.designedLength, 0);
   const totalPulledLength = cats.reduce((s, c) => s + c.pulledLength, 0);
   const totalDesignedTermination = cats.reduce((s, c) => s + c.designedTermination, 0);
@@ -137,8 +155,8 @@ export function getTotals(actuals) {
   };
 }
 
-export function getCategoryProgress(actuals) {
-  return withActuals(actuals).map((c) => {
+export function getCategoryProgress(actuals, lengths) {
+  return withActuals(actuals, lengths).map((c) => {
     const pullPct = c.designedLength > 0
       ? ((c.pulledLength / c.designedLength) * 100)
       : 0;
@@ -149,10 +167,10 @@ export function getCategoryProgress(actuals) {
   });
 }
 
-export function getPriorityChartData() {
+export function getPriorityChartData(lengths) {
   return priorityData.map((p) => ({
     name: p.name,
-    value: p.value,
+    value: lengths?.byPri?.[p.name] ?? p.value,
     lineCount: p.lineCount,
     color: p.color,
   }));

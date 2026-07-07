@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTotals, getCategoryProgress, getPriorityChartData, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
+import { getTotals, getCategoryProgress, getPriorityChartData, masterLengths, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
 import { loadFieldData } from '../lib/dataStore'
 import KpiCards from './KpiCards'
 import BarChartSection from './BarChartSection'
@@ -28,9 +28,10 @@ export default function Dashboard() {
     return () => window.removeEventListener('cable-field-update', recompute)
   }, [master])
 
-  const totals = getTotals(actuals)
-  const categoryProgress = getCategoryProgress(actuals)
-  const priorityChartData = getPriorityChartData()
+  const lengths = masterLengths(master)
+  const totals = getTotals(actuals, lengths)
+  const categoryProgress = getCategoryProgress(actuals, lengths)
+  const priorityChartData = getPriorityChartData(lengths)
   const priorityPulled = master ? rollupPriorityActuals(fieldData, master) : {}
   const inspection = master ? rollupInspection(fieldData, master) : { power: 0, control: 0, iac: 0, pkg: 0 }
 
