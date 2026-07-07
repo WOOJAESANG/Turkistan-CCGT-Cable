@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
   ComposedChart, Bar,
 } from 'recharts'
+import { loadMilestoneTargets, saveMilestoneTarget, resetMilestoneTarget } from '../lib/dataStore'
 
 // Source: 완료일정 기입됨.xlsx (2026-07-04) — milestone dates + cable completion deadlines
 const UNIT1 = [
@@ -109,20 +111,54 @@ function PlanTooltip({ active, payload, label: lb, unit }) {
   )
 }
 
-function MilestoneRows({ rows }) {
-  return rows.map(r => (
-    <tr key={r.name} className={r.finish ? 'mpl-finish-row' : ''}>
-      <td className="mpl-metric">{r.name}</td>
-      <td className="mpl-owner">{r.cust}</td>
-      <td className="mpl-cable-owner">{r.custCable}</td>
-      <td className="mpl-l3">{r.l3}</td>
-      <td className="mpl-cable-l3">{r.l3Cable}</td>
-      <td className="mpl-gap">{r.gap}</td>
-    </tr>
-  ))
+function MilestoneRows({ rows, targets, onTarget }) {
+  return rows.map(r => {
+    const override = targets[r.name]
+    const isDefault = !override
+    return (
+      <tr key={r.name} className={r.finish ? 'mpl-finish-row' : ''}>
+        <td className="mpl-metric">{r.name}</td>
+        <td className="mpl-owner">{r.cust}</td>
+        <td className="mpl-cable-owner">{r.custCable}</td>
+        <td className="mpl-l3">{r.l3}</td>
+        <td className="mpl-cable-l3">{r.l3Cable}</td>
+        <td className="mpl-target-cell">
+          <input
+            type="date"
+            className={`mpl-target-input${isDefault ? ' is-default' : ''}`}
+            value={override || r.l3Cable}
+            onChange={e => e.target.value && onTarget(r.name, e.target.value)}
+            title={isDefault ? 'Default: L3 cable due (L3 event − 90 days)' : 'Edited target date'}
+          />
+          {!isDefault && (
+            <button
+              type="button"
+              className="mpl-target-reset"
+              title="Reset to default (L3 cable due)"
+              onClick={() => onTarget(r.name, null)}
+            >↺</button>
+          )}
+        </td>
+        <td className="mpl-gap">{r.gap}</td>
+      </tr>
+    )
+  })
 }
 
 export default function MasterPlan() {
+  const [targets, setTargets] = useState(() => ({ ...loadMilestoneTargets() }))
+
+  useEffect(() => {
+    const handler = () => setTargets({ ...loadMilestoneTargets() })
+    window.addEventListener('milestone-targets-update', handler)
+    return () => window.removeEventListener('milestone-targets-update', handler)
+  }, [])
+
+  const handleTarget = (name, date) => {
+    if (date) saveMilestoneTarget(name, date)
+    else resetMilestoneTarget(name)
+  }
+
   return (
     <div className="content-body">
       <div className="page-header">
@@ -176,22 +212,24 @@ export default function MasterPlan() {
                 <th>Cable Due <span className="mpl-th-owner">(Cust. Req)</span></th>
                 <th>L3 Schedule</th>
                 <th>Cable Due <span className="mpl-th-l3">(L3)</span></th>
+                <th>Target Date <span className="mpl-th-target">(editable)</span></th>
                 <th>Gap (Cust→L3)</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="mpl-section"><td colSpan={6}>Simple Cycle — Unit 1 (GT#11 / GT#12 / ST#10)</td></tr>
-              <MilestoneRows rows={UNIT1} />
-              <tr className="mpl-section"><td colSpan={6}>Simple Cycle — Unit 2 (GT#21 / GT#22 / ST#20)</td></tr>
-              <MilestoneRows rows={UNIT2} />
+              <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 1 (GT#11 / GT#12 / ST#10)</td></tr>
+              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} />
+              <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 2 (GT#21 / GT#22 / ST#20)</td></tr>
+              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} />
             </tbody>
           </table>
         </div>
         <p className="mpl-note">
           <b>Cable Due</b> = date by which all cable work for that milestone must be completed — exactly 90 days
           before the event date in every row, for both scenarios. Gap = difference between Customer Required and
-          L3 Schedule event dates. Source: completion schedule file · 2026-07-04
-          (its "Estimated Date" column is still empty — can be wired to actual progress later.)
+          L3 Schedule event dates. Source: completion schedule file · 2026-07-04.
+          <b> Target Date</b> is our own pulling-completion target — editable per milestone; the default is the
+          L3 cable due date (L3 event − 90 days). Edited dates show a ↺ button to restore the default.
         </p>
       </div>
 

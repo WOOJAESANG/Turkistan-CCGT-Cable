@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { supabase } from './lib/supabase'
-import { fetchAllFieldData, fetchAllDaily, fetchAllVendors, subscribeRealtime, unsubscribeRealtime, resetCaches, setCurrentEmail } from './lib/dataStore'
+import { fetchAllFieldData, fetchAllDaily, fetchAllVendors, fetchAllMilestoneTargets, subscribeRealtime, unsubscribeRealtime, resetCaches, setCurrentEmail } from './lib/dataStore'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import MasterPlan from './components/MasterPlan'
@@ -35,6 +35,7 @@ function App() {
     fetchAllFieldData()
     fetchAllDaily()
     fetchAllVendors()
+    fetchAllMilestoneTargets()
     subscribeRealtime()
     return () => { /* keep subscription across page nav */ }
   }, [session])

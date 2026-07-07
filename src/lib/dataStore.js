@@ -207,6 +207,62 @@ export function unsubscribeRealtime() {
 export function resetCaches() {
   cableCache = {}; dailyCache = {}; cableLoaded = false; dailyLoaded = false
   vendorCache = []; vendorLoaded = false
+  targetCache = {}; targetLoaded = false
+}
+
+// =========================================================
+// milestone_targets (Cable Master Plan — editable target dates)
+// Falls back to this browser's localStorage until the Supabase
+// table exists, so the page works either way.
+// =========================================================
+let targetCache = {}
+let targetLoaded = false
+const TARGET_LS_KEY = 'milestone-targets'
+
+function readTargetLS() {
+  try { return JSON.parse(localStorage.getItem(TARGET_LS_KEY)) || {} } catch { return {} }
+}
+function writeTargetLS() {
+  try { localStorage.setItem(TARGET_LS_KEY, JSON.stringify(targetCache)) } catch { /* ignore */ }
+}
+
+export function loadMilestoneTargets() { return targetCache }
+export function isMilestoneTargetsLoaded() { return targetLoaded }
+
+export async function fetchAllMilestoneTargets() {
+  const { data, error } = await supabase.from('milestone_targets').select('*')
+  if (error) {
+    targetCache = readTargetLS()
+  } else {
+    const next = {}
+    for (const r of data || []) next[r.milestone] = r.target_date
+    targetCache = next
+  }
+  targetLoaded = true
+  window.dispatchEvent(new CustomEvent('milestone-targets-update'))
+}
+
+export async function saveMilestoneTarget(milestone, date) {
+  targetCache = { ...targetCache, [milestone]: date }
+  writeTargetLS()
+  window.dispatchEvent(new CustomEvent('milestone-targets-update'))
+  const { error } = await supabase.from('milestone_targets').upsert({
+    milestone,
+    target_date: date,
+    updated_by: currentEmail(),
+    updated_at: new Date().toISOString(),
+  })
+  if (error) console.error('[saveMilestoneTarget] saved locally only:', error.message)
+}
+
+export async function resetMilestoneTarget(milestone) {
+  const next = { ...targetCache }
+  delete next[milestone]
+  targetCache = next
+  writeTargetLS()
+  window.dispatchEvent(new CustomEvent('milestone-targets-update'))
+  const { error } = await supabase.from('milestone_targets').delete().eq('milestone', milestone)
+  if (error) console.error('[resetMilestoneTarget] removed locally only:', error.message)
 }
 
 // =========================================================

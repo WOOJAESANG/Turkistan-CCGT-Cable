@@ -1505,3 +1505,41 @@
 }
 .mpl-legend span { display: flex; align-items: center; gap: 6px; }
 .mpl-sw { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+
+/* Target Date column (editable) */
+.mpl-th-target { font-weight: 400; color: #0d9488; text-transform: none; }
+.mpl-target-cell { white-space: nowrap; }
+.mpl-target-input {
+  border: 1px solid var(--hairline, #e3e8ee);
+  border-radius: 7px;
+  padding: 4px 7px;
+  font-size: 12px;
+  font-family: inherit;
+  font-feature-settings: "tnum";
+  color: #0d9488;
+  font-weight: 600;
+  background: #f0fdfa;
+  cursor: pointer;
+}
+.mpl-target-input.is-default {
+  color: var(--ink-mute, #9498ad);
+  font-weight: 500;
+  background: #fff;
+}
+.mpl-target-input:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+}
+.mpl-target-reset {
+  margin-left: 5px;
+  border: 1px solid var(--hairline, #e3e8ee);
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 12px;
+  color: #0d9488;
+  cursor: pointer;
+  line-height: 1;
+}
+.mpl-target-reset:hover { background: #f0fdfa; border-color: #0d9488; }
