@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 import { fetchAllFieldData, fetchAllDaily, fetchAllVendors, subscribeRealtime, unsubscribeRealtime, resetCaches, setCurrentEmail } from './lib/dataStore'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
+import MasterPlan from './components/MasterPlan'
 import CableSchedule from './components/CableSchedule'
 import CableMaterial from './components/CableMaterial'
 import CableActuals from './components/CableActuals'
@@ -64,6 +65,7 @@ function App() {
       />
       <main className="main-content">
         {page === 'dashboard' && <Dashboard />}
+        {page === 'masterplan' && <MasterPlan />}
         {page === 'schedule' && <CableSchedule />}
         {page === 'material' && <CableMaterial />}
         {page === 'actuals' && <CableActuals />}
