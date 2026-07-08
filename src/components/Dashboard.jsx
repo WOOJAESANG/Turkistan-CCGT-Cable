@@ -41,6 +41,19 @@ export default function Dashboard() {
     year: 'numeric', month: '2-digit', day: '2-digit',
   })
 
+  // wait for cable-data.json + actuals rollup: rendering earlier would flash
+  // the hardcoded fallback figures before the derived ones replace them
+  if (!master || !actuals) {
+    return (
+      <div className="content-body">
+        <div className="page-header">
+          <h2>Cable Dashboard</h2>
+        </div>
+        <div className="cs-loading">Loading data…</div>
+      </div>
+    )
+  }
+
   return (
     <div className="content-body">
       <div className="page-header">
