@@ -259,6 +259,11 @@ export default function CableActuals({ session }) {
       .sort((a, b) => a.cno.localeCompare(b.cno))
   }, [fieldData, search, masterMap, dateFrom, dateTo])
 
+  const totalPulled = useMemo(() => records.reduce((s, r) => {
+    const n = parseFloat(String(r.pulledLength ?? '').replace(/[^0-9.]/g, ''))
+    return s + (isNaN(n) ? 0 : n)
+  }, 0), [records])
+
   const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Pulled By',
     'Pulling Date', 'Term Date (From)', 'Terminated By (From)',
     'Term Date (To)', 'Terminated By (To)', 'Line Check', 'ACT No.']
@@ -304,7 +309,10 @@ export default function CableActuals({ session }) {
             <h2>Work Log</h2>
             <div className="cm-subtitle">Field Records · 실적 입력</div>
           </div>
-          <span className="cs-total">{records.length} records</span>
+          <div className="cs-header-stats">
+            <span className="cs-meters">{Math.round(totalPulled).toLocaleString()}<span className="cs-meters-unit"> m pulled</span></span>
+            <span className="cs-total">{records.length} lines</span>
+          </div>
         </div>
 
         {/* ---- Entry form ---- */}

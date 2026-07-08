@@ -240,6 +240,17 @@ function num(v) {
   return isNaN(n) ? 0 : n
 }
 
+// Legacy AIS tags (before packing-prefixed rename) → canonical prefixed tags.
+// Unprefixed PoCable maps to 0481: 0570 is not yet on site, so any existing
+// Work Log entry can only have used a 0481 drum.
+const LEGACY_AIS_PK = { pocable: '0481', cocable: '0571', cc: '0585', cmcable: '0587' }
+function canonDrum(tag) {
+  const m = tag.match(/^AIS-(PoCable|CoCable|CC|CMcable)-(\d{1,3})$/i)
+  if (!m) return tag
+  const pk = LEGACY_AIS_PK[m[1].toLowerCase()]
+  return `AIS-${m[1]}-${pk}-${m[2].padStart(3, '0')}`
+}
+
 function DrumUsage({ capacity }) {
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [q, setQ] = useState('')
@@ -259,7 +270,7 @@ function DrumUsage({ capacity }) {
   const rows = useMemo(() => {
     const byKey = new Map()
     for (const [cno, e] of Object.entries(fieldData || {})) {
-      const drum = (e?.usedDrum || '').trim()
+      const drum = canonDrum((e?.usedDrum || '').trim())
       if (!drum) continue
       const cap = capUpper.get(drum.toUpperCase())
       const pk = cap?.pk || '—'
