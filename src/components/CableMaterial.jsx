@@ -124,7 +124,14 @@ function DrumDropdown({ list, compact, highlight }) {
   useEffect(() => {
     if (!open) return
     const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    const onScroll = () => setOpen(false)
+    // scrolling inside the panel must not close it; outside scroll re-anchors
+    // the fixed panel to the button, closing only once the button scrolls away
+    const onScroll = e => {
+      if (ref.current && e.target instanceof Node && ref.current.contains(e.target)) return
+      const r = btnRef.current?.getBoundingClientRect()
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) { setOpen(false); return }
+      place()
+    }
     document.addEventListener('mousedown', onDoc)
     window.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', onScroll)
