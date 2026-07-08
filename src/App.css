@@ -1122,8 +1122,6 @@
 .ca-flash.err { color: #dc2626; }
 
 .ca-records-bar { align-items: center; flex-wrap: wrap; }
-.ca-bar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-left: auto; }
-.ca-bar-stats .cs-meters { font-size: 19px; }
 .ca-date-range { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .ca-dr-label { font-size: 12px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
 .ca-dr-input { height: 36px; padding: 0 8px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--bg-card); color: var(--text-1); font-size: 13px; cursor: pointer; }
