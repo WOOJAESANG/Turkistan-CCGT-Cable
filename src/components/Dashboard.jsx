@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getTotals, getCategoryProgress, getPriorityChartData, masterLengths, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
 import { loadFieldData } from '../lib/dataStore'
+import { dataUrl } from '../lib/dataUrl'
 import KpiCards from './KpiCards'
 import BarChartSection from './BarChartSection'
 import PieChartSection from './PieChartSection'
@@ -13,7 +14,7 @@ export default function Dashboard() {
   const [actuals, setActuals] = useState(null)
 
   useEffect(() => {
-    fetch('/cable-data.json').then(r => r.json()).then(setMaster).catch(() => setMaster([]))
+    fetch(dataUrl('/cable-data.json')).then(r => r.json()).then(setMaster).catch(() => setMaster([]))
   }, [])
 
   useEffect(() => {

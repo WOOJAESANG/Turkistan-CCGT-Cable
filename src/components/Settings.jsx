@@ -5,6 +5,7 @@ import {
   loadVendors, fetchAllVendors, addVendor, updateVendor, deleteVendor,
   fetchRecentActivity, fetchAllForExport,
 } from '../lib/dataStore'
+import { dataUrl } from '../lib/dataUrl'
 
 const TABS = [
   { id: 'password', label: 'Change Password' },
@@ -154,7 +155,7 @@ function ExportTab() {
   const [master, setMaster] = useState(null)
 
   useEffect(() => {
-    fetch('/cable-data.json').then(r => r.json()).then(setMaster).catch(() => setMaster([]))
+    fetch(dataUrl('/cable-data.json')).then(r => r.json()).then(setMaster).catch(() => setMaster([]))
   }, [])
 
   const run = async () => {

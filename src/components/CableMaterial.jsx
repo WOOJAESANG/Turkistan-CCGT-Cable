@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData } from '../lib/dataStore'
+import { dataUrl } from '../lib/dataUrl'
 
 const EXPORT_COLS = [
   'No.', 'Category', 'Type', 'Title', 'In-Charge', 'Document No.',
@@ -379,11 +380,11 @@ export default function CableMaterial() {
   const [capacity, setCapacity] = useState({})
 
   useEffect(() => {
-    fetch('/cable-material.json')
+    fetch(dataUrl('/cable-material.json'))
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-    fetch('/drum-capacity.json')
+    fetch(dataUrl('/drum-capacity.json'))
       .then(r => r.json())
       .then(setCapacity)
       .catch(() => setCapacity({}))

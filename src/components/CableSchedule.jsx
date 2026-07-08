@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
+import { dataUrl } from '../lib/dataUrl'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Priority',
@@ -142,11 +143,11 @@ export default function CableSchedule() {
   const [drumMap, setDrumMap] = useState({})
 
   useEffect(() => {
-    fetch('/cable-data.json')
+    fetch(dataUrl('/cable-data.json'))
       .then(r => r.json())
       .then(data => { setAllData(data); setLoading(false) })
       .catch(() => setLoading(false))
-    fetch('/cable-drum-map.json')
+    fetch(dataUrl('/cable-drum-map.json'))
       .then(r => r.json())
       .then(setDrumMap)
       .catch(() => setDrumMap({}))

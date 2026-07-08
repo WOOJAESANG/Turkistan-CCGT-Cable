@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
+import { dataUrl } from '../lib/dataUrl'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -184,8 +185,8 @@ export default function CableActuals({ session }) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/cable-data.json').then(r => r.json()),
-      fetch('/cable-material.json').then(r => r.json()).catch(() => []),
+      fetch(dataUrl('/cable-data.json')).then(r => r.json()),
+      fetch(dataUrl('/cable-material.json')).then(r => r.json()).catch(() => []),
     ]).then(([cables, materials]) => {
       setMaster(cables)
       setMasterMap(new Map(cables.map(c => [c.n, c])))
