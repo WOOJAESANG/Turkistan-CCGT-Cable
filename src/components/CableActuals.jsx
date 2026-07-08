@@ -178,6 +178,8 @@ export default function CableActuals({ session }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [missing, setMissing] = useState(new Set())
   const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [flash, setFlash] = useState(null)
 
   useEffect(() => {
@@ -247,9 +249,15 @@ export default function CableActuals({ session }) {
     return Object.entries(fieldData)
       .filter(([, e]) => hasActuals(e))
       .filter(([cno]) => !q || cno.toLowerCase().includes(q))
+      .filter(([, e]) => {
+        if (!dateFrom && !dateTo) return true
+        const dates = [e.pullingDate, e.termDateFrom, e.termDateTo].filter(Boolean)
+        if (!dates.length) return false
+        return dates.some(d => (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo))
+      })
       .map(([cno, e]) => ({ cno, ...e, cat: masterMap.get(cno)?.g || '' }))
       .sort((a, b) => a.cno.localeCompare(b.cno))
-  }, [fieldData, search, masterMap])
+  }, [fieldData, search, masterMap, dateFrom, dateTo])
 
   const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Pulled By',
     'Pulling Date', 'Term Date (From)', 'Terminated By (From)',
@@ -416,6 +424,15 @@ export default function CableActuals({ session }) {
             </svg>
             <input type="text" placeholder="Search recorded Cable Tag" value={search} onChange={e => setSearch(e.target.value)} />
             {search && <button className="cs-clear" onClick={() => setSearch('')}>✕</button>}
+          </div>
+          <div className="ca-date-range">
+            <span className="ca-dr-label">Date</span>
+            <input type="date" className={`ca-dr-input${dateFrom ? ' active' : ''}`} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <span className="ca-dr-sep">–</span>
+            <input type="date" className={`ca-dr-input${dateTo ? ' active' : ''}`} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            {(dateFrom || dateTo) && (
+              <button className="ca-dr-clear" title="Clear date filter" onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
+            )}
           </div>
           <div className="cm-export-inline">
             <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>

@@ -1121,7 +1121,15 @@
 .ca-flash.ok { color: #15803d; }
 .ca-flash.err { color: #dc2626; }
 
-.ca-records-bar { align-items: center; }
+.ca-records-bar { align-items: center; flex-wrap: wrap; }
+.ca-date-range { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ca-dr-label { font-size: 12px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.ca-dr-input { height: 36px; padding: 0 8px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--bg-card); color: var(--text-1); font-size: 13px; cursor: pointer; }
+.ca-dr-input.active { border-color: #7c3aed; background: #f5f3ff; color: #5b21b6; }
+@media (prefers-color-scheme: dark) { .ca-dr-input.active { background: #2e1065; color: #c4b5fd; } }
+.ca-dr-sep { font-size: 13px; color: var(--text-2); }
+.ca-dr-clear { width: 24px; height: 24px; border-radius: 50%; border: none; background: #e5e7eb; color: #6b7280; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0; }
+.ca-dr-clear:hover { background: #fee2e2; color: #dc2626; }
 .cm-export-inline { display: flex; gap: 8px; }
 .cm-export-inline .cm-export-btn { height: 38px; }
 .ca-btn-csv { background: #5a6577 !important; border-color: #5a6577 !important; }

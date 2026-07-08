@@ -257,26 +257,27 @@ function DrumUsage({ capacity }) {
   }, [capacity])
 
   const rows = useMemo(() => {
-    const byDrum = new Map()
+    const byKey = new Map()
     for (const [cno, e] of Object.entries(fieldData || {})) {
       const drum = (e?.usedDrum || '').trim()
       if (!drum) continue
-      const key = drum.toUpperCase()
-      if (!byDrum.has(key)) byDrum.set(key, { drum, used: 0, cables: [] })
-      const r = byDrum.get(key)
+      const cap = capUpper.get(drum.toUpperCase())
+      const pk = cap?.pk || '—'
+      const key = drum.toUpperCase() + '\x00' + pk
+      if (!byKey.has(key)) byKey.set(key, {
+        drum, pk,
+        capacity: cap?.m ?? null,
+        used: 0, cables: [],
+      })
+      const r = byKey.get(key)
       r.used += num(e.pulledLength)
       r.cables.push(cno)
     }
-    const out = [...byDrum.values()].map(r => {
-      const cap = capUpper.get(r.drum.toUpperCase())
-      return {
-        ...r,
-        capacity: cap?.m ?? null,
-        pk: cap?.pk || '—',
-        remaining: cap ? cap.m - r.used : null,
-        pct: cap && cap.m > 0 ? Math.min(100, (r.used / cap.m) * 100) : null,
-      }
-    })
+    const out = [...byKey.values()].map(r => ({
+      ...r,
+      remaining: r.capacity != null ? r.capacity - r.used : null,
+      pct: r.capacity && r.capacity > 0 ? Math.min(100, (r.used / r.capacity) * 100) : null,
+    }))
     out.sort((a, b) => b.used - a.used)
     const ql = q.trim().toLowerCase()
     return ql ? out.filter(r => r.drum.toLowerCase().includes(ql) || r.pk.toLowerCase().includes(ql)) : out
@@ -322,7 +323,7 @@ function DrumUsage({ capacity }) {
               const over = r.remaining != null && r.remaining < 0
               const low = !over && r.remaining != null && r.capacity > 0 && r.remaining / r.capacity < 0.1
               return (
-                <tr key={r.drum}>
+                <tr key={r.drum + '\x00' + r.pk}>
                   <td className="cs-cable-no">{r.drum}</td>
                   <td className="cs-kks">{r.pk}</td>
                   <td className="num">{r.capacity != null ? Math.round(r.capacity).toLocaleString() : '—'}</td>
