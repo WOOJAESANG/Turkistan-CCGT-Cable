@@ -310,10 +310,6 @@ export default function CableActuals({ session }) {
             <h2>Work Log</h2>
             <div className="cm-subtitle">Field Records · 실적 입력</div>
           </div>
-          <div className="cs-header-stats">
-            <span className="cs-meters">{Math.round(totalPulled).toLocaleString()}<span className="cs-meters-unit"> m pulled</span></span>
-            <span className="cs-total">{records.length} lines</span>
-          </div>
         </div>
 
         {/* ---- Entry form ---- */}
@@ -443,13 +439,19 @@ export default function CableActuals({ session }) {
               <button className="ca-dr-clear" title="Clear date filter" onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
             )}
           </div>
-          <div className="cm-export-inline">
-            <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>
-              <span className="cm-export-ico xls">XLS</span> Excel
-            </button>
-            <button className="cm-export-btn ca-btn-csv" onClick={exportCSV} disabled={records.length === 0}>
-              <span className="cm-export-ico csv">CSV</span> CSV
-            </button>
+          <div className="ca-bar-right">
+            <div className="cs-header-stats ca-bar-stats">
+              <span className="cs-meters">{Math.round(totalPulled).toLocaleString()}<span className="cs-meters-unit"> m pulled</span></span>
+              <span className="cs-total">{records.length} lines</span>
+            </div>
+            <div className="cm-export-inline">
+              <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>
+                <span className="cm-export-ico xls">XLS</span> Excel
+              </button>
+              <button className="cm-export-btn ca-btn-csv" onClick={exportCSV} disabled={records.length === 0}>
+                <span className="cm-export-ico csv">CSV</span> CSV
+              </button>
+            </div>
           </div>
         </div>
 
