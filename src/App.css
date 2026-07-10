@@ -700,8 +700,10 @@
   background: var(--canvas);
   border: 1px solid var(--hairline);
   border-radius: var(--rounded-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: var(--shadow-1);
+  -webkit-overflow-scrolling: touch;
 }
 
 .cs-table {
