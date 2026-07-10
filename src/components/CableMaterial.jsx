@@ -91,7 +91,7 @@ function DownloadLink({ url, label, name }) {
   if (!label) return <span className="cm-muted">—</span>
   if (!url) return <span className="cm-code cm-muted" title="No file available">{label}</span>
   return (
-    <a className="cm-dl" href={url} download={name} title={`Download ${name}`}>
+    <a className="cm-dl" href={dataUrl(url)} download={name} title={`Download ${name}`}>
       <DownloadIcon />
       <span>{label}</span>
     </a>
