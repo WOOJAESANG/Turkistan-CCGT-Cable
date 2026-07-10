@@ -29,11 +29,6 @@ function monthKeyOf(dateStr) {
   return dateStr.slice(0, 7)
 }
 
-function num(v) {
-  const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g, ''))
-  return isNaN(n) ? 0 : n
-}
-
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value || 0), 0)
@@ -76,8 +71,8 @@ export default function MonthlyPullingChart({ fieldData, master }) {
                    : catLabel === 'I&C' ? 'I&C'
                    : catLabel === 'PKG' ? 'PKG' : null
       if (!catKey) continue
-      const length = num(e.pulledLength) || (cab?.l || 0)
-      buckets.get(key)[catKey] += length
+      // design length, consistent with the design-based KPI totals
+      buckets.get(key)[catKey] += cab?.l || 0
     }
     return Array.from(buckets.values())
   }, [fieldData, master])

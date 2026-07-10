@@ -93,8 +93,9 @@ export function rollupActuals(fieldData, master) {
     const id = cab ? CAT_ID_BY_LABEL[cab.g] : null;
     if (!id || !out[id]) continue;
     if (e.pullingDate) {
-      const pl = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''));
-      out[id].pulled += !isNaN(pl) ? pl : (cab.l || 0);
+      // completed = DESIGN length: the KPI denominator is design meters, so the
+      // numerator must be too (field-entered pulled length lives in Work Log)
+      out[id].pulled += cab.l || 0;
     }
     if (e.termDateFrom) out[id].term += 1; // each cable end = 1 termination point (2 ends = 2P)
     if (e.termDateTo) out[id].term += 1;
@@ -208,8 +209,8 @@ export function rollupPriorityActuals(fieldData, master) {
     const cab = mmap.get(cno);
     const bucket = PRIORITY_MAP[cab?.pri];
     if (!bucket) continue;
-    const pl = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''));
-    out[bucket] += !isNaN(pl) ? pl : (cab.l || 0);
+    // completed = DESIGN length, matching the design-based denominators
+    out[bucket] += cab.l || 0;
   }
   return out;
 }
