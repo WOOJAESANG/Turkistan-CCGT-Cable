@@ -170,6 +170,7 @@ function DrumInput({ value, onChange, master, cat, invalid }) {
 
 export default function CableActuals({ session }) {
   const admin = session?.user?.user_metadata?.role === 'admin'
+  const viewer = session?.user?.user_metadata?.role === 'viewer'
   const [master, setMaster] = useState([])
   const [masterMap, setMasterMap] = useState(new Map())
   const [drumMaster, setDrumMaster] = useState([])
@@ -221,6 +222,7 @@ export default function CableActuals({ session }) {
   const pickCable = c => { setTag(c.n); setForm(pickForm(fieldData[c.n])); clearErr() }
 
   const save = () => {
+    if (viewer) return
     const t = tag.trim()
     const { ok, miss, labels } = validate(tag, form)
     if (!ok) {
@@ -317,6 +319,10 @@ export default function CableActuals({ session }) {
         </div>
 
         {/* ---- Entry form ---- */}
+        {viewer && (
+          <div className="ca-viewer-notice">👁 View Only — you can browse and export records, but not add or edit them.</div>
+        )}
+        {!viewer && (
         <div className="ca-form">
           <div className="ca-top-row">
             <div className="ca-field ca-field-tag">
@@ -424,6 +430,7 @@ export default function CableActuals({ session }) {
             {flash && <span className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</span>}
           </div>
         </div>
+        )}
 
         {/* ---- Records table ---- */}
         <div className="cs-toolbar ca-records-bar">
@@ -494,7 +501,7 @@ export default function CableActuals({ session }) {
                     <td><span className="cs-badge" style={{ background: lcC.bg, color: lcC.text }}>{lc}</span></td>
                     <td className="ca-mono">{r.act || '—'}</td>
                     <td className="ca-row-actions">
-                      <button className="ca-act ca-act-edit" title="Edit" onClick={() => editRecord(r.cno)}>Edit</button>
+                      {!viewer && <button className="ca-act ca-act-edit" title="Edit" onClick={() => editRecord(r.cno)}>Edit</button>}
                       {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRecord(r.cno)}>✕</button>}
                     </td>
                   </tr>

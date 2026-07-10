@@ -15,6 +15,7 @@ const EMPTY = { date: '', vendor: '', pullManpower: '', termManpower: '' }
 
 export default function DailyReport({ session }) {
   const admin = session?.user?.user_metadata?.role === 'admin'
+  const viewer = session?.user?.user_metadata?.role === 'viewer'
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [daily, setDaily] = useState(loadDaily)
   const [form, setForm] = useState(EMPTY)
@@ -63,6 +64,7 @@ export default function DailyReport({ session }) {
   const setField = (k, v) => { setForm(f => ({ ...f, [k]: v })); if (flash?.type === 'err') setFlash(null) }
 
   const save = () => {
+    if (viewer) return
     const date = form.date.trim(); const vendor = form.vendor.trim()
     if (!date || !vendor) { setFlash({ type: 'err', msg: '필수 항목을 입력하세요 — Date, Vendor' }); return }
     saveDailyEntry(date, vendor, { pullManpower: form.pullManpower.trim(), termManpower: form.termManpower.trim() })
@@ -109,6 +111,10 @@ export default function DailyReport({ session }) {
         </div>
 
         {/* ---- Daily manpower entry (once per day per vendor) ---- */}
+        {viewer && (
+          <div className="ca-viewer-notice">👁 View Only — you can browse and export records, but not add or edit them.</div>
+        )}
+        {!viewer && (
         <div className="ca-form dr-form">
           <div className="dr-entry-grid">
             <div className="ca-field">
@@ -139,6 +145,7 @@ export default function DailyReport({ session }) {
             {flash && <span className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</span>}
           </div>
         </div>
+        )}
 
         {/* ---- Daily summary (auto) ---- */}
         <div className="cs-toolbar ca-records-bar">
@@ -182,7 +189,7 @@ export default function DailyReport({ session }) {
                     <td className="num">{r.termMan || <span className="dr-need">입력</span>}</td>
                     <td className="num dr-prod">{tp != null ? (Math.round(tp * 10) / 10) : '—'}</td>
                     <td className="ca-row-actions">
-                      <button className="ca-act ca-act-edit" onClick={() => editRow(r)}>Edit</button>
+                      {!viewer && <button className="ca-act ca-act-edit" onClick={() => editRow(r)}>Edit</button>}
                       {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRow(r)}>✕</button>}
                     </td>
                   </tr>

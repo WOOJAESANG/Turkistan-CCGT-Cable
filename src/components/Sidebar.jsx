@@ -4,8 +4,13 @@ export function isAdmin(session) {
   return session?.user?.user_metadata?.role === 'admin'
 }
 
+export function isViewer(session) {
+  return session?.user?.user_metadata?.role === 'viewer'
+}
+
 export default function Sidebar({ activePage, onNavigate, session, mobileOpen }) {
   const admin = isAdmin(session)
+  const viewer = isViewer(session)
   return (
     <aside className={`sidebar${mobileOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-brand">
@@ -85,6 +90,7 @@ export default function Sidebar({ activePage, onNavigate, session, mobileOpen })
           <div className="sidebar-user">
             <div className="sidebar-user-label">Signed in</div>
             <div className="sidebar-user-email" title={session.user.email}>{session.user.email}</div>
+            {viewer && <span className="sidebar-viewer-badge">View Only</span>}
             <button className="sidebar-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
           </div>
         )}
