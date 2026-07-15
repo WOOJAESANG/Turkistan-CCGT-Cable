@@ -27,13 +27,16 @@ export default function Sidebar({ activePage, onNavigate, session, mobileOpen })
           </svg>
           Dashboard
         </button>
-        <button className={`nav-item${activePage === 'masterplan' ? ' active' : ''}`} onClick={() => onNavigate('masterplan')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3v18h18" />
-            <path d="M7 15l4-6 4 3 5-8" />
-          </svg>
-          Cable Master Plan
-        </button>
+        {admin && (
+          <button className={`nav-item${activePage === 'masterplan' ? ' active' : ''}`} onClick={() => onNavigate('masterplan')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3v18h18" />
+              <path d="M7 15l4-6 4 3 5-8" />
+            </svg>
+            Cable Master Plan
+            <span className="nav-admin-badge">Admin</span>
+          </button>
+        )}
         <button className={`nav-item${activePage === 'schedule' ? ' active' : ''}`} onClick={() => onNavigate('schedule')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
