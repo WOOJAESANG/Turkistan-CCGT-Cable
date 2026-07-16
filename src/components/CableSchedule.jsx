@@ -137,7 +137,9 @@ const FROM_AREAS = [
 
 // TO area options: destination system area (sys field based)
 const TO_AREAS = [
-  { code: '1.1', label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS'] },
+  { code: '1.1',   label: '1.1 — Main Building (All)',     kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'] },
+  { code: '1.1.1', label: '1.1.1 — Main Building Block 1', kw: [] },
+  { code: '1.1.2', label: '1.1.2 — Main Building Block 2', kw: [] },
   { code: '1.2', label: '1.2 — LEB Block 1',             kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
   { code: '1.3', label: '1.3 — LEB Block 2',             kw: ['LEB #2', '#B2', 'FMS_LEB #2', 'VMS_LEB #2', 'SWGR_LEB #2', 'TIE FEEDER_LEB #2'] },
   { code: '2.1', label: '2.1 — ACC Block 1',             kw: ['ACC #1', 'AIR COOLED CONDENSER#1'] },
@@ -152,7 +154,7 @@ const TO_AREAS = [
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
   { code: '25',  label: '25 — Administrative Building',  kw: ['DC UPS_ADM'] },
-  { code: 'waste', label: 'Waste Water Treatment',       kw: ['WASTE WATER', 'SEWAGE'] },
+  { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
   { code: 'elec', label: 'General Electrical (SWGR/UPS)', kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
@@ -170,16 +172,30 @@ function getFromArea(tag) {
 
 function getToArea(sys, toTag) {
   if (!sys) return ''
-  // CCW Pump Building: same sys values across blocks — use TO tag prefix to split
+  // CCW Pump Building: sys values identical across blocks — use TO tag prefix
   if (sys.includes('CLOSED COOLING WATER PUMP') || sys.includes('CLOSED COOLING WATER SYSTEM')) {
     if (toTag && toTag.startsWith('B1-')) return '8.1'
     if (toTag && toTag.startsWith('B2-')) return '8.2'
     return ''
   }
-  for (const a of TO_AREAS) {
-    if (a.kw.some(kw => sys.includes(kw))) return a.code
+  // Waste water: classify by TO tag block prefix; B0-* stays as 'waste'
+  if (sys.includes('WASTE WATER') || sys.includes('SEWAGE')) {
+    if (toTag && toTag.startsWith('B1-')) return '1.1.1'
+    if (toTag && toTag.startsWith('B2-')) return '1.1.2'
+    return 'waste'
   }
-  return ''
+  // Keyword match for all other systems
+  let code = ''
+  for (const a of TO_AREAS) {
+    if (a.kw.length > 0 && a.kw.some(kw => sys.includes(kw))) { code = a.code; break }
+  }
+  // Main Building sub-split: 11xx/12xx = Block 1, 21xx/22xx = Block 2
+  if (code === '1.1' && toTag) {
+    if (toTag.startsWith('B1-') || /^(11|12)[A-Z0-9]/.test(toTag)) return '1.1.1'
+    if (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag)) return '1.1.2'
+    // B0-* and true common equipment stays at 1.1
+  }
+  return code
 }
 
 // Per-column header filters (Excel-style filter row under the column titles)
@@ -237,7 +253,12 @@ export default function CableSchedule() {
           if (c.g === 'PKG') return false
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
           if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
-          if (colF.toArea && getToArea(c.sys, c.t) !== colF.toArea) return false
+          if (colF.toArea) {
+            const ca = getToArea(c.sys, c.t)
+            // '1.1' parent matches 1.1, 1.1.1, 1.1.2
+            const match = colF.toArea === '1.1' ? ca.startsWith('1.1') : ca === colF.toArea
+            if (!match) return false
+          }
         }
       }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
