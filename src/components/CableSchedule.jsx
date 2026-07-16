@@ -153,7 +153,7 @@ const TO_AREAS = [
   { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'SERVICE WTR', 'RAW WATER', 'RWA WATER', 'WTP'] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
-  { code: '25',  label: '25 — Administrative Building',  kw: ['DC UPS_ADM'] },
+  { code: '25',  label: '25 — Admin Building (CER/CCR)',  kw: ['DC UPS_ADM'] },
   { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
@@ -174,6 +174,8 @@ function getFromArea(tag) {
 
 function getToArea(sys, toTag) {
   if (!sys) return ''
+  // Admin Building 25 (CER/CCR/Server Room): B0-MD-* and B0-HTP-* panels are physically in Admin Bldg 25
+  if (toTag && (toTag.startsWith('B0-MD-') || toTag.startsWith('B0-HTP-'))) return '25'
   // CCW Pump Building: sys values identical across blocks — use TO tag prefix
   if (sys.includes('CLOSED COOLING WATER PUMP') || sys.includes('CLOSED COOLING WATER SYSTEM')) {
     if (toTag && toTag.startsWith('B1-')) return '8.1'
