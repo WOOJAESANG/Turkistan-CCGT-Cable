@@ -4,15 +4,16 @@ import { dataUrl } from '../lib/dataUrl'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Priority',
-  'From', 'To', 'Drum No.', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
+  'From', 'To', 'Drum No.', 'Pkg List', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
 ]
 
-function buildScheduleRows(rows, fieldData, drumMap) {
+function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
     const fd = fieldData[c.n] || {}
+    const drum = drumMap[c.n] || ''
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
-      c.f || '', c.t || '', drumMap[c.n] || '', c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
+      c.f || '', c.t || '', drum, pkgMap[drum] || '', c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
     ]
   })
 }
@@ -23,12 +24,12 @@ function stamp() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-function exportScheduleExcel(rows, fieldData, drumMap) {
-  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap)]
+function exportScheduleExcel(rows, fieldData, drumMap, pkgMap) {
+  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap, pkgMap)]
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = [
     { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 13 },
-    { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+    { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
   ]
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: EXPORT_COLS.length - 1, r: aoa.length - 1 } }) }
   ws['!freeze'] = { xSplit: 0, ySplit: 1 }
@@ -37,8 +38,8 @@ function exportScheduleExcel(rows, fieldData, drumMap) {
   XLSX.writeFile(wb, `Cable Schedule_${stamp()}.xlsx`)
 }
 
-function exportScheduleCSV(rows, fieldData, drumMap) {
-  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap)]
+function exportScheduleCSV(rows, fieldData, drumMap, pkgMap) {
+  const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap, pkgMap)]
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   const csv = XLSX.utils.sheet_to_csv(ws)
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -50,7 +51,7 @@ function exportScheduleCSV(rows, fieldData, drumMap) {
   URL.revokeObjectURL(url)
 }
 
-function ScheduleExportMenu({ rows, fieldData, drumMap }) {
+function ScheduleExportMenu({ rows, fieldData, drumMap, pkgMap }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
@@ -60,7 +61,7 @@ function ScheduleExportMenu({ rows, fieldData, drumMap }) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
 
-  const run = fn => { fn(rows, fieldData, drumMap); setOpen(false) }
+  const run = fn => { fn(rows, fieldData, drumMap, pkgMap); setOpen(false) }
   const disabled = !rows || rows.length === 0
 
   return (
@@ -176,7 +177,7 @@ function getToArea(sys) {
 // Per-column header filters (Excel-style filter row under the column titles)
 const EMPTY_COLF = {
   cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: '', pri: 'All',
-  from: '', to: '', drum: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
+  from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
   fromArea: '', toArea: '',
 }
 
@@ -188,6 +189,7 @@ export default function CableSchedule() {
   const [currentPage, setCurrentPage] = useState(1)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [drumMap, setDrumMap] = useState({})
+  const [pkgMap, setPkgMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -198,6 +200,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setDrumMap)
       .catch(() => setDrumMap({}))
+    fetch(dataUrl('/cable-pkg-map.json'))
+      .then(r => r.json())
+      .then(setPkgMap)
+      .catch(() => setPkgMap({}))
   }, [])
 
   useEffect(() => {
@@ -231,6 +237,7 @@ export default function CableSchedule() {
       if (!inc(c.f, colF.from)) return false
       if (!inc(c.t, colF.to)) return false
       if (!inc(drumMap[c.n], colF.drum)) return false
+      if (!inc(pkgMap[drumMap[c.n]], colF.pkg)) return false
       if (!inc(fd.usedDrum, colF.used)) return false
       if (!inc(fd.act, colF.act)) return false
       if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) return false
@@ -239,6 +246,7 @@ export default function CableSchedule() {
       if (q) {
         const assignedDrum = drumMap[c.n] || ''
         const usedDrum = fd.usedDrum || ''
+        const pkgNo = pkgMap[assignedDrum] || ''
         return (
           c.n.toLowerCase().includes(q) ||
           c.s.toLowerCase().includes(q) ||
@@ -246,12 +254,13 @@ export default function CableSchedule() {
           c.f.toLowerCase().includes(q) ||
           c.t.toLowerCase().includes(q) ||
           assignedDrum.toLowerCase().includes(q) ||
-          usedDrum.toLowerCase().includes(q)
+          usedDrum.toLowerCase().includes(q) ||
+          pkgNo.toLowerCase().includes(q)
         )
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
@@ -352,7 +361,7 @@ export default function CableSchedule() {
               ✕ Reset Filters
             </button>
           )}
-          <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} />
+          <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} pkgMap={pkgMap} />
         </div>
 
         <div className="cs-table-wrap">
@@ -368,6 +377,7 @@ export default function CableSchedule() {
                 <th>FROM</th>
                 <th>TO</th>
                 <th>DRUM NO.</th>
+                <th>PKG LIST</th>
                 <th>PULLING</th>
                 <th>USED DRUM</th>
                 <th>TERMINATION</th>
@@ -391,6 +401,7 @@ export default function CableSchedule() {
                 <th>{cfText('from')}</th>
                 <th>{cfText('to')}</th>
                 <th>{cfText('drum')}</th>
+                <th>{cfText('pkg', 'e.g. 590')}</th>
                 <th>{cfSelect('pull', STATUSES)}</th>
                 <th>{cfText('used')}</th>
                 <th>{cfSelect('term', STATUSES)}</th>
@@ -430,6 +441,7 @@ export default function CableSchedule() {
                     <td className="cs-kks">{c.f || '—'}</td>
                     <td className="cs-kks">{c.t || '—'}</td>
                     <td className="cs-kks">{drumMap[c.n] || '—'}</td>
+                    <td className="cs-pkg-cell">{pkgMap[drumMap[c.n]] || '—'}</td>
                     <td>
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
                     </td>

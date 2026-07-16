@@ -818,6 +818,14 @@
   font-feature-settings: "tnum";
 }
 
+.cs-pkg-cell {
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  font-feature-settings: "tnum";
+  letter-spacing: 0.01em;
+}
+
 /* Line Check / ACT No. columns */
 .cs-act-cell {
   color: var(--ink-mute);
