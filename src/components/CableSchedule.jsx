@@ -151,7 +151,7 @@ const TO_AREAS = [
   { code: '8.2', label: '8.2 — CCW Pump Building Block 2', kw: [] },
   { code: '9',   label: '9 — BSDG',                      kw: ['BSDG', 'BSDEG', 'EMERGENCY DIESEL', 'Back Up SWGR', 'DU UPS_ACC'] },
   { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'SERVICE WTR', 'RAW WATER', 'RWA WATER', 'WTP'] },
-  { code: '16',  label: '16 — CEP Building / ACC LER',   kw: [] },
+  { code: '16',  label: '16 — CEPB (Condensate Extraction Pump Bldg)', kw: ['CONDENSATE EXTRACTION', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: '18',  label: '18 — Auxiliary Boiler / LER',   kw: [] },
   { code: '19',  label: '19 — Distribution Point 10kV',  kw: [] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
@@ -160,7 +160,7 @@ const TO_AREAS = [
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
   { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
-  { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
+  { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
   { code: 'elec',   label: 'General Electrical (All)',      kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
   { code: 'elec.1', label: 'General Electrical Block 1',   kw: [] },
@@ -198,6 +198,8 @@ function getToArea(sys, toTag) {
   if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
   // Admin Building 25 (CER/CCR/Server Room): B0-MD-* panels are physically in Admin Bldg 25
   if (toTag && toTag.startsWith('B0-MD-')) return '25'
+  // CEPB (Building 16): must check before generic CONDENSATE keyword hits 1.1
+  if (sys.includes('CONDENSATE EXTRACTION') || sys.includes('SWGR_CEPB') || sys.includes('FMS_CEPB') || sys.includes('VMS_CEPB')) return '16'
   // CCW Pump Building: sys values identical across blocks — use TO tag prefix
   if (sys.includes('CLOSED COOLING WATER PUMP') || sys.includes('CLOSED COOLING WATER SYSTEM')) {
     if (toTag && toTag.startsWith('B1-')) return '8.1'
