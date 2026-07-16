@@ -145,7 +145,8 @@ const TO_AREAS = [
   { code: '3',   label: '3 — Fuel Gas (EGS)',             kw: ['FUEL GAS', 'GAS METERING', 'GAS REGULATOR', 'IGNITION GAS'] },
   { code: '7.1', label: '7.1 — CCW Fan Block 1',         kw: ['CCW #1', 'FIN FAN COOLER', 'INST BOX_CCW #1'] },
   { code: '7.2', label: '7.2 — CCW Fan Block 2',         kw: ['CCW #2', 'INST BOX_CCW #2'] },
-  { code: '8',   label: '8 — CCW Pump Building',         kw: ['CLOSED COOLING WATER PUMP', 'CLOSED COOLING WATER SYSTEM'] },
+  { code: '8.1', label: '8.1 — CCW Pump Building Block 1', kw: [] },
+  { code: '8.2', label: '8.2 — CCW Pump Building Block 2', kw: [] },
   { code: '9',   label: '9 — BSDG',                      kw: ['BSDG', 'BSDEG', 'EMERGENCY DIESEL', 'Back Up SWGR', 'DU UPS_ACC'] },
   { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'SERVICE WTR', 'RAW WATER', 'RWA WATER', 'WTP'] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
@@ -155,6 +156,7 @@ const TO_AREAS = [
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
   { code: 'elec', label: 'General Electrical (SWGR/UPS)', kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
+  { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
 function getFromArea(tag) {
@@ -166,8 +168,14 @@ function getFromArea(tag) {
   return ''
 }
 
-function getToArea(sys) {
+function getToArea(sys, toTag) {
   if (!sys) return ''
+  // CCW Pump Building: same sys values across blocks — use TO tag prefix to split
+  if (sys.includes('CLOSED COOLING WATER PUMP') || sys.includes('CLOSED COOLING WATER SYSTEM')) {
+    if (toTag && toTag.startsWith('B1-')) return '8.1'
+    if (toTag && toTag.startsWith('B2-')) return '8.2'
+    return ''
+  }
   for (const a of TO_AREAS) {
     if (a.kw.some(kw => sys.includes(kw))) return a.code
   }
@@ -219,13 +227,18 @@ export default function CableSchedule() {
     const lmax = colF.lmax !== '' ? parseFloat(colF.lmax) : null
     return allData.filter(c => {
       const fd = fieldData[c.n] || {}
-      // FROM / TO area filter (excludes AIS + PKG when active)
+      // FROM / TO area filter
       if (colF.fromArea || colF.toArea) {
-        if (c.g === 'PKG') return false
         const s = c.sys || ''
-        if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
-        if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
-        if (colF.toArea && getToArea(c.sys) !== colF.toArea) return false
+        if (colF.toArea === '38') {
+          // Area 38 (OCP): only AIS-OCP cables; these are PKG so skip the normal PKG exclusion
+          if (s !== 'AIS-OCP') return false
+        } else {
+          if (c.g === 'PKG') return false
+          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
+          if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
+          if (colF.toArea && getToArea(c.sys, c.t) !== colF.toArea) return false
+        }
       }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
       if (colF.pri !== 'All' && c.pri !== colF.pri) return false
@@ -339,7 +352,7 @@ export default function CableSchedule() {
                 {TO_AREAS.map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
               </select>
             </div>
-            {(colF.fromArea || colF.toArea) && (
+            {(colF.fromArea || colF.toArea) && colF.toArea !== '38' && (
               <span className="cs-loc-note">AIS &amp; PKG excluded</span>
             )}
           </div>
