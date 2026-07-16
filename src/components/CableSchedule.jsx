@@ -127,10 +127,33 @@ const CATEGORIES = ['All', 'Power', 'Control', 'I&C', 'PKG']
 const PRIORITIES = ['All', 'PR', 'Simple Cycle', 'ETC']
 const STATUSES = ['All', 'Pending', 'In Progress', 'Done']
 
+// 4-stage area classification (excludes AIS 220kV / AIS 500kV / AIS-OCP / PKG)
+const AREA_MAP = [
+  { code: '1.1', label: '1.1 — MAIN BUILDING COMPLEX',      kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER'] },
+  { code: '1.2', label: '1.2 — LEB – Block 1',              kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
+  { code: '1.3', label: '1.3 — LEB – Block 2',              kw: ['LEB #2', '#B2', 'FMS_LEB #2', 'VMS_LEB #2', 'SWGR_LEB #2', 'TIE FEEDER_LEB #2'] },
+  { code: '2.1', label: '2.1 — ACC – Block 1',              kw: ['ACC #1', 'AIR COOLED CONDENSER#1'] },
+  { code: '2.2', label: '2.2 — ACC – Block 2',              kw: ['ACC #2', 'AIR COOLED CONDENSER#2'] },
+  { code: '3',   label: '3 — Fuel Gas (EGS)',                kw: ['FUEL GAS', 'GAS METERING', 'GAS REGULATOR', 'IGNITION GAS'] },
+  { code: '7.1', label: '7.1 — CCW Fan – Block 1',          kw: ['CCW #1', 'FIN FAN COOLER'] },
+  { code: '7.2', label: '7.2 — CCW Fan – Block 2',          kw: ['CCW #2'] },
+  { code: '8',   label: '8 — CCW Pump Building',            kw: ['CLOSED COOLING WATER PUMP', 'CLOSED COOLING WATER SYSTEM'] },
+  { code: '9',   label: '9 — BSDG',                         kw: ['BSDG', 'BSDEG', 'EMERGENCY DIESEL', 'Back Up SWGR', 'DU UPS_ACC'] },
+  { code: '10',  label: '10-11 — Water Treatment Plant',    kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'RAW WATER', 'WTP'] },
+  { code: '21',  label: '21 — Fuel Oil Pump Station',        kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
+  { code: '24',  label: '24 — Workshop',                     kw: ['WORKSHOP'] },
+  { code: '25',  label: '25 — Administrative Building',      kw: ['DC UPS_ADM'] },
+  { code: 'waste', label: 'Waste Water Treatment',           kw: ['WASTE WATER', 'SEWAGE'] },
+  { code: 'prot', label: 'Protection Relay Panel',           kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
+  { code: 'swas', label: 'SWAS / Water Analysis',            kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
+  { code: 'elec', label: 'General Electrical (SWGR/UPS)',    kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL ('] },
+]
+
 // Per-column header filters (Excel-style filter row under the column titles)
 const EMPTY_COLF = {
   cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: '', pri: 'All',
   from: '', to: '', drum: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
+  loc: '',
 }
 
 export default function CableSchedule() {
@@ -166,6 +189,14 @@ export default function CableSchedule() {
     const lmax = colF.lmax !== '' ? parseFloat(colF.lmax) : null
     return allData.filter(c => {
       const fd = fieldData[c.n] || {}
+      // Location area filter (excludes AIS + PKG when active)
+      if (colF.loc) {
+        if (c.g === 'PKG') return false
+        const s = c.sys || ''
+        if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
+        const area = AREA_MAP.find(a => a.code === colF.loc)
+        if (area && !area.kw.some(kw => s.includes(kw))) return false
+      }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
       if (colF.pri !== 'All' && c.pri !== colF.pri) return false
       if (!inc(c.n, colF.cn)) return false
@@ -254,6 +285,20 @@ export default function CableSchedule() {
         </div>
 
         <div className="cs-toolbar">
+          <div className="cs-loc-bar">
+            <span className="cs-loc-label">Location</span>
+            <select
+              className={`cs-loc-select${colF.loc ? ' active' : ''}`}
+              value={colF.loc}
+              onChange={e => setCF('loc', e.target.value)}
+            >
+              <option value="">All Areas</option>
+              {AREA_MAP.map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+            </select>
+            {colF.loc && (
+              <span className="cs-loc-note">AIS &amp; PKG cables excluded</span>
+            )}
+          </div>
           <div className="cs-search">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
