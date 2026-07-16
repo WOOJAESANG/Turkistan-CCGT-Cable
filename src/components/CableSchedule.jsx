@@ -137,7 +137,7 @@ const FROM_AREAS = [
 
 // TO area options: destination system area (sys field based)
 const TO_AREAS = [
-  { code: '1.1',   label: '1.1 — Main Building (All)',     kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'] },
+  { code: '1.1',   label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'] },
   { code: '1.1.1', label: '1.1.1 — Main Building Block 1', kw: [] },
   { code: '1.1.2', label: '1.1.2 — Main Building Block 2', kw: [] },
   { code: '1.2', label: '1.2 — LEB Block 1',             kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
@@ -158,6 +158,7 @@ const TO_AREAS = [
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
   { code: '25',  label: '25 — Admin Building (CER/CCR)',  kw: ['DC UPS_ADM'] },
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
+  { code: '34',  label: '34 — Back-Up Transformer',      kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
   { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP'] },
@@ -192,8 +193,10 @@ const HTP_TAG_AREA = {
   'B2-HTP-16601': '2.2',  // ACC Block 2
 }
 
-function getToArea(sys, toTag) {
+function getToArea(sys, toTag, elecAreaMap = {}) {
   if (!sys) return ''
+  // Power Cable Schedule Load Location lookup (tag → area code from xlsx)
+  if (toTag && elecAreaMap[toTag]) return elecAreaMap[toTag]
   // Heat Tracing Panels: each HTP tag has a specific physical Load Location
   if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
   // Admin Building 25 (CER/CCR/Server Room): B0-MD-* panels are physically in Admin Bldg 25
@@ -250,6 +253,7 @@ export default function CableSchedule() {
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [drumMap, setDrumMap] = useState({})
   const [pkgMap, setPkgMap] = useState({})
+  const [elecAreaMap, setElecAreaMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -264,6 +268,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setPkgMap)
       .catch(() => setPkgMap({}))
+    fetch(dataUrl('/cable-elec-area-map.json'))
+      .then(r => r.json())
+      .then(setElecAreaMap)
+      .catch(() => setElecAreaMap({}))
   }, [])
 
   useEffect(() => {
@@ -290,7 +298,7 @@ export default function CableSchedule() {
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
           if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
           if (colF.toArea) {
-            const ca = getToArea(c.sys, c.t)
+            const ca = getToArea(c.sys, c.t, elecAreaMap)
             // parent codes match their sub-areas too
             const match =
               colF.toArea === '1.1'   ? ca.startsWith('1.1') :
@@ -333,7 +341,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap, pkgMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
