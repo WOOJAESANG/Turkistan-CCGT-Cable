@@ -1669,18 +1669,29 @@ select.cs-cf { padding: 4px 2px; }
   color: var(--ink-mute);
   white-space: nowrap;
 }
+.cs-loc-selects {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cs-loc-arrow {
+  font-size: 16px;
+  color: var(--ink-mute);
+  user-select: none;
+}
 .cs-loc-select {
   height: 38px;
   padding: 0 10px;
   border: 1px solid var(--hairline);
   border-radius: var(--rounded-md);
   background: var(--canvas);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--ink);
   cursor: pointer;
   font-family: inherit;
-  min-width: 260px;
-  max-width: 480px;
+  min-width: 200px;
+  max-width: 380px;
 }
 .cs-loc-select.active {
   border-color: var(--primary);
