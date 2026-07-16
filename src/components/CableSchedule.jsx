@@ -136,24 +136,24 @@ const FROM_AREAS = [
 
 // TO area options: destination system area (sys field based)
 const TO_AREAS = [
-  { code: '1.1', label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER'] },
+  { code: '1.1', label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS'] },
   { code: '1.2', label: '1.2 — LEB Block 1',             kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
   { code: '1.3', label: '1.3 — LEB Block 2',             kw: ['LEB #2', '#B2', 'FMS_LEB #2', 'VMS_LEB #2', 'SWGR_LEB #2', 'TIE FEEDER_LEB #2'] },
   { code: '2.1', label: '2.1 — ACC Block 1',             kw: ['ACC #1', 'AIR COOLED CONDENSER#1'] },
   { code: '2.2', label: '2.2 — ACC Block 2',             kw: ['ACC #2', 'AIR COOLED CONDENSER#2'] },
   { code: '3',   label: '3 — Fuel Gas (EGS)',             kw: ['FUEL GAS', 'GAS METERING', 'GAS REGULATOR', 'IGNITION GAS'] },
-  { code: '7.1', label: '7.1 — CCW Fan Block 1',         kw: ['CCW #1', 'FIN FAN COOLER'] },
-  { code: '7.2', label: '7.2 — CCW Fan Block 2',         kw: ['CCW #2'] },
+  { code: '7.1', label: '7.1 — CCW Fan Block 1',         kw: ['CCW #1', 'FIN FAN COOLER', 'INST BOX_CCW #1'] },
+  { code: '7.2', label: '7.2 — CCW Fan Block 2',         kw: ['CCW #2', 'INST BOX_CCW #2'] },
   { code: '8',   label: '8 — CCW Pump Building',         kw: ['CLOSED COOLING WATER PUMP', 'CLOSED COOLING WATER SYSTEM'] },
   { code: '9',   label: '9 — BSDG',                      kw: ['BSDG', 'BSDEG', 'EMERGENCY DIESEL', 'Back Up SWGR', 'DU UPS_ACC'] },
-  { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'RAW WATER', 'WTP'] },
+  { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'SERVICE WTR', 'RAW WATER', 'RWA WATER', 'WTP'] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
   { code: '25',  label: '25 — Administrative Building',  kw: ['DC UPS_ADM'] },
   { code: 'waste', label: 'Waste Water Treatment',       kw: ['WASTE WATER', 'SEWAGE'] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
-  { code: 'elec', label: 'General Electrical (SWGR/UPS)', kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL ('] },
+  { code: 'elec', label: 'General Electrical (SWGR/UPS)', kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
 ]
 
 function getFromArea(tag) {
