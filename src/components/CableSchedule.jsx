@@ -157,7 +157,9 @@ const TO_AREAS = [
   { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
-  { code: 'elec', label: 'General Electrical (SWGR/UPS)', kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
+  { code: 'elec',   label: 'General Electrical (All)',      kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
+  { code: 'elec.1', label: 'General Electrical Block 1',   kw: [] },
+  { code: 'elec.2', label: 'General Electrical Block 2',   kw: [] },
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
@@ -194,6 +196,14 @@ function getToArea(sys, toTag) {
     if (toTag.startsWith('B1-') || /^(11|12)[A-Z0-9]/.test(toTag)) return '1.1.1'
     if (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag)) return '1.1.2'
     // B0-* and true common equipment stays at 1.1
+  }
+  // General Electrical sub-split by TO tag prefix or sys block designation
+  if (code === 'elec') {
+    if (toTag && (toTag.startsWith('B1-') || /^(11|12)[A-Z0-9]/.test(toTag))) return 'elec.1'
+    if (toTag && (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag))) return 'elec.2'
+    if (sys.includes('BLOCK#1')) return 'elec.1'
+    if (sys.includes('BLOCK#2')) return 'elec.2'
+    // B0-* and common equipment stays at 'elec'
   }
   return code
 }
@@ -255,8 +265,11 @@ export default function CableSchedule() {
           if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t)
-            // '1.1' parent matches 1.1, 1.1.1, 1.1.2
-            const match = colF.toArea === '1.1' ? ca.startsWith('1.1') : ca === colF.toArea
+            // parent codes match their sub-areas too
+            const match =
+              colF.toArea === '1.1'   ? ca.startsWith('1.1') :
+              colF.toArea === 'elec'  ? ca.startsWith('elec') :
+              ca === colF.toArea
             if (!match) return false
           }
         }
