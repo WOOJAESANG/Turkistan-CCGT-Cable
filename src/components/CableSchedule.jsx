@@ -151,9 +151,14 @@ const TO_AREAS = [
   { code: '8.2', label: '8.2 — CCW Pump Building Block 2', kw: [] },
   { code: '9',   label: '9 — BSDG',                      kw: ['BSDG', 'BSDEG', 'EMERGENCY DIESEL', 'Back Up SWGR', 'DU UPS_ACC'] },
   { code: '10',  label: '10-11 — Water Treatment Plant', kw: ['WATER TREATMENT', 'DEMI WATER', 'DEMI WTR', 'POTABLE WATER', 'SERVICE WATER', 'SERVICE WTR', 'RAW WATER', 'RWA WATER', 'WTP'] },
+  { code: '16',  label: '16 — CEP Building / ACC LER',   kw: [] },
+  { code: '18',  label: '18 — Auxiliary Boiler / LER',   kw: [] },
+  { code: '19',  label: '19 — Distribution Point 10kV',  kw: [] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
   { code: '25',  label: '25 — Admin Building (CER/CCR)',  kw: ['DC UPS_ADM'] },
+  { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
+  { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
   { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP', 'SWGR_CEPB', 'FMS_CEPB', 'VMS_CEPB'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
@@ -172,10 +177,27 @@ function getFromArea(tag) {
   return ''
 }
 
+// Heat Tracing Panel (HTP) tag → physical Load Location (from Power Cable Schedule)
+const HTP_TAG_AREA = {
+  'B0-HTP-00701': '10',   // Water Treatment Plant
+  'B0-HTP-00702': '19',   // Distribution Point 10kV / TP Station
+  'B0-HTP-00703': '18',   // Auxiliary Boiler / LER
+  'B0-HTP-00704': '21',   // Diesel Oil Pump Station (21)
+  'B0-HTP-00706': '16',   // CEP Building W/ACC LER
+  'B0-HTP-00719': '33',   // Oil Storage Dyke
+  'B0-HTP-00720': '24',   // Workshop
+  'B0-HTP-00721': '8.2',  // CCW Pump / Heat Exchanger Building Block 2
+  'B0-HTP-00725': '4.2',  // STG Generator Step-Up TR / Pipe Rack
+  'B1-HTP-16601': '2.1',  // ACC Block 1
+  'B2-HTP-16601': '2.2',  // ACC Block 2
+}
+
 function getToArea(sys, toTag) {
   if (!sys) return ''
-  // Admin Building 25 (CER/CCR/Server Room): B0-MD-* and B0-HTP-* panels are physically in Admin Bldg 25
-  if (toTag && (toTag.startsWith('B0-MD-') || toTag.startsWith('B0-HTP-'))) return '25'
+  // Heat Tracing Panels: each HTP tag has a specific physical Load Location
+  if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
+  // Admin Building 25 (CER/CCR/Server Room): B0-MD-* panels are physically in Admin Bldg 25
+  if (toTag && toTag.startsWith('B0-MD-')) return '25'
   // CCW Pump Building: sys values identical across blocks — use TO tag prefix
   if (sys.includes('CLOSED COOLING WATER PUMP') || sys.includes('CLOSED COOLING WATER SYSTEM')) {
     if (toTag && toTag.startsWith('B1-')) return '8.1'
