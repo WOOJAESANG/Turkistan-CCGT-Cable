@@ -196,7 +196,7 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1', 'B2-LCP-4201': '1.1',
 }
 
-function getFromArea(tag, elecFromAreaMap = {}, toTag = '') {
+function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '') {
   if (!tag) return ''
   if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
   if (elecFromAreaMap[tag]) return elecFromAreaMap[tag]
@@ -206,6 +206,11 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '') {
   if (tag.startsWith('LATER / ') && tag.endsWith('-C6001')) {
     if (toTag === 'B1-FP-47-001') return '1.1.1'
     if (toTag === 'B2-FP-47-001') return '1.1.2'
+  }
+  // FAAP/AIS SYSTEM cables sharing one placeholder FROM tag (no -C6001 suffix); sys distinguishes them (user-confirmed)
+  if (tag.startsWith('LATER / ') && !tag.endsWith('-C6001')) {
+    if (sys === 'FAAP SYSTEM') return '1.2'
+    if (sys.startsWith('AIS SYSTEM')) return '38'
   }
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
@@ -344,7 +349,7 @@ export default function CableSchedule() {
         } else {
           if (c.g === 'PKG') return false
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
-          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t) !== colF.fromArea) return false
+          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
             if (ca !== colF.toArea) return false
