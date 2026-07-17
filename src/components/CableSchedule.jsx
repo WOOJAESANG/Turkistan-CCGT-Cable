@@ -137,14 +137,14 @@ const FROM_AREAS = [
 
 // TO area options: destination system area (sys field based)
 const TO_AREAS = [
-  { code: '1.1',   label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'], hidden: true },
+  { code: '1.1',   label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'WASTE WATER', 'SEWAGE'], hidden: true },
   { code: '1.1.1', label: '1.1 — Main BLDG Block #1', kw: [] },
   { code: '1.1.2', label: '1.1 — Main BLDG Block #2', kw: [] },
   { code: '1.2', label: '1.2 — LEB Block 1',             kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
   { code: '1.3', label: '1.3 — LEB Block 2',             kw: ['LEB #2', '#B2', 'FMS_LEB #2', 'VMS_LEB #2', 'SWGR_LEB #2', 'TIE FEEDER_LEB #2'] },
   { code: '2.1', label: '2.1 — ACC Block 1',             kw: ['ACC #1', 'AIR COOLED CONDENSER#1'] },
   { code: '2.2', label: '2.2 — ACC Block 2',             kw: ['ACC #2', 'AIR COOLED CONDENSER#2'] },
-  { code: '3',   label: '3 — Fuel Gas (EGS)',             kw: ['FUEL GAS', 'GAS METERING', 'GAS REGULATOR', 'IGNITION GAS'] },
+  { code: '3',   label: '3 — Fuel Gas (FGSS)',             kw: ['FUEL GAS', 'GAS METERING', 'GAS REGULATOR', 'IGNITION GAS'] },
   { code: '7.1', label: '7.1 — CCW Fan Block 1',         kw: ['CCW #1', 'FIN FAN COOLER', 'INST BOX_CCW #1'] },
   { code: '7.2', label: '7.2 — CCW Fan Block 2',         kw: ['CCW #2', 'INST BOX_CCW #2'] },
   { code: '8.1', label: '8.1 — CCW Pump Building Block 1', kw: [] },
@@ -200,6 +200,8 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
   if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
   // Admin Building 25 (CER/CCR/Server Room): B0-MD-* panels are physically in Admin Bldg 25
   if (toTag && toTag.startsWith('B0-MD-')) return '25'
+  // Fuel Gas (FGSS): must check before generic 'EPB FOR' keyword hits 1.1 (e.g. "EPB FOR FGSS")
+  if (sys.includes('FGSS')) return '3'
   // CEPB (Building 16): must check before generic CONDENSATE keyword hits 1.1
   if (sys.includes('CONDENSATE EXTRACTION') || sys.includes('SWGR_CEPB') || sys.includes('FMS_CEPB') || sys.includes('VMS_CEPB')) return '16'
   // CCW Pump Building: sys values identical across blocks — use TO tag prefix
