@@ -196,10 +196,17 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1', 'B2-LCP-4201': '1.1',
 }
 
-function getFromArea(tag, elecFromAreaMap = {}) {
+function getFromArea(tag, elecFromAreaMap = {}, toTag = '') {
   if (!tag) return ''
   if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
   if (elecFromAreaMap[tag]) return elecFromAreaMap[tag]
+  // Control/GTG cables where FROM and TO are both literally 'HOLD' in the schedule (user-confirmed: FROM = Bldg 19)
+  if (tag === 'HOLD' && toTag === 'HOLD') return '19'
+  // FIRE PROTECTION SYSTEM cables sharing one placeholder FROM tag; the paired TO tag (Block 1/2 FP panel) establishes the block
+  if (tag.startsWith('LATER / ') && tag.endsWith('-C6001')) {
+    if (toTag === 'B1-FP-47-001') return '1.1.1'
+    if (toTag === 'B2-FP-47-001') return '1.1.2'
+  }
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
@@ -222,10 +229,12 @@ const HTP_TAG_AREA = {
   'B2-HTP-16601': '2.2',  // ACC Block 2
 }
 
-function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '') {
+function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '', fromTag = '') {
   if (!sys) return ''
   // Cable-number-level override (e.g. 10kV SWGR feeder cables with t='-')
   if (cableNum && cableNumAreaMap[cableNum]) return cableNumAreaMap[cableNum]
+  // Control/GTG cables where FROM and TO are both literally 'HOLD' in the schedule (user-confirmed: TO = LEB Block 1)
+  if (sys === 'GTG' && fromTag === 'HOLD' && toTag === 'HOLD') return '1.2'
   // Power Cable Schedule Load Location lookup (tag → area code from xlsx)
   if (toTag && elecAreaMap[toTag]) return elecAreaMap[toTag]
   // Heat Tracing Panels: each HTP tag has a specific physical Load Location
@@ -335,9 +344,9 @@ export default function CableSchedule() {
         } else {
           if (c.g === 'PKG') return false
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
-          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap) !== colF.fromArea) return false
+          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t) !== colF.fromArea) return false
           if (colF.toArea) {
-            const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n)
+            const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
             if (ca !== colF.toArea) return false
           }
         }
