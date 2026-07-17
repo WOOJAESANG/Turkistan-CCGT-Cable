@@ -350,12 +350,13 @@ export default function CableSchedule() {
       // FROM / TO area filter
       if (colF.fromArea || colF.toArea) {
         const s = c.sys || ''
-        if (colF.toArea === '38') {
-          // Area 38 (OCP): only AIS-OCP cables; these are PKG so skip the normal PKG exclusion
-          if (s !== 'AIS-OCP') return false
+        if (s === 'AIS-OCP') {
+          // OCP internal wiring: both FROM and TO are Operational Control Point (38); these are PKG so skip the normal PKG exclusion
+          if (colF.fromArea && colF.fromArea !== '38') return false
+          if (colF.toArea && colF.toArea !== '38') return false
         } else {
           if (c.g === 'PKG') return false
-          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
+          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s.startsWith('AIS LEB')) return false
           if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
