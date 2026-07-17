@@ -197,6 +197,11 @@ const FROM_TAG_AREA = {
 }
 
 function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '') {
+  // GTG#11/12/21/22 FIRE PROTECTION SYSTEM cables with a bare 'LATER' or fully blank FROM tag
+  // (user-confirmed: same Main Building block as TO) — checked before the empty-tag guard below
+  if ((tag === 'LATER' || !tag) && /GTG#(11|12|21|22)\b/.test(sys)) {
+    return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
+  }
   if (!tag) return ''
   if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
   if (elecFromAreaMap[tag]) return elecFromAreaMap[tag]
@@ -211,10 +216,6 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '') {
   if (tag.startsWith('LATER / ') && !tag.endsWith('-C6001')) {
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
-  }
-  // GTG#11/12/21/22 FIRE PROTECTION SYSTEM cables with a bare 'LATER' FROM tag (user-confirmed: same Main Building block as TO)
-  if (tag === 'LATER' && /GTG#(11|12|21|22)\b/.test(sys)) {
-    return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
   }
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
