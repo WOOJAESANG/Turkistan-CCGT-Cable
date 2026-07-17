@@ -146,6 +146,8 @@ const FROM_AREAS = [
   { code: '34',  label: '34 — Back-Up Transformer' },
   { code: '38',  label: '38 — Operational Control Point (OCP)' },
   { code: '39',  label: '39 — 500 MVA Auto Transformer' },
+  { code: '43',  label: '43 — Air Insulated Switchgear 220kV' },
+  { code: '44',  label: '44 — Air Insulated Switchgear 500kV' },
 ]
 
 // TO area options: destination system area (sys field based)
@@ -184,6 +186,8 @@ const TO_AREAS = [
   { code: '35.1', label: '35.1 — Turbine Oil Drainage Reservoir', kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
+  { code: '43',  label: '43 — Air Insulated Switchgear 220kV', kw: [] },
+  { code: '44',  label: '44 — Air Insulated Switchgear 500kV', kw: [] },
 ]
 
 // FROM tags whose schedule LOCATION cell is a document reference (e.g.
@@ -196,7 +200,9 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1', 'B2-LCP-4201': '1.1',
 }
 
-function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '') {
+function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', aisNAreaMap = {}) {
+  // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
+  if (cableNum && aisNAreaMap[cableNum]) return aisNAreaMap[cableNum].from
   // GTG#11/12/21/22 FIRE PROTECTION SYSTEM cables with a bare 'LATER' or fully blank FROM tag
   // (user-confirmed: same Main Building block as TO) — checked before the empty-tag guard below
   if ((tag === 'LATER' || !tag) && /GTG#(11|12|21|22)\b/.test(sys)) {
@@ -239,8 +245,10 @@ const HTP_TAG_AREA = {
   'B2-HTP-16601': '2.2',  // ACC Block 2
 }
 
-function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '', fromTag = '') {
+function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '', fromTag = '', aisNAreaMap = {}) {
   if (!sys) return ''
+  // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
+  if (cableNum && aisNAreaMap[cableNum]) return aisNAreaMap[cableNum].to
   // Cable-number-level override (e.g. 10kV SWGR feeder cables with t='-')
   if (cableNum && cableNumAreaMap[cableNum]) return cableNumAreaMap[cableNum]
   // Control/GTG cables where FROM and TO are both literally 'HOLD' in the schedule (user-confirmed: TO = LEB Block 1)
@@ -306,6 +314,7 @@ export default function CableSchedule() {
   const [elecAreaMap, setElecAreaMap] = useState({})
   const [cableNumAreaMap, setCableNumAreaMap] = useState({})
   const [elecFromAreaMap, setElecFromAreaMap] = useState({})
+  const [aisNAreaMap, setAisNAreaMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -332,6 +341,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setElecFromAreaMap)
       .catch(() => setElecFromAreaMap({}))
+    fetch(dataUrl('/cable-ais-n-area-map.json'))
+      .then(r => r.json())
+      .then(setAisNAreaMap)
+      .catch(() => setAisNAreaMap({}))
   }, [])
 
   useEffect(() => {
@@ -354,9 +367,12 @@ export default function CableSchedule() {
           // OCP internal wiring: both FROM and TO are Operational Control Point (38); these are PKG so skip the normal PKG exclusion
           if (colF.fromArea && colF.fromArea !== '38') return false
           if (colF.toArea && colF.toArea !== '38') return false
+        } else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
+          // AIS switchyard cables: FROM/TO from the interconnection diagram's M (OCP) / J (TIER vs OUTDOOR) columns; PKG so skip the normal PKG exclusion
+          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, aisNAreaMap) !== colF.fromArea) return false
+          if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap) !== colF.toArea) return false
         } else {
           if (c.g === 'PKG') return false
-          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) return false
           if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
@@ -397,7 +413,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap, aisNAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
