@@ -162,7 +162,6 @@ const TO_AREAS = [
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
   { code: '34',  label: '34 — Back-Up Transformer',      kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
-  { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
@@ -178,6 +177,8 @@ const FROM_TAG_AREA = {
   'D13+S_D13/1': '1.3', 'D13+S_D13/2': '1.3',
   '+QE CEMS': '1.2',
   'STM BLW MOV-1': '1.2', 'STM BLW MOV-2': '1.2',
+  'B1-LCP-4101': '1.1.1', 'B1-LCP-4201': '1.1.1',
+  'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
 }
 
 function getFromArea(tag) {
