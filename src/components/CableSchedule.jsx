@@ -128,11 +128,24 @@ const CATEGORIES = ['All', 'Power', 'Control', 'I&C', 'PKG']
 const PRIORITIES = ['All', 'PR', 'Simple Cycle', 'ETC']
 const STATUSES = ['All', 'Pending', 'In Progress', 'Done']
 
-// FROM area options: physical location of the FROM (feeding) equipment (tag-prefix based)
+// FROM area options: physical location of the FROM (feeding) equipment,
+// resolved from the schedule's SWGR LOCATION column (elecFromAreaMap) with a
+// tag-prefix fallback for anything not covered.
 const FROM_AREAS = [
   { code: '1.1', label: '1.1 — Main Building Complex' },
   { code: '1.2', label: '1.2 — LEB Block 1' },
   { code: '1.3', label: '1.3 — LEB Block 2' },
+  { code: '4',   label: '4 — STG Generator Step-Up (GSU) Transformer' },
+  { code: '5',   label: '5 — GTG Generator Step-Up (GSU) Transformer' },
+  { code: '6',   label: '6 — Unit Auxiliary Transformer' },
+  { code: '10',  label: '10-11 — Water Treatment Plant' },
+  { code: '16',  label: '16 — CEPB (Condensate Extraction Pump Bldg)' },
+  { code: '19',  label: '19 — Distribution Point 10kV' },
+  { code: '24',  label: '24 — Workshop' },
+  { code: '25',  label: '25 — Admin Building (CER/CCR)' },
+  { code: '34',  label: '34 — Back-Up Transformer' },
+  { code: '38',  label: '38 — Operational Control Point (OCP)' },
+  { code: '39',  label: '39 — 500 MVA Auto Transformer' },
 ]
 
 // TO area options: destination system area (sys field based)
@@ -165,25 +178,20 @@ const TO_AREAS = [
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
-// FROM tags that don't follow the standard KKS/B1-/B2- prefix pattern (GTG panel
-// grounding tags, CEMS, temporary steam-blowing MOVs) — resolved from their paired
-// TO tag / cable-number block prefix in the schedule.
+// FROM tags whose schedule LOCATION cell is a document reference (e.g.
+// "CCP-W-B115-IA-329-0001") rather than a parseable area code — resolved
+// manually from the paired TO tag / cable-number block prefix.
 const FROM_TAG_AREA = {
-  'B03+S_B03/1': '1.2', 'B03+S_B03/2': '1.2',
-  'B04+S_B04/1': '1.2', 'B04+S_B04/2': '1.2',
-  'B02+S_B02/2': '1.2',
-  'D09+S_D09/2': '1.3',
-  'D11+S_D11/1': '1.3', 'D11+S_D11/2': '1.3',
-  'D13+S_D13/1': '1.3', 'D13+S_D13/2': '1.3',
   '+QE CEMS': '1.2',
   'STM BLW MOV-1': '1.2', 'STM BLW MOV-2': '1.2',
-  'B1-LCP-4101': '1.1.1', 'B1-LCP-4201': '1.1.1',
-  'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
+  'B1-LCP-4101': '1.1', 'B1-LCP-4201': '1.1',
+  'B2-LCP-4101': '1.1', 'B2-LCP-4201': '1.1',
 }
 
-function getFromArea(tag) {
+function getFromArea(tag, elecFromAreaMap = {}) {
   if (!tag) return ''
   if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
+  if (elecFromAreaMap[tag]) return elecFromAreaMap[tag]
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
@@ -268,6 +276,7 @@ export default function CableSchedule() {
   const [pkgMap, setPkgMap] = useState({})
   const [elecAreaMap, setElecAreaMap] = useState({})
   const [cableNumAreaMap, setCableNumAreaMap] = useState({})
+  const [elecFromAreaMap, setElecFromAreaMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -290,6 +299,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setCableNumAreaMap)
       .catch(() => setCableNumAreaMap({}))
+    fetch(dataUrl('/cable-elec-from-area-map.json'))
+      .then(r => r.json())
+      .then(setElecFromAreaMap)
+      .catch(() => setElecFromAreaMap({}))
   }, [])
 
   useEffect(() => {
@@ -314,7 +327,7 @@ export default function CableSchedule() {
         } else {
           if (c.g === 'PKG') return false
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
-          if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
+          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n)
             if (ca !== colF.toArea) return false
@@ -354,7 +367,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
