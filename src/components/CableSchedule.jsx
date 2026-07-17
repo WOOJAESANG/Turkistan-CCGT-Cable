@@ -356,7 +356,7 @@ export default function CableSchedule() {
           if (colF.toArea && colF.toArea !== '38') return false
         } else {
           if (c.g === 'PKG') return false
-          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s.startsWith('AIS LEB')) return false
+          if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) return false
           if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
