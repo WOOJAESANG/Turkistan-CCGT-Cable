@@ -166,8 +166,23 @@ const TO_AREAS = [
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
+// FROM tags that don't follow the standard KKS/B1-/B2- prefix pattern (GTG panel
+// grounding tags, CEMS, temporary steam-blowing MOVs) — resolved from their paired
+// TO tag / cable-number block prefix in the schedule.
+const FROM_TAG_AREA = {
+  'B03+S_B03/1': '1.2', 'B03+S_B03/2': '1.2',
+  'B04+S_B04/1': '1.2', 'B04+S_B04/2': '1.2',
+  'B02+S_B02/2': '1.2',
+  'D09+S_D09/2': '1.3',
+  'D11+S_D11/1': '1.3', 'D11+S_D11/2': '1.3',
+  'D13+S_D13/1': '1.3', 'D13+S_D13/2': '1.3',
+  '+QE CEMS': '1.2',
+  'STM BLW MOV-1': '1.2', 'STM BLW MOV-2': '1.2',
+}
+
 function getFromArea(tag) {
   if (!tag) return ''
+  if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
