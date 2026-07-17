@@ -192,8 +192,10 @@ const HTP_TAG_AREA = {
   'B2-HTP-16601': '2.2',  // ACC Block 2
 }
 
-function getToArea(sys, toTag, elecAreaMap = {}) {
+function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '') {
   if (!sys) return ''
+  // Cable-number-level override (e.g. 10kV SWGR feeder cables with t='-')
+  if (cableNum && cableNumAreaMap[cableNum]) return cableNumAreaMap[cableNum]
   // Power Cable Schedule Load Location lookup (tag → area code from xlsx)
   if (toTag && elecAreaMap[toTag]) return elecAreaMap[toTag]
   // Heat Tracing Panels: each HTP tag has a specific physical Load Location
@@ -259,6 +261,7 @@ export default function CableSchedule() {
   const [drumMap, setDrumMap] = useState({})
   const [pkgMap, setPkgMap] = useState({})
   const [elecAreaMap, setElecAreaMap] = useState({})
+  const [cableNumAreaMap, setCableNumAreaMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -277,6 +280,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setElecAreaMap)
       .catch(() => setElecAreaMap({}))
+    fetch(dataUrl('/cable-n-area-map.json'))
+      .then(r => r.json())
+      .then(setCableNumAreaMap)
+      .catch(() => setCableNumAreaMap({}))
   }, [])
 
   useEffect(() => {
@@ -303,7 +310,7 @@ export default function CableSchedule() {
           if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV') || s === 'AIS-OCP' || s.startsWith('AIS LEB')) return false
           if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
           if (colF.toArea) {
-            const ca = getToArea(c.sys, c.t, elecAreaMap)
+            const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n)
             // parent codes match their sub-areas too
             const match =
               colF.toArea === '1.1'   ? ca.startsWith('1.1') :
@@ -346,7 +353,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
