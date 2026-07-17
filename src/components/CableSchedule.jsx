@@ -212,6 +212,10 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '') {
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
   }
+  // GTG#11/12/21/22 FIRE PROTECTION SYSTEM cables with a bare 'LATER' FROM tag (user-confirmed: same Main Building block as TO)
+  if (tag === 'LATER' && /GTG#(11|12|21|22)\b/.test(sys)) {
+    return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
+  }
   if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
@@ -275,6 +279,8 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
   // Main Building sub-split: 21xx/22xx / B2- = Block 2; everything else (incl. B0-*) = Block 1
   if (code === '1.1') {
     if (toTag && (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag))) return '1.1.2'
+    // Fall back to the sys field itself when the TO tag carries no block info (e.g. GTG#21/#22 FIRE PROTECTION SYSTEM with TO still pending)
+    if (/GTG#2[12]\b/.test(sys)) return '1.1.2'
     return '1.1.1'
   }
   return code
