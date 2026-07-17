@@ -137,9 +137,9 @@ const FROM_AREAS = [
 
 // TO area options: destination system area (sys field based)
 const TO_AREAS = [
-  { code: '1.1',   label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'] },
-  { code: '1.1.1', label: '1.1.1 — Main Building Block 1', kw: [] },
-  { code: '1.1.2', label: '1.1.2 — Main Building Block 2', kw: [] },
+  { code: '1.1',   label: '1.1 — Main Building Complex',   kw: ['GTG', 'HRSG', 'HSRG', 'STG', 'FEEDWATER', 'HP & LP STEAM', 'CONDENSATE', 'GCB', 'HOT WATER', 'EPB FOR', 'DIVERTER', 'ATMOSPHERIC FLASH', 'AUXILIARY STEAM', 'AUXILIARY BOILER', 'AUX BOILER', 'GT PKG', 'GAS TURBINE CONTROL SYSTEM', 'STEAM', 'VMS', 'DC UPS_ST', 'DCS', 'COMMON DCS', 'Crane & Hoist', 'FGSS', 'WASTE WATER', 'SEWAGE'], hidden: true },
+  { code: '1.1.1', label: '1.1 — Main BLDG Block #1', kw: [] },
+  { code: '1.1.2', label: '1.1 — Main BLDG Block #2', kw: [] },
   { code: '1.2', label: '1.2 — LEB Block 1',             kw: ['LEB #1', '#B1', 'ST1 LEB', 'FMS_LEB #1', 'VMS_LEB #1', 'SWGR_LEB #1', 'TIE FEEDER_LEB #1'] },
   { code: '1.3', label: '1.3 — LEB Block 2',             kw: ['LEB #2', '#B2', 'FMS_LEB #2', 'VMS_LEB #2', 'SWGR_LEB #2', 'TIE FEEDER_LEB #2'] },
   { code: '2.1', label: '2.1 — ACC Block 1',             kw: ['ACC #1', 'AIR COOLED CONDENSER#1'] },
@@ -155,14 +155,14 @@ const TO_AREAS = [
   { code: '18',  label: '18 — Auxiliary Boiler / LER',   kw: [] },
   { code: '19',  label: '19 — Distribution Point 10kV',  kw: [] },
   { code: '21',  label: '21 — Fuel Oil Pump Station',    kw: ['FUEL OIL', 'OIL FACILITY', 'OIL STORAGE'] },
+  { code: '23.1', label: '23.1 — Emergency Lube Oil Pit for GT', kw: [] },
   { code: '24',  label: '24 — Workshop',                 kw: ['WORKSHOP'] },
   { code: '25',  label: '25 — Admin Building (CER/CCR)',  kw: ['DC UPS_ADM'] },
+  { code: '32',  label: '32 — Hot Water Supply Building', kw: [] },
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
   { code: '34',  label: '34 — Back-Up Transformer',      kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
-  { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
-  { code: 'elec',   label: 'General Electrical (All)',      kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
 ]
 
@@ -208,11 +208,10 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
     if (toTag && toTag.startsWith('B2-')) return '8.2'
     return ''
   }
-  // Waste water: B1/B2 go to their Main Building block; B0-* common → 1.1
+  // Waste water: B1/B2 go to their Main Building block; B0-* common → Block #1
   if (sys.includes('WASTE WATER') || sys.includes('SEWAGE')) {
-    if (toTag && toTag.startsWith('B1-')) return '1.1.1'
     if (toTag && toTag.startsWith('B2-')) return '1.1.2'
-    return '1.1'
+    return '1.1.1'
   }
   // FIN FAN / FFC Instrument Box: split by TO tag B1/B2 prefix
   if (sys.includes('FIN FAN') || sys.includes('INST BOX_FFC')) {
@@ -225,11 +224,10 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
   for (const a of TO_AREAS) {
     if (a.kw.length > 0 && a.kw.some(kw => sys.includes(kw))) { code = a.code; break }
   }
-  // Main Building sub-split: 11xx/12xx = Block 1, 21xx/22xx = Block 2
-  if (code === '1.1' && toTag) {
-    if (toTag.startsWith('B1-') || /^(11|12)[A-Z0-9]/.test(toTag)) return '1.1.1'
-    if (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag)) return '1.1.2'
-    // B0-* and true common equipment stays at 1.1
+  // Main Building sub-split: 21xx/22xx / B2- = Block 2; everything else (incl. B0-*) = Block 1
+  if (code === '1.1') {
+    if (toTag && (toTag.startsWith('B2-') || /^(21|22)[A-Z0-9]/.test(toTag))) return '1.1.2'
+    return '1.1.1'
   }
   return code
 }
@@ -301,12 +299,7 @@ export default function CableSchedule() {
           if (colF.fromArea && getFromArea(c.f) !== colF.fromArea) return false
           if (colF.toArea) {
             const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n)
-            // parent codes match their sub-areas too
-            const match =
-              colF.toArea === '1.1'   ? ca.startsWith('1.1') :
-              colF.toArea === 'elec'  ? ca.startsWith('elec') :
-              ca === colF.toArea
-            if (!match) return false
+            if (ca !== colF.toArea) return false
           }
         }
       }
@@ -419,7 +412,7 @@ export default function CableSchedule() {
                 onChange={e => setCF('toArea', e.target.value)}
               >
                 <option value="">TO — Any</option>
-                {TO_AREAS.map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+                {TO_AREAS.filter(a => !a.hidden).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
               </select>
             </div>
             {(colF.fromArea || colF.toArea) && colF.toArea !== '38' && (
