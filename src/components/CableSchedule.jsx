@@ -160,7 +160,6 @@ const TO_AREAS = [
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
   { code: '34',  label: '34 — Back-Up Transformer',      kw: [] },
   { code: '4.2', label: '4.2 — STG Step-Up Transformer', kw: [] },
-  { code: 'waste', label: 'Waste Water (Common/B0)',       kw: [] },
   { code: 'prot', label: 'Protection Relay Panel',       kw: ['PROTECTION RELAY', 'PRP'] },
   { code: 'swas', label: 'SWAS / Water Analysis',        kw: ['SWAS', 'STM & WATER', 'CHEMICAL DOSING'] },
   { code: 'elec',   label: 'General Electrical (All)',      kw: ['0.4kV SWGR', '10kV SWGR', 'DP 10kV', 'BACK UP', 'Auto TO BU', 'METERING', 'EHT', 'ELECTRICAL (', 'ELEC /', 'TR FEEDER'] },
@@ -209,11 +208,17 @@ function getToArea(sys, toTag, elecAreaMap = {}) {
     if (toTag && toTag.startsWith('B2-')) return '8.2'
     return ''
   }
-  // Waste water: classify by TO tag block prefix; B0-* stays as 'waste'
+  // Waste water: B1/B2 go to their Main Building block; B0-* common → 1.1
   if (sys.includes('WASTE WATER') || sys.includes('SEWAGE')) {
     if (toTag && toTag.startsWith('B1-')) return '1.1.1'
     if (toTag && toTag.startsWith('B2-')) return '1.1.2'
-    return 'waste'
+    return '1.1'
+  }
+  // FIN FAN / FFC Instrument Box: split by TO tag B1/B2 prefix
+  if (sys.includes('FIN FAN') || sys.includes('INST BOX_FFC')) {
+    if (toTag && toTag.startsWith('B1-')) return '7.1'
+    if (toTag && toTag.startsWith('B2-')) return '7.2'
+    return '7.1'
   }
   // Keyword match for all other systems
   let code = ''
