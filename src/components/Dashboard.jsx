@@ -3,6 +3,8 @@ import { getTotals, getCategoryProgress, getPriorityChartData, masterLengths, ro
 import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import KpiCards from './KpiCards'
+import LifecycleSummary from './LifecycleSummary'
+import WeeklyProgressChart from './WeeklyProgressChart'
 import BarChartSection from './BarChartSection'
 import PieChartSection from './PieChartSection'
 import MonthlyPullingChart from './MonthlyPullingChart'
@@ -13,8 +15,28 @@ export default function Dashboard() {
   const [fieldData, setFieldData] = useState({})
   const [actuals, setActuals] = useState(null)
 
+  const [supplyInfo, setSupplyInfo] = useState(null)
+
   useEffect(() => {
     fetch(dataUrl('/cable-data.json')).then(r => r.json()).then(setMaster).catch(() => setMaster([]))
+    Promise.all([
+      fetch(dataUrl('/cable-material.json')).then(r => r.json()),
+      fetch(dataUrl('/drum-capacity.json')).then(r => r.json()),
+    ]).then(([mat, cap]) => {
+      const byStatus = {}
+      let totalDrums = 0
+      for (const r of mat) {
+        const s = (r.status || 'N/A').trim()
+        const cnt = r.drumCount || r.drumList?.length || 0
+        if (!byStatus[s]) byStatus[s] = { rows: 0, drums: 0 }
+        byStatus[s].rows++
+        byStatus[s].drums += cnt
+        totalDrums += cnt
+      }
+      let suppliedMeters = 0
+      for (const v of Object.values(cap)) suppliedMeters += v.m || 0
+      setSupplyInfo({ byStatus, totalDrums, suppliedMeters })
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -68,6 +90,12 @@ export default function Dashboard() {
       </div>
 
       <KpiCards totals={totals} />
+
+      <LifecycleSummary totals={totals} supplyInfo={supplyInfo} />
+
+      <div className="charts-row">
+        <WeeklyProgressChart fieldData={fieldData} master={master} totalDesignedLength={totals.totalDesignedLength} />
+      </div>
 
       <div className="charts-row">
         <MonthlyPullingChart fieldData={fieldData} master={master} />

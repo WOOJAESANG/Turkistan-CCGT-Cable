@@ -17,6 +17,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Auth state
   useEffect(() => {
@@ -44,7 +45,7 @@ function App() {
   if (!session) return <Login />
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
       <button
         type="button"
         className="mobile-hamburger"
@@ -63,6 +64,8 @@ function App() {
         onNavigate={p => { setPage(p); setMobileOpen(false) }}
         session={session}
         mobileOpen={mobileOpen}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(c => !c)}
       />
       <main className="main-content">
         {page === 'dashboard' && <Dashboard />}
