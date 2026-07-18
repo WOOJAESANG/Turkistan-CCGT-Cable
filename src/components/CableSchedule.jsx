@@ -366,23 +366,8 @@ export default function CableSchedule() {
       const fd = fieldData[c.n] || {}
       // FROM / TO area filter
       if (colF.fromArea || colF.toArea) {
-        const s = c.sys || ''
-        if (s === 'AIS-OCP') {
-          // OCP internal wiring: both FROM and TO are Operational Control Point (38); these are PKG so skip the normal PKG exclusion
-          if (colF.fromArea && colF.fromArea !== '38') return false
-          if (colF.toArea && colF.toArea !== '38') return false
-        } else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
-          // AIS switchyard cables: FROM/TO from the interconnection diagram's M (OCP) / J (TIER vs OUTDOOR) columns; PKG so skip the normal PKG exclusion
-          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, aisNAreaMap) !== colF.fromArea) return false
-          if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap) !== colF.toArea) return false
-        } else {
-          if (c.g === 'PKG') return false
-          if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys) !== colF.fromArea) return false
-          if (colF.toArea) {
-            const ca = getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f)
-            if (ca !== colF.toArea) return false
-          }
-        }
+        if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, aisNAreaMap) !== colF.fromArea) return false
+        if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap) !== colF.toArea) return false
       }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
       if (colF.pri !== 'All' && c.pri !== colF.pri) return false
@@ -543,9 +528,6 @@ export default function CableSchedule() {
                 }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
               </select>
             </div>
-            {(colF.fromArea || colF.toArea) && colF.toArea !== '38' && (
-              <span className="cs-loc-note">AIS &amp; PKG excluded</span>
-            )}
           </div>
           <div className="cs-search">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
