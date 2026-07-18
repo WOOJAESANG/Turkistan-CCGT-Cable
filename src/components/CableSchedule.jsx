@@ -196,17 +196,17 @@ const TO_AREAS = [
 const FROM_TAG_AREA = {
   '+QE CEMS': '1.2',
   'STM BLW MOV-1': '1.2', 'STM BLW MOV-2': '1.2',
-  'B1-LCP-4101': '1.1', 'B1-LCP-4201': '1.1',
-  'B2-LCP-4101': '1.1', 'B2-LCP-4201': '1.1',
+  'B1-LCP-4101': '1.1.1', 'B1-LCP-4201': '1.1.1',
+  'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
 }
 
 function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', aisNAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
   if (cableNum && aisNAreaMap[cableNum]) return aisNAreaMap[cableNum].from
-  // GTG#11/12/21/22 FIRE PROTECTION SYSTEM cables with a bare 'LATER' or fully blank FROM tag
-  // (user-confirmed: same Main Building block as TO) — checked before the empty-tag guard below
-  if ((tag === 'LATER' || !tag) && /GTG#(11|12|21|22)\b/.test(sys)) {
-    return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
+  if (tag === 'LATER' || !tag) {
+    if (/GTG#(11|12|21|22)\b/.test(sys)) return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
+    if (/^(HRSG|STG|DCS|COMMON DCS)/.test(sys)) return '1.1.1'
+    if (sys.includes('FGSS')) return '3'
   }
   if (!tag) return ''
   if (FROM_TAG_AREA[tag]) return FROM_TAG_AREA[tag]
@@ -223,10 +223,14 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
   }
-  if (/^(11|12|21|22)[A-Z0-9]/.test(tag)) return '1.1'
+  if (/^(11|12)[A-Z0-9]/.test(tag)) return '1.1.1'
+  if (/^(21|22)[A-Z0-9]/.test(tag)) return '1.1.2'
+  if (/^B1J/.test(tag)) return '1.1.1'
+  if (/^B2J/.test(tag)) return '1.1.2'
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
   if (tag.startsWith('B0-')) return '1.2'
+  if (sys && sys.includes('FGSS')) return '3'
   return ''
 }
 
@@ -417,11 +421,49 @@ export default function CableSchedule() {
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
+  const areaPairs = useMemo(() => {
+    const fromSet = new Set()
+    const toSet = new Set()
+    const pairFrom = {}
+    const pairTo = {}
+    for (const c of allData) {
+      const s = c.sys || ''
+      let fa, ta
+      if (s === 'AIS-OCP') { fa = '38'; ta = '38' }
+      else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, aisNAreaMap)
+        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap)
+      } else {
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, aisNAreaMap)
+        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap)
+      }
+      if (fa) fromSet.add(fa)
+      if (ta) toSet.add(ta)
+      if (fa) { if (!pairFrom[fa]) pairFrom[fa] = new Set(); if (ta) pairFrom[fa].add(ta) }
+      if (ta) { if (!pairTo[ta]) pairTo[ta] = new Set(); if (fa) pairTo[ta].add(fa) }
+    }
+    return { fromSet, toSet, pairFrom, pairTo }
+  }, [allData, elecAreaMap, cableNumAreaMap, elecFromAreaMap, aisNAreaMap])
+
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const handleSearch = v => { setSearch(v); setCurrentPage(1) }
-  const setCF = (k, v) => { setColF(f => ({ ...f, [k]: v })); setCurrentPage(1) }
+  const setCF = (k, v) => {
+    setColF(f => {
+      const next = { ...f, [k]: v }
+      if (k === 'fromArea' && v && next.toArea) {
+        const valid = areaPairs.pairFrom[v]
+        if (valid && !valid.has(next.toArea)) next.toArea = ''
+      }
+      if (k === 'toArea' && v && next.fromArea) {
+        const valid = areaPairs.pairTo[v]
+        if (valid && !valid.has(next.fromArea)) next.fromArea = ''
+      }
+      return next
+    })
+    setCurrentPage(1)
+  }
   const anyColF = Object.keys(EMPTY_COLF).some(k => colF[k] !== EMPTY_COLF[k])
   const resetColF = () => { setColF(EMPTY_COLF); setCurrentPage(1) }
 
@@ -480,7 +522,11 @@ export default function CableSchedule() {
                 onChange={e => setCF('fromArea', e.target.value)}
               >
                 <option value="">FROM — Any</option>
-                {FROM_AREAS.map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+                {FROM_AREAS.filter(a => {
+                  if (!areaPairs.fromSet.has(a.code)) return false
+                  if (colF.toArea && areaPairs.pairTo[colF.toArea] && !areaPairs.pairTo[colF.toArea].has(a.code)) return false
+                  return true
+                }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
               </select>
               <span className="cs-loc-arrow">→</span>
               <select
@@ -489,7 +535,12 @@ export default function CableSchedule() {
                 onChange={e => setCF('toArea', e.target.value)}
               >
                 <option value="">TO — Any</option>
-                {TO_AREAS.filter(a => !a.hidden).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+                {TO_AREAS.filter(a => {
+                  if (a.hidden) return false
+                  if (!areaPairs.toSet.has(a.code)) return false
+                  if (colF.fromArea && areaPairs.pairFrom[colF.fromArea] && !areaPairs.pairFrom[colF.fromArea].has(a.code)) return false
+                  return true
+                }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
               </select>
             </div>
             {(colF.fromArea || colF.toArea) && colF.toArea !== '38' && (
