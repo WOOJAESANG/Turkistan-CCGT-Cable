@@ -11,8 +11,9 @@ export default function LifecycleSummary({ totals, supplyInfo }) {
   const termPct = totals.terminationPercent
 
   const supplied = supplyInfo?.suppliedMeters || 0
-  const remainSupply = designLen - supplied
-  const supplyPct = designLen > 0 ? (supplied / designLen) * 100 : 0
+  const totalCap = supplyInfo?.totalCapacity || 0
+  const remainSupply = totalCap - supplied
+  const supplyPct = totalCap > 0 ? (supplied / totalCap) * 100 : 0
   const onSite = supplyInfo?.byStatus?.['On-Site']?.drums || 0
   const sailing = supplyInfo?.byStatus?.['Sailing']?.drums || 0
   const cargoReady = supplyInfo?.byStatus?.['Cargo Ready']?.drums || 0
@@ -59,11 +60,11 @@ export default function LifecycleSummary({ totals, supplyInfo }) {
           </div>
           <div className="lcs-stats">
             <div className="lcs-stat">
-              <span className="lcs-stat-label">Supplied (Drum Capacity)</span>
+              <span className="lcs-stat-label">On-Site (입고)</span>
               <span className="lcs-stat-value" style={{ color: 'var(--primary)' }}>{fmt(supplied)} <span className="lcs-unit">m</span></span>
             </div>
             <div className="lcs-stat">
-              <span className="lcs-stat-label">Remaining to Supply</span>
+              <span className="lcs-stat-label">미입고 (Sailing + Ready)</span>
               <span className="lcs-stat-value lcs-amber">{fmt(remainSupply)} <span className="lcs-unit">m</span></span>
             </div>
             <div className="lcs-divider" />

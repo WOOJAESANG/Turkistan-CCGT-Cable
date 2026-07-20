@@ -25,6 +25,7 @@ export default function Dashboard() {
     ]).then(([mat, cap]) => {
       const byStatus = {}
       let totalDrums = 0
+      const onSiteDrumSet = new Set()
       for (const r of mat) {
         const s = (r.status || 'N/A').trim()
         const cnt = r.drumCount || r.drumList?.length || 0
@@ -32,10 +33,15 @@ export default function Dashboard() {
         byStatus[s].rows++
         byStatus[s].drums += cnt
         totalDrums += cnt
+        if (s === 'On-Site' && r.drumList) r.drumList.forEach(d => onSiteDrumSet.add(d))
       }
       let suppliedMeters = 0
-      for (const v of Object.values(cap)) suppliedMeters += v.m || 0
-      setSupplyInfo({ byStatus, totalDrums, suppliedMeters })
+      let totalCapacity = 0
+      for (const [k, v] of Object.entries(cap)) {
+        totalCapacity += v.m || 0
+        if (onSiteDrumSet.has(k)) suppliedMeters += v.m || 0
+      }
+      setSupplyInfo({ byStatus, totalDrums, suppliedMeters, totalCapacity })
     }).catch(() => {})
   }, [])
 
