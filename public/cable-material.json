@@ -985,7 +985,7 @@
     "drumNo": "AIS-PoCable-0570-001 ~ 009",
     "status": "On-Site",
     "eta": "",
-    "remark": "AIS_Power cable_additional (입고 2026-07-20)",
+    "remark": "",
     "docUrl2": "/files/docs/ais-500kv.xlsx",
     "docName2": "500kV Cable Interconnection Diagram (2026-07-09).xlsx",
     "drumList": [
@@ -1017,7 +1017,7 @@
     "drumNo": "AIS-CoCable-0571-001 ~ 049",
     "status": "On-Site",
     "eta": "",
-    "remark": "Control cable - 1st batch",
+    "remark": "",
     "docUrl2": "/files/docs/ais-500kv.xlsx",
     "docName2": "500kV Cable Interconnection Diagram (2026-07-09).xlsx",
     "drumList": [
@@ -1089,7 +1089,7 @@
     "drumNo": "AIS-CC-0585-001 ~ 142",
     "status": "On-Site",
     "eta": "",
-    "remark": "Control cable - 전량 입고 완료",
+    "remark": "",
     "docUrl2": "/files/docs/ais-500kv.xlsx",
     "docName2": "500kV Cable Interconnection Diagram (2026-07-09).xlsx",
     "drumList": [
