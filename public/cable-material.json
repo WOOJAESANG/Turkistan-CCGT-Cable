@@ -1085,11 +1085,11 @@
     "packingList": "PGU-DE-585",
     "packingUrl": "/files/packing/PGU-DE-585.xlsx",
     "packingName": "PGU-DE-585 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0585-AIS-CC (69 drums arrived)",
-    "drumNo": "AIS-CC-0585 (69 drums)",
+    "packingDetail": "PGU-DE-0585-AIS-CC-001 ~ 142",
+    "drumNo": "AIS-CC-0585-001 ~ 142",
     "status": "On-Site",
     "eta": "2026-07-20",
-    "remark": "Control cable - partial arrival (입고 2026-07-20)",
+    "remark": "Control cable - 전량 입고 완료",
     "docUrl2": "/files/docs/ais-500kv.xlsx",
     "docName2": "500kV Cable Interconnection Diagram (2026-07-09).xlsx",
     "drumList": [
@@ -1161,30 +1161,7 @@
       "AIS-CC-0585-138",
       "AIS-CC-0585-139",
       "AIS-CC-0585-140",
-      "AIS-CC-0585-141"
-    ],
-    "drumCount": 69
-  },
-  {
-    "no": 20,
-    "category": "PKG Cable",
-    "cableType": "AIS",
-    "title": "AIS - Control Cable",
-    "inCharge": "정백경(Beagkyong Jeong)",
-    "docNo": "CCP-W-B022-35-EL-B16-0002",
-    "docUrl": "/files/docs/ais-220kv.xlsx",
-    "docName": "220kV Cable Interconnection Diagram (2026-07-09).xlsx",
-    "packingList": "PGU-DE-585",
-    "packingUrl": "/files/packing/PGU-DE-585.xlsx",
-    "packingName": "PGU-DE-585 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0585-AIS-CC (73 drums remaining)",
-    "drumNo": "AIS-CC-0585 (73 drums)",
-    "status": "Sailing",
-    "eta": "2026-07-20",
-    "remark": "Control cable - 2nd batch (remaining)",
-    "docUrl2": "/files/docs/ais-500kv.xlsx",
-    "docName2": "500kV Cable Interconnection Diagram (2026-07-09).xlsx",
-    "drumList": [
+      "AIS-CC-0585-141",
       "AIS-CC-0585-001",
       "AIS-CC-0585-002",
       "AIS-CC-0585-003",
@@ -1259,10 +1236,10 @@
       "AIS-CC-0585-136",
       "AIS-CC-0585-142"
     ],
-    "drumCount": 73
+    "drumCount": 142
   },
   {
-    "no": 21,
+    "no": 20,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Communication Cable",
@@ -1275,7 +1252,7 @@
     "packingName": "PGU-DE-587 Packing List.xlsx",
     "packingDetail": "PGU-DE-0587-AIS-CMcable-001 ~ 004",
     "drumNo": "AIS-CMcable-0587-001 ~ 004",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-07-20",
     "remark": "",
     "docUrl2": "/files/docs/ais-500kv.xlsx",
@@ -1289,7 +1266,7 @@
     "drumCount": 4
   },
   {
-    "no": 22,
+    "no": 21,
     "category": "PKG Cable",
     "cableType": "HRSG",
     "title": "HRSG | CABLE SCHEDULE",
@@ -1374,7 +1351,7 @@
     "drumCount": 64
   },
   {
-    "no": 23,
+    "no": 22,
     "category": "PKG Cable",
     "cableType": "STG",
     "title": "STG | Cable Interconnection Connection List and Schedule",
@@ -1412,7 +1389,7 @@
     "drumCount": 17
   },
   {
-    "no": 24,
+    "no": 23,
     "category": "PKG Cable",
     "cableType": "STG",
     "title": "STG | Cable Interconnection Connection List and Schedule",
@@ -1452,7 +1429,7 @@
     "drumCount": 19
   },
   {
-    "no": 25,
+    "no": 24,
     "category": "PKG Cable",
     "cableType": "FGSS",
     "title": "FGSS | CABLE SCHEDULE AND LIST",
@@ -1497,7 +1474,7 @@
     "drumCount": 24
   },
   {
-    "no": 26,
+    "no": 25,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1521,7 +1498,7 @@
     "drumCount": 3
   },
   {
-    "no": 27,
+    "no": 26,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
@@ -1578,7 +1555,7 @@
     "drumCount": 36
   },
   {
-    "no": 28,
+    "no": 27,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1610,7 +1587,7 @@
     "drumCount": 11
   },
   {
-    "no": 29,
+    "no": 28,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
