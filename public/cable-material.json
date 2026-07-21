@@ -923,52 +923,6 @@
   {
     "no": 16,
     "category": "PKG Cable",
-    "cableType": "DCS",
-    "title": "DCS - Cable list - MHI Cable",
-    "inCharge": "고경환(Kyounghwan Koh)",
-    "docNo": "CCP-W-B000-51-IA-H03-0001",
-    "docUrl": "/files/docs/dcs.pdf",
-    "docName": "CCP-W-B000-51-IA-H03-0001 DCS Cable List.pdf",
-    "packingList": "PGU-DE-0219",
-    "packingUrl": "/files/packing/PGU-DE-0219.xlsx",
-    "packingName": "PGU-DE-0219 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0219-DCS-FNT-017",
-    "drumNo": "DCS-FNT-017",
-    "status": "On-Site",
-    "eta": "",
-    "remark": "",
-    "drumList": [
-      "DCS-FNT-017"
-    ],
-    "drumCount": 1
-  },
-  {
-    "no": 17,
-    "category": "PKG Cable",
-    "cableType": "DCS",
-    "title": "DCS - Cable list - LAN I Grounding Cable I GPS Cable",
-    "inCharge": "고경환(Kyounghwan Koh)",
-    "docNo": "CCP-W-B000-51-IA-H03-0001",
-    "docUrl": "/files/docs/dcs.pdf",
-    "docName": "CCP-W-B000-51-IA-H03-0001 DCS Cable List.pdf",
-    "packingList": "PGU-DE-0220",
-    "packingUrl": "/files/packing/PGU-DE-0220.xlsx",
-    "packingName": "PGU-DE-0220 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0220-DCS-CBN-032 ~ 034",
-    "drumNo": "DCS-CBN-032 ~ 034",
-    "status": "On-Site",
-    "eta": "",
-    "remark": "",
-    "drumList": [
-      "DCS-CBN-032",
-      "DCS-CBN-033",
-      "DCS-CBN-034"
-    ],
-    "drumCount": 3
-  },
-  {
-    "no": 18,
-    "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Power Cable",
     "inCharge": "정백경(Beagkyong Jeong)",
@@ -1016,7 +970,7 @@
     "drumCount": 26
   },
   {
-    "no": 19,
+    "no": 17,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Power Cable",
@@ -1048,7 +1002,7 @@
     "drumCount": 9
   },
   {
-    "no": 20,
+    "no": 18,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Control Cable",
@@ -1120,7 +1074,7 @@
     "drumCount": 49
   },
   {
-    "no": 21,
+    "no": 19,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Control Cable",
@@ -1212,7 +1166,7 @@
     "drumCount": 69
   },
   {
-    "no": 22,
+    "no": 20,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Control Cable",
@@ -1308,7 +1262,7 @@
     "drumCount": 73
   },
   {
-    "no": 23,
+    "no": 21,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Communication Cable",
@@ -1335,7 +1289,7 @@
     "drumCount": 4
   },
   {
-    "no": 24,
+    "no": 22,
     "category": "PKG Cable",
     "cableType": "HRSG",
     "title": "HRSG | CABLE SCHEDULE",
@@ -1420,7 +1374,7 @@
     "drumCount": 64
   },
   {
-    "no": 25,
+    "no": 23,
     "category": "PKG Cable",
     "cableType": "STG",
     "title": "STG | Cable Interconnection Connection List and Schedule",
@@ -1428,21 +1382,77 @@
     "docNo": "CCP-W-B113-03-ME-E10-0075",
     "docUrl": "/files/docs/stg.xlsx",
     "docName": "CCP-W-B113-03-ME-E10-0075 STG Cable Schedule.xlsx",
-    "packingList": "PGU-DE-0149",
-    "packingUrl": "/files/packing/PGU-DE-0149.xlsx",
-    "packingName": "PGU-DE-0149 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0149-STG-MMS-002",
-    "drumNo": "STG-MMS-002",
+    "packingList": "PGU-DE-175",
+    "packingUrl": "/files/packing/PGU-DE-175.xlsx",
+    "packingName": "PGU-DE-175 Packing List.xlsx",
+    "packingDetail": "PGU-DE-0175-STG-OPS-001 ~ 017",
+    "drumNo": "STG-OPS-001 ~ STG-OPS-017",
     "status": "On-Site",
     "eta": "",
-    "remark": "",
+    "remark": "STG Unit 1 (길이 미표기 - 설계=패킹 반영)",
     "drumList": [
-      "STG-MMS-002"
+      "STG-OPS-001",
+      "STG-OPS-002",
+      "STG-OPS-003",
+      "STG-OPS-004",
+      "STG-OPS-005",
+      "STG-OPS-006",
+      "STG-OPS-007",
+      "STG-OPS-008",
+      "STG-OPS-009",
+      "STG-OPS-010",
+      "STG-OPS-011",
+      "STG-OPS-012",
+      "STG-OPS-013",
+      "STG-OPS-014",
+      "STG-OPS-015",
+      "STG-OPS-016",
+      "STG-OPS-017"
     ],
-    "drumCount": 1
+    "drumCount": 17
   },
   {
-    "no": 26,
+    "no": 24,
+    "category": "PKG Cable",
+    "cableType": "STG",
+    "title": "STG | Cable Interconnection Connection List and Schedule",
+    "inCharge": "김태균(Taegyun Kim)",
+    "docNo": "CCP-W-B113-03-ME-E10-0075",
+    "docUrl": "/files/docs/stg.xlsx",
+    "docName": "CCP-W-B113-03-ME-E10-0075 STG Cable Schedule.xlsx",
+    "packingList": "PGU-DE-257",
+    "packingUrl": "/files/packing/PGU-DE-257.xlsx",
+    "packingName": "PGU-DE-257 Packing List.xlsx",
+    "packingDetail": "PGU-DE-0257-STG-CON-001 ~ 019",
+    "drumNo": "STG-CON-001 ~ STG-CON-019",
+    "status": "On-Site",
+    "eta": "",
+    "remark": "STG Unit 2 (길이 미표기 - 설계=패킹 반영)",
+    "drumList": [
+      "STG-CON-001",
+      "STG-CON-002",
+      "STG-CON-003",
+      "STG-CON-004",
+      "STG-CON-005",
+      "STG-CON-006",
+      "STG-CON-007",
+      "STG-CON-008",
+      "STG-CON-009",
+      "STG-CON-010",
+      "STG-CON-011",
+      "STG-CON-012",
+      "STG-CON-013",
+      "STG-CON-014",
+      "STG-CON-015",
+      "STG-CON-016",
+      "STG-CON-017",
+      "STG-CON-018",
+      "STG-CON-019"
+    ],
+    "drumCount": 19
+  },
+  {
+    "no": 25,
     "category": "PKG Cable",
     "cableType": "FGSS",
     "title": "FGSS | CABLE SCHEDULE AND LIST",
@@ -1487,7 +1497,7 @@
     "drumCount": 24
   },
   {
-    "no": 27,
+    "no": 26,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1511,7 +1521,7 @@
     "drumCount": 3
   },
   {
-    "no": 28,
+    "no": 27,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
@@ -1568,7 +1578,7 @@
     "drumCount": 36
   },
   {
-    "no": 29,
+    "no": 28,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1600,7 +1610,7 @@
     "drumCount": 11
   },
   {
-    "no": 30,
+    "no": 29,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
