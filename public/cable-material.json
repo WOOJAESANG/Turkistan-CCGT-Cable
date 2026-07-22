@@ -1366,7 +1366,7 @@
     "drumNo": "STG-OPS-001 ~ STG-OPS-017",
     "status": "On-Site",
     "eta": "",
-    "remark": "STG Unit 1 (길이 미표기 - 설계=패킹 반영)",
+    "remark": "",
     "drumList": [
       "STG-OPS-001",
       "STG-OPS-002",
@@ -1404,7 +1404,7 @@
     "drumNo": "STG-CON-001 ~ STG-CON-019",
     "status": "On-Site",
     "eta": "",
-    "remark": "STG Unit 2 (길이 미표기 - 설계=패킹 반영)",
+    "remark": "",
     "drumList": [
       "STG-CON-001",
       "STG-CON-002",
