@@ -133,6 +133,8 @@ const STATUSES = ['All', 'Pending', 'In Progress', 'Done']
 // tag-prefix fallback for anything not covered.
 const FROM_AREAS = [
   { code: '1.1', label: '1.1 — Main Building Complex' },
+  { code: '1.1.1', label: '1.1 — Main BLDG Block #1' },
+  { code: '1.1.2', label: '1.1 — Main BLDG Block #2' },
   { code: '1.2', label: '1.2 — LEB Block 1' },
   { code: '1.3', label: '1.3 — LEB Block 2' },
   { code: '4',   label: '4 — STG Generator Step-Up (GSU) Transformer' },
