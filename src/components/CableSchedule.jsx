@@ -261,8 +261,6 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
   if (toTag && elecAreaMap[toTag]) return elecAreaMap[toTag]
   // Heat Tracing Panels: each HTP tag has a specific physical Load Location
   if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
-  // Admin Building 25 (CER/CCR/Server Room): B0-MD-* panels are physically in Admin Bldg 25
-  if (toTag && toTag.startsWith('B0-MD-')) return '25'
   // Fuel Gas (FGSS): must check before generic 'EPB FOR' keyword hits 1.1 (e.g. "EPB FOR FGSS")
   if (sys.includes('FGSS')) return '3'
   // CEPB (Building 16): must check before generic CONDENSATE keyword hits 1.1
