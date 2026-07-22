@@ -6,6 +6,7 @@ import {
   fetchRecentActivity, fetchAllForExport,
 } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
+import { stamp } from '../lib/format'
 
 const TABS = [
   { id: 'password', label: 'Change Password' },
@@ -14,10 +15,6 @@ const TABS = [
   { id: 'activity', label: 'Activity Log' },
 ]
 
-function stamp() {
-  const d = new Date(); const p = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
 
 // -------------------- Change Password --------------------
 function PasswordTab({ session }) {

@@ -2,16 +2,14 @@ import { useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area,
 } from 'recharts'
+import { CAT_ID_BY_LABEL, CHART_START as START, CHART_END as END } from '../data/constants'
 
-const START = { y: 2026, m: 7 }
-const END   = { y: 2027, m: 12 }
 const CATS = [
   { key: 'power',   label: 'Power',   color: '#8b7dff' },
   { key: 'control', label: 'Control', color: '#65d5ea' },
   { key: 'iac',     label: 'I&C',     color: '#fdbb63' },
   { key: 'pkg',     label: 'PKG',     color: '#63d09b' },
 ]
-const CAT_ID_BY_LABEL = { Power: 'power', Control: 'control', 'I&C': 'iac', PKG: 'pkg' }
 
 function buildMonths() {
   const out = []

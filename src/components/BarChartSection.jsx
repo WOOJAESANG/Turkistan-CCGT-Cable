@@ -9,10 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-
-function formatNumber(n) {
-  return n.toLocaleString('ko-KR')
-}
+import { formatNumber } from '../lib/format'
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null

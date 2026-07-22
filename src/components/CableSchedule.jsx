@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { dataUrl } from '../lib/dataUrl'
+import { stamp } from '../lib/format'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Priority',
@@ -18,11 +19,6 @@ function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   })
 }
 
-function stamp() {
-  const d = new Date()
-  const p = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
 
 function exportScheduleExcel(rows, fieldData, drumMap, pkgMap) {
   const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap, pkgMap)]

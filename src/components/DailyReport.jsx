@@ -1,16 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData, loadDaily, saveDailyEntry, deleteDailyEntry, loadVendors } from '../lib/dataStore'
+import { stamp, num } from '../lib/format'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
 const NO_VENDOR = '(미지정)'
 
-const num = v => { const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n }
-function stamp() {
-  const d = new Date(); const p = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
 const EMPTY = { date: '', vendor: '', pullManpower: '', termManpower: '' }
 
 export default function DailyReport({ session }) {

@@ -1,6 +1,4 @@
-function formatNumber(n) {
-  return n.toLocaleString('ko-KR')
-}
+import { formatNumber } from '../lib/format'
 
 export default function ProgressCards({ totals }) {
   return (

@@ -2,11 +2,9 @@ import { useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts'
+import { CHART_START as START, CHART_END as END } from '../data/constants'
 
-const START = { y: 2026, m: 7 }
-const END = { y: 2027, m: 12 }
 const TOTAL_WEEKS = 78
-const CAT_ID_BY_LABEL = { Power: 'power', Control: 'control', 'I&C': 'iac', PKG: 'pkg' }
 
 function isoWeekKey(dateStr) {
   if (!dateStr || dateStr.length < 10) return null

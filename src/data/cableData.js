@@ -1,3 +1,5 @@
+import { CAT_ID_BY_LABEL } from './constants'
+
 export const cableCategories = [
   {
     id: 'power',
@@ -83,7 +85,6 @@ export const powerReceivingPulling = {
 // Roll up entered field actuals (localStorage) into per-category pulled length + termination points.
 // fieldData: { [cableNo]: { pulledLength, pullingDate, termDateFrom, termDateTo, ... } }
 // master: array of cable rows { n, g, l, ... } from cable-data.json (for category + design length lookup)
-const CAT_ID_BY_LABEL = { Power: 'power', Control: 'control', 'I&C': 'iac', PKG: 'pkg' };
 export function rollupActuals(fieldData, master) {
   const out = { power: { pulled: 0, term: 0 }, control: { pulled: 0, term: 0 }, iac: { pulled: 0, term: 0 }, pkg: { pulled: 0, term: 0 } };
   if (!fieldData || !master) return out;

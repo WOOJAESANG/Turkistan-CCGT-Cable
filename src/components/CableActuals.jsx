@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
+import { stamp } from '../lib/format'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -61,10 +62,6 @@ function validate(tag, form) {
   return { ok: miss.size === 0 && labels.length === 0, miss, labels }
 }
 
-function stamp() {
-  const d = new Date(); const p = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
 
 // ---- Cable Tag autocomplete (master list) + free-text fallback ----
 function CableTagInput({ value, onChange, onPick, master, invalid }) {

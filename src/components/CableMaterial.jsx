@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
+import { stamp, num } from '../lib/format'
 
 const EXPORT_COLS = [
   'No.', 'Category', 'Type', 'Title', 'In-Charge', 'Document No.',
@@ -19,11 +20,6 @@ function buildRows(rows) {
   ])
 }
 
-function stamp() {
-  const d = new Date()
-  const p = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
 
 function exportExcel(rows) {
   const aoa = [EXPORT_COLS, ...buildRows(rows)]
@@ -243,10 +239,6 @@ function ExportMenu({ rows }) {
 }
 
 // ── Drum Usage: per-drum consumption from Work Log vs packing-list capacity ──
-function num(v) {
-  const n = parseFloat(String(v ?? '').replace(/[^0-9.]/g, ''))
-  return isNaN(n) ? 0 : n
-}
 
 // Legacy AIS tags (before packing-prefixed rename) → canonical prefixed tags.
 // Unprefixed PoCable maps to 0481: 0570 is not yet on site, so any existing
