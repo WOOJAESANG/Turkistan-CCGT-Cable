@@ -865,64 +865,6 @@
   {
     "no": 15,
     "category": "PKG Cable",
-    "cableType": "DCS",
-    "title": "DCS - Cable list - F.O Cable",
-    "inCharge": "고경환(Kyounghwan Koh)",
-    "docNo": "CCP-W-B000-51-IA-H03-0001",
-    "docUrl": "/files/docs/dcs.pdf",
-    "docName": "CCP-W-B000-51-IA-H03-0001 DCS Cable List.pdf",
-    "packingList": "PGU-DE-0311",
-    "packingUrl": "/files/packing/PGU-DE-0311.xlsx",
-    "packingName": "PGU-DE-0311 Packing List.xlsx",
-    "packingDetail": "PGU-DE-0311-DCS-INS-001 ~ 037",
-    "drumNo": "DCS-INS-001 ~ 037",
-    "status": "On-Site",
-    "eta": "",
-    "remark": "",
-    "drumList": [
-      "DCS-INS-001",
-      "DCS-INS-002",
-      "DCS-INS-003",
-      "DCS-INS-004",
-      "DCS-INS-005",
-      "DCS-INS-006",
-      "DCS-INS-007",
-      "DCS-INS-008",
-      "DCS-INS-009",
-      "DCS-INS-010",
-      "DCS-INS-011",
-      "DCS-INS-012",
-      "DCS-INS-013",
-      "DCS-INS-014",
-      "DCS-INS-015",
-      "DCS-INS-016",
-      "DCS-INS-017",
-      "DCS-INS-018",
-      "DCS-INS-019",
-      "DCS-INS-020",
-      "DCS-INS-021",
-      "DCS-INS-022",
-      "DCS-INS-023",
-      "DCS-INS-024",
-      "DCS-INS-025",
-      "DCS-INS-026",
-      "DCS-INS-027",
-      "DCS-INS-028",
-      "DCS-INS-029",
-      "DCS-INS-030",
-      "DCS-INS-031",
-      "DCS-INS-032",
-      "DCS-INS-033",
-      "DCS-INS-034",
-      "DCS-INS-035",
-      "DCS-INS-036",
-      "DCS-INS-037"
-    ],
-    "drumCount": 37
-  },
-  {
-    "no": 16,
-    "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Power Cable",
     "inCharge": "정백경(Beagkyong Jeong)",
@@ -970,7 +912,7 @@
     "drumCount": 26
   },
   {
-    "no": 17,
+    "no": 16,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Power Cable",
@@ -1002,7 +944,7 @@
     "drumCount": 9
   },
   {
-    "no": 18,
+    "no": 17,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Control Cable",
@@ -1074,7 +1016,7 @@
     "drumCount": 49
   },
   {
-    "no": 19,
+    "no": 18,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Control Cable",
@@ -1239,7 +1181,7 @@
     "drumCount": 142
   },
   {
-    "no": 20,
+    "no": 19,
     "category": "PKG Cable",
     "cableType": "AIS",
     "title": "AIS - Communication Cable",
@@ -1266,7 +1208,7 @@
     "drumCount": 4
   },
   {
-    "no": 21,
+    "no": 20,
     "category": "PKG Cable",
     "cableType": "HRSG",
     "title": "HRSG | CABLE SCHEDULE",
@@ -1351,7 +1293,7 @@
     "drumCount": 64
   },
   {
-    "no": 22,
+    "no": 21,
     "category": "PKG Cable",
     "cableType": "STG",
     "title": "STG | Cable Interconnection Connection List and Schedule",
@@ -1389,7 +1331,7 @@
     "drumCount": 17
   },
   {
-    "no": 23,
+    "no": 22,
     "category": "PKG Cable",
     "cableType": "STG",
     "title": "STG | Cable Interconnection Connection List and Schedule",
@@ -1429,7 +1371,7 @@
     "drumCount": 19
   },
   {
-    "no": 24,
+    "no": 23,
     "category": "PKG Cable",
     "cableType": "FGSS",
     "title": "FGSS | CABLE SCHEDULE AND LIST",
@@ -1474,7 +1416,7 @@
     "drumCount": 24
   },
   {
-    "no": 25,
+    "no": 24,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1498,7 +1440,7 @@
     "drumCount": 3
   },
   {
-    "no": 26,
+    "no": 25,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
@@ -1555,7 +1497,7 @@
     "drumCount": 36
   },
   {
-    "no": 27,
+    "no": 26,
     "category": "Power Cable",
     "cableType": "MV",
     "title": "Power Cable Schedule",
@@ -1587,7 +1529,7 @@
     "drumCount": 11
   },
   {
-    "no": 28,
+    "no": 27,
     "category": "Power Cable",
     "cableType": "LV",
     "title": "Power Cable Schedule",
