@@ -8,10 +8,16 @@ const EXPORT_COLS = [
   'From', 'To', 'Drum No.', 'Pkg List', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
 ]
 
+// Fiber-optic cables ship on their own reels, not the copper pair drums. A copper
+// segment can share a cable number with an F.O segment, so suppress the copper drum
+// for F.O-spec rows (drum is assigned to the copper spec only).
+const isFO = c => (c.s || '').startsWith('F.O')
+const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
+
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
     const fd = fieldData[c.n] || {}
-    const drum = drumMap[c.n] || ''
+    const drum = drumFor(c, drumMap)
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
       c.f || '', c.t || '', drum, pkgMap[drum] || '', c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
@@ -374,15 +380,15 @@ export default function CableSchedule() {
       if (!inc(c.sys, colF.sys)) return false
       if (!inc(c.f, colF.from)) return false
       if (!inc(c.t, colF.to)) return false
-      if (!inc(drumMap[c.n], colF.drum)) return false
-      if (!inc(pkgMap[drumMap[c.n]], colF.pkg)) return false
+      if (!inc(drumFor(c, drumMap), colF.drum)) return false
+      if (!inc(pkgMap[drumFor(c, drumMap)], colF.pkg)) return false
       if (!inc(fd.usedDrum, colF.used)) return false
       if (!inc(fd.act, colF.act)) return false
       if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) return false
       if (colF.term !== 'All' && deriveTermStatus(c, fd) !== colF.term) return false
       if (colF.lc !== 'All' && (fd.lc || 'Pending') !== colF.lc) return false
       if (q) {
-        const assignedDrum = drumMap[c.n] || ''
+        const assignedDrum = drumFor(c, drumMap)
         const usedDrum = fd.usedDrum || ''
         const pkgNo = pkgMap[assignedDrum] || ''
         return (
@@ -622,8 +628,8 @@ export default function CableSchedule() {
                     </td>
                     <td className="cs-kks">{c.f || '—'}</td>
                     <td className="cs-kks">{c.t || '—'}</td>
-                    <td className="cs-kks">{drumMap[c.n] || '—'}</td>
-                    <td className="cs-pkg-cell">{pkgMap[drumMap[c.n]] || '—'}</td>
+                    <td className="cs-kks">{drumFor(c, drumMap) || '—'}</td>
+                    <td className="cs-pkg-cell">{pkgMap[drumFor(c, drumMap)] || '—'}</td>
                     <td>
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
                     </td>
