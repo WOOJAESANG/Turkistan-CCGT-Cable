@@ -440,9 +440,9 @@ export default function CableActuals({ session }) {
           </div>
           <div className="ca-date-range">
             <span className="ca-dr-label">Date</span>
-            <input type="date" className={`ca-dr-input${dateFrom ? ' active' : ''}`} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <input type="date" className={`ca-dr-input${dateFrom ? ' active' : ''}`} title="시작일" min={DATE_MIN} max={dateTo || DATE_MAX} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
             <span className="ca-dr-sep">–</span>
-            <input type="date" className={`ca-dr-input${dateTo ? ' active' : ''}`} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            <input type="date" className={`ca-dr-input${dateTo ? ' active' : ''}`} title="종료일" min={dateFrom || DATE_MIN} max={DATE_MAX} value={dateTo} onChange={e => setDateTo(e.target.value)} />
             {(dateFrom || dateTo) && (
               <button className="ca-dr-clear" title="Clear date filter" onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
             )}
