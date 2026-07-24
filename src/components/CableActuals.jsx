@@ -180,6 +180,34 @@ export default function CableActuals({ session }) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [flash, setFlash] = useState(null)
+  const [importMsg, setImportMsg] = useState(null)
+  const importRef = useRef(null)
+
+  // Bulk import vendor actuals from a JSON file. Merges into each cable (existing
+  // fields preserved via updateFieldEntry) — used for supplier pulling/termination reports.
+  async function handleImport(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const parsed = JSON.parse(await file.text())
+      const entries = parsed.entries || parsed
+      const keys = Object.keys(entries)
+      if (!keys.length) { setImportMsg('빈 파일'); return }
+      let done = 0, fail = 0
+      setImportMsg(`반영 중… 0/${keys.length}`)
+      for (const cno of keys) {
+        try { await updateFieldEntry(cno, entries[cno]); done++ }
+        catch { fail++ }
+        if ((done + fail) % 5 === 0 || done + fail === keys.length) setImportMsg(`반영 중… ${done + fail}/${keys.length}`)
+      }
+      setFieldData(loadFieldData())
+      setImportMsg(`완료: ${done}건 반영${fail ? `, ${fail}건 실패` : ''}`)
+      setTimeout(() => setImportMsg(null), 8000)
+    } catch (err) {
+      setImportMsg('파일 오류: ' + err.message)
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -454,6 +482,15 @@ export default function CableActuals({ session }) {
             <button className="cm-export-btn ca-btn-csv" onClick={exportCSV} disabled={records.length === 0}>
               <span className="cm-export-ico csv">CSV</span> CSV
             </button>
+            {admin && (
+              <>
+                <input ref={importRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={handleImport} />
+                <button className="cm-export-btn" style={{ background: '#0d9488', borderColor: '#0d9488' }} onClick={() => importRef.current?.click()} title="업체 실적 JSON 일괄 반영 (기존 기록 보존)">
+                  실적 Import
+                </button>
+              </>
+            )}
+            {importMsg && <span style={{ fontSize: 12, color: 'var(--ink-secondary)', alignSelf: 'center', whiteSpace: 'nowrap' }}>{importMsg}</span>}
           </div>
         </div>
 
