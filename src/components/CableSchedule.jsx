@@ -12,7 +12,7 @@ const EXPORT_COLS = [
 // segment can share a cable number with an F.O segment, so suppress the copper drum
 // for F.O-spec rows (drum is assigned to the copper spec only).
 const isFO = c => (c.s || '').startsWith('F.O')
-const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
+const drumFor = (c, drumMap) => (isFO(c) ? (c.g === 'I&C' ? 'PGU-DE-0311' : '') : (drumMap[c.n] || ''))
 
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
