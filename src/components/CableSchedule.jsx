@@ -12,7 +12,9 @@ const EXPORT_COLS = [
 // segment can share a cable number with an F.O segment, so suppress the copper drum
 // for F.O-spec rows (drum is assigned to the copper spec only).
 const isFO = c => (c.s || '').startsWith('F.O')
-const drumFor = (c, drumMap) => (isFO(c) ? (c.g === 'I&C' ? 'PGU-DE-0311' : '') : (drumMap[c.n] || ''))
+const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
+// F.O I&C cables have no individual drum but reference packing list PGU-DE-0311
+const pkgFor = (c, drumMap, pkgMap) => (isFO(c) && c.g === 'I&C' ? 'PGU-DE-0311' : (pkgMap[drumFor(c, drumMap)] || ''))
 
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
@@ -20,7 +22,7 @@ function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
     const drum = drumFor(c, drumMap)
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
-      c.f || '', c.t || '', drum, pkgMap[drum] || '', c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
+      c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
     ]
   })
 }
@@ -381,7 +383,7 @@ export default function CableSchedule() {
       if (!inc(c.f, colF.from)) return false
       if (!inc(c.t, colF.to)) return false
       if (!inc(drumFor(c, drumMap), colF.drum)) return false
-      if (!inc(pkgMap[drumFor(c, drumMap)], colF.pkg)) return false
+      if (!inc(pkgFor(c, drumMap, pkgMap), colF.pkg)) return false
       if (!inc(fd.usedDrum, colF.used)) return false
       if (!inc(fd.act, colF.act)) return false
       if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) return false
@@ -390,7 +392,7 @@ export default function CableSchedule() {
       if (q) {
         const assignedDrum = drumFor(c, drumMap)
         const usedDrum = fd.usedDrum || ''
-        const pkgNo = pkgMap[assignedDrum] || ''
+        const pkgNo = pkgFor(c, drumMap, pkgMap)
         return (
           c.n.toLowerCase().includes(q) ||
           c.s.toLowerCase().includes(q) ||
@@ -629,7 +631,7 @@ export default function CableSchedule() {
                     <td className="cs-kks">{c.f || '—'}</td>
                     <td className="cs-kks">{c.t || '—'}</td>
                     <td className="cs-kks">{drumFor(c, drumMap) || '—'}</td>
-                    <td className="cs-pkg-cell">{pkgMap[drumFor(c, drumMap)] || '—'}</td>
+                    <td className="cs-pkg-cell">{pkgFor(c, drumMap, pkgMap) || '—'}</td>
                     <td>
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
                     </td>
