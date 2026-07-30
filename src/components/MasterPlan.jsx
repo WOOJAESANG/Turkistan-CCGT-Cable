@@ -153,6 +153,93 @@ function SCurveTooltip({ active, payload, label: lb }) {
   )
 }
 
+// Milestone target %: Customer Required cumulative at month of event
+const PR_TARGET_PCT   = 77.9  // Oct 2026 → Power Receiving
+const GTG11_TARGET_PCT = 94.5  // Dec 2026 → GTG #11 Sync
+
+function projectDate(actualMonthly, targetPct) {
+  const totalActual = actualMonthly.reduce((s, v) => s + v, 0)
+  const targetM = targetPct / 100 * TOTAL_M
+  if (totalActual <= 0) return null
+  // days elapsed in project (Jul 1 = day 0)
+  const T0date = new Date('2026-07-01')
+  const today = new Date()
+  const daysElapsed = Math.max(1, Math.round((today - T0date) / 86400000))
+  const dailyRate = totalActual / daysElapsed
+  const remaining = Math.max(0, targetM - totalActual)
+  const daysNeeded = remaining / dailyRate
+  const projected = new Date(today.getTime() + daysNeeded * 86400000)
+  return projected
+}
+
+function fmt(d) {
+  if (!d) return '—'
+  return d.toISOString().slice(0, 7)
+}
+
+function monthsDiff(a, b) {
+  return (a.getFullYear() - b.getFullYear()) * 12 + (a.getMonth() - b.getMonth())
+}
+
+function ProjectionPanel({ actualMonthly, hasActual, gapM, gapPct }) {
+  const prProj   = projectDate(actualMonthly, PR_TARGET_PCT)
+  const gtg11Proj = projectDate(actualMonthly, GTG11_TARGET_PCT)
+  const prCust   = new Date('2026-10-30')
+  const gtg11Cust = new Date('2026-12-22')
+  const prDelay   = prProj   ? monthsDiff(prProj, prCust)   : null
+  const gtg11Delay = gtg11Proj ? monthsDiff(gtg11Proj, gtg11Cust) : null
+
+  const row = (label, custDate, proj, delay) => (
+    <div style={{
+      padding: '12px 0', borderBottom: '1px solid #eef0f6',
+    }}>
+      <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
+        Customer Required: <b style={{ color: '#b45309' }}>{custDate}</b>
+      </div>
+      {hasActual && proj ? (
+        <>
+          <div style={{ fontSize: 13, fontWeight: 700, color: delay > 0 ? '#dc2626' : '#16a34a' }}>
+            Projected: {fmt(proj)}
+          </div>
+          {delay > 0 && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 5,
+              background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 5,
+              padding: '3px 8px', fontSize: 11, fontWeight: 700, color: '#dc2626',
+            }}>
+              ▲ {delay} month{delay > 1 ? 's' : ''} overrun
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>No actual data yet</div>
+      )}
+    </div>
+  )
+
+  return (
+    <div style={{
+      flexShrink: 0, width: 210,
+      background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
+      padding: '14px 16px', marginTop: 20,
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+        Projected at Current Pace
+      </div>
+      {row('Power Receiving (PR)', '2026-10-30', prProj, prDelay)}
+      {row('GTG #11 Sync', '2026-12-22', gtg11Proj, gtg11Delay)}
+      {hasActual && gapM != null && gapM > 0 && (
+        <div style={{ marginTop: 10, padding: '8px 10px', background: '#fef2f2', borderRadius: 6, border: '1px solid #fca5a5' }}>
+          <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 3 }}>Current Delay</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#dc2626' }}>{gapM?.toLocaleString()} m</div>
+          <div style={{ fontSize: 11, color: '#ef4444' }}>{gapPct?.toFixed(1)}%p behind plan</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MilestoneRows({ rows, targets, onTarget, admin, viewer }) {
   return rows.map(r => {
     const override = targets[r.name]
@@ -242,9 +329,16 @@ export default function MasterPlan({ session }) {
   }), [actualMonthly])
 
   const CUM_DATA = useMemo(() => MONTHS.map((m, i) => {
-    const entry = { name: label(m), 'Customer Required': OWNER_CUM[i] }
-    if (actualCum[i] > 0) entry['Actual'] = actualCum[i]
-    return entry
+    const planVal = OWNER_CUM[i]
+    const actualVal = actualCum[i]
+    const hasData = actualVal > 0
+    return {
+      name: label(m),
+      'Plan': planVal,
+      'Actual': hasData ? actualVal : undefined,
+      'actualFill': hasData ? actualVal : undefined,
+      'gapFill': hasData ? Math.max(0, planVal - actualVal) : undefined,
+    }
   }), [actualCum])
 
   const handleTarget = (name, date) => {
@@ -360,99 +454,137 @@ export default function MasterPlan({ session }) {
         </div>
       </div>
 
-      {/* Monthly Pulling Plan */}
-      <div className="chart-card">
-        <div className="chart-card-header">
-          <span className="chart-title">Monthly Pulling Plan — Customer Required vs 실적</span>
-          <span className="chart-subtitle">m / month · Customer Required 기준</span>
+      {/* Monthly Pulling Plan — line + bar side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 12, marginBottom: 12 }}>
+        <div className="chart-card" style={{ margin: 0 }}>
+          <div className="chart-card-header">
+            <span className="chart-title">Monthly Pulling Plan</span>
+            <span className="chart-subtitle">m / month · trend line</span>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={MONTHLY_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 10 }} axisLine={{ stroke: '#e3e8ee' }}
+                tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
+              <YAxis tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
+                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+              <Tooltip content={<MonthlyTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
+              <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
+              <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
+              <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
+                label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
+              <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.2}
+                strokeDasharray="6 4" dot={false} />
+              {hasActual && (
+                <Line type="monotone" dataKey="Actual" stroke={C_ACTUAL} strokeWidth={2.4}
+                  dot={{ r: 3, fill: C_ACTUAL, strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: C_ACTUAL, stroke: '#fff', strokeWidth: 2 }}
+                  connectNulls={false} />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+          <div className="mpl-legend">
+            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Plan</span>
+            {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
+            <span><i className="mpl-sw" style={{ background: '#b45309' }} />PR</span>
+            <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />GTG#11 Sync</span>
+          </div>
         </div>
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={MONTHLY_DATA} margin={{ top: 20, right: 24, left: 0, bottom: 8 }}>
-            <defs>
-              <linearGradient id="grad-actual" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C_ACTUAL} stopOpacity={0.18} />
-                <stop offset="100%" stopColor={C_ACTUAL} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
-            <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 11 }} axisLine={{ stroke: '#e3e8ee' }}
-              tickLine={false} interval={0} angle={-30} textAnchor="end" height={50} />
-            <YAxis tick={{ fill: '#64748d', fontSize: 12 }} axisLine={false} tickLine={false}
-              tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-            <Tooltip content={<MonthlyTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
-            {/* PR 마커 */}
-            <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
-              label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
-            {/* GTG #11 Sync 마커 */}
-            <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
-              label={{ value: 'GTG#11 Sync', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
-            {/* TODAY */}
-            <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
-              label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
-            <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.4}
-              strokeDasharray="6 4" dot={false} />
-            {hasActual && (
-              <Line type="monotone" dataKey="Actual" stroke={C_ACTUAL} strokeWidth={2.4}
-                dot={{ r: 3.5, fill: C_ACTUAL, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: C_ACTUAL, stroke: '#fff', strokeWidth: 2 }}
-                connectNulls={false} />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-        <div className="mpl-legend">
-          <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required (계획)</span>
-          {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual (실적)</span>}
-          <span><i className="mpl-sw" style={{ background: '#b45309' }} />PR (2026-10-30)</span>
-          <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />GTG #11 Sync (2026-12-22)</span>
+
+        <div className="chart-card" style={{ margin: 0 }}>
+          <div className="chart-card-header">
+            <span className="chart-title">Plan vs Actual — Monthly Bar</span>
+            <span className="chart-subtitle">m / month · grouped bars</span>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <ComposedChart data={MONTHLY_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }} barGap={2} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 10 }} axisLine={{ stroke: '#e3e8ee' }}
+                tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
+              <YAxis tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
+                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+              <Tooltip content={<MonthlyTooltip />} cursor={{ fill: 'rgba(83,58,253,0.04)' }} />
+              <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
+              <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
+              <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
+                label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
+              <Bar dataKey="Customer Required" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
+              {hasActual && (
+                <Bar dataKey="Actual" fill={C_ACTUAL} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div className="mpl-legend">
+            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required</span>
+            {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
+          </div>
         </div>
       </div>
 
-      {/* Cumulative S-Curve */}
+      {/* Cumulative S-Curve + Projection panel */}
       <div className="chart-card">
         <div className="chart-card-header">
-          <span className="chart-title">누적 S-Curve — 계획 vs 실적</span>
-          <span className="chart-subtitle">% of total {TOTAL_M.toLocaleString()} m · 빨간 영역 = 지연</span>
+          <span className="chart-title">Cumulative S-Curve — Plan vs Actual</span>
+          <span className="chart-subtitle">% of {TOTAL_M.toLocaleString()} m total · red area = delay gap</span>
         </div>
-        <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={CUM_DATA} margin={{ top: 20, right: 24, left: 0, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
-            <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 11 }} axisLine={{ stroke: '#e3e8ee' }}
-              tickLine={false} interval={0} angle={-30} textAnchor="end" height={50} />
-            <YAxis domain={[0, 100]} tick={{ fill: '#64748d', fontSize: 12 }} axisLine={false} tickLine={false}
-              tickFormatter={v => `${v}%`} />
-            <Tooltip content={<SCurveTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
-            <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={2}
-              label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideBottomLeft' }} />
-            <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
-              label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
-            <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
-              label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
-            <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.4}
-              strokeDasharray="6 4" dot={false} />
-            {hasActual && (
-              <Line type="monotone" dataKey="Actual" stroke={C_ACTUAL} strokeWidth={2.8}
-                dot={{ r: 3.5, fill: C_ACTUAL, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: C_ACTUAL, stroke: '#fff', strokeWidth: 2 }}
-                connectNulls={false} />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-        <div className="mpl-legend">
-          <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required (계획)</span>
-          {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual (실적)</span>}
-          <span><i className="mpl-sw" style={{ background: '#dc2626' }} />TODAY</span>
-          {hasActual && gapM != null && gapM > 0 && (
-            <span style={{ marginLeft: 'auto', color: '#ef4444', fontWeight: 600, fontSize: 12 }}>
-              현재 지연: {gapM.toLocaleString()} m ({gapPct?.toFixed(1)}%p)
-            </span>
-          )}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          {/* Chart */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height={340}>
+              <ComposedChart data={CUM_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="grad-actual-cum" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.08} />
+                  </linearGradient>
+                  <linearGradient id="grad-gap-cum" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0.12} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 10 }} axisLine={{ stroke: '#e3e8ee' }}
+                  tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
+                  tickFormatter={v => `${v}%`} />
+                <Tooltip content={<SCurveTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
+                {/* Stacked fills: blue=actual, red=gap to plan */}
+                <Area type="monotone" dataKey="actualFill" stackId="cum"
+                  fill="url(#grad-actual-cum)" stroke="none" connectNulls={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="gapFill" stackId="cum"
+                  fill="url(#grad-gap-cum)" stroke="none" connectNulls={false} isAnimationActive={false} />
+                {/* Reference lines */}
+                <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={2}
+                  label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideBottomLeft' }} />
+                <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
+                  label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
+                <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
+                  label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
+                {/* Lines on top of fills */}
+                <Line type="monotone" dataKey="Plan" stroke={C_OWNER} strokeWidth={2.2}
+                  strokeDasharray="6 4" dot={false} />
+                {hasActual && (
+                  <Line type="monotone" dataKey="Actual" stroke="#3b82f6" strokeWidth={2.8}
+                    dot={{ r: 3.5, fill: '#3b82f6', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                    connectNulls={false} />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="mpl-legend">
+              <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required (Plan)</span>
+              {hasActual && <span><i className="mpl-sw" style={{ background: '#3b82f6' }} />Actual</span>}
+              <span><i className="mpl-sw" style={{ background: '#ef4444', opacity: .55 }} />Gap (delay)</span>
+            </div>
+          </div>
+
+          {/* Projection panel */}
+          <ProjectionPanel actualMonthly={actualMonthly} hasActual={hasActual} gapM={gapM} gapPct={gapPct} />
         </div>
-        {hasActual && gapM != null && gapM > 0 && (
-          <p className="mpl-note" style={{ color: '#ef4444' }}>
-            Customer Required 대비 <b>{gapPct?.toFixed(1)}%p ({gapM.toLocaleString()} m)</b> 지연.
-            Customer Required 달성을 위해 잔여 기간 내 만회 필요.
-          </p>
-        )}
       </div>
     </div>
   )
