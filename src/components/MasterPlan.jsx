@@ -23,8 +23,6 @@ const MONTHS = ['2026-07','2026-08','2026-09','2026-10','2026-11','2026-12','202
 const OWNER_MONTHLY = [56380,210585,397950,429915,233757,72846,3795,0,0,0,0,0,0,0,0,0,0,0]
 const OWNER_CUM = [4.0,19.0,47.3,77.9,94.5,99.7,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0]
 const TOTAL_M = 1405228
-// S-curve: ramp Jul→Oct 2026, PEAK at PR (Oct '26 = 150k), I&C/BOP keeps high through Apr '27,
-// steep drop from Jun '27 (STG#20 cable due) → tapers to Dec '27. Total = exactly 1,405,228 m
 const BAR_MONTHLY = [31000,62000,103000,150000,140000,132000,129000,126000,122000,113000,93000,72000,52000,36000,23000,12000,6000,3228]
 
 const label = m => { const [y,mm] = m.split('-'); return `'${y.slice(2)}.${mm}` }
