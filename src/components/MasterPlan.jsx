@@ -23,6 +23,10 @@ const MONTHS = ['2026-07','2026-08','2026-09','2026-10','2026-11','2026-12','202
 const OWNER_MONTHLY = [56380,210585,397950,429915,233757,72846,3795,0,0,0,0,0,0,0,0,0,0,0]
 const OWNER_CUM = [4.0,19.0,47.3,77.9,94.5,99.7,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0]
 const TOTAL_M = 1405228
+// Even distribution of total scope across all 18 months (bar chart plan baseline)
+const BAR_TARGET_BASE = Math.floor(TOTAL_M / MONTHS.length)
+const BAR_TARGET_REM = TOTAL_M - BAR_TARGET_BASE * MONTHS.length
+const BAR_MONTHLY = MONTHS.map((_, i) => BAR_TARGET_BASE + (i < BAR_TARGET_REM ? 1 : 0))
 
 const label = m => { const [y,mm] = m.split('-'); return `'${y.slice(2)}.${mm}` }
 
@@ -79,7 +83,8 @@ function TimelineTooltip({ active, payload }) {
 
 function MonthlyTooltip({ active, payload, label: lb }) {
   if (!active || !payload?.length) return null
-  const plan = payload.find(p => p.dataKey === 'Customer Required')?.value
+  const plan = (payload.find(p => p.dataKey === 'Monthly Target') ?? payload.find(p => p.dataKey === 'Customer Required'))?.value
+  const planLabel = payload.find(p => p.dataKey === 'Monthly Target') ? 'Monthly Target' : 'Customer Required'
   const actual = payload.find(p => p.dataKey === 'Actual')?.value
   return (
     <div style={{
@@ -90,7 +95,7 @@ function MonthlyTooltip({ active, payload, label: lb }) {
       {plan != null && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C_OWNER, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>Customer Required</span>
+          <span style={{ color: '#64748d' }}>{planLabel}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d', paddingLeft: 12 }}>{Math.round(plan).toLocaleString()} m</span>
         </div>
       )}
@@ -323,7 +328,7 @@ export default function MasterPlan({ session }) {
   const gapM = gapPct != null ? Math.round(gapPct / 100 * TOTAL_M) : null
 
   const MONTHLY_DATA = useMemo(() => MONTHS.map((m, i) => {
-    const entry = { name: label(m), 'Customer Required': OWNER_MONTHLY[i] }
+    const entry = { name: label(m), 'Customer Required': OWNER_MONTHLY[i], 'Monthly Target': BAR_MONTHLY[i] }
     if (actualMonthly[i] > 0) entry['Actual'] = actualMonthly[i]
     return entry
   }), [actualMonthly])
@@ -610,7 +615,7 @@ export default function MasterPlan({ session }) {
         <div className="chart-card" style={{ margin: 0 }}>
           <div className="chart-card-header">
             <span className="chart-title">Plan vs Actual — Monthly Bar</span>
-            <span className="chart-subtitle">m / month · grouped bars</span>
+            <span className="chart-subtitle">m / month · balanced target to Dec 2027 (~{Math.round(TOTAL_M/MONTHS.length/1000)}k/mo)</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <ComposedChart data={MONTHLY_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }} barGap={2} barCategoryGap="30%">
@@ -626,8 +631,8 @@ export default function MasterPlan({ session }) {
                 label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
               <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
                 label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
-              <Bar dataKey="Customer Required" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
-                <LabelList dataKey="Customer Required" position="top" fontSize={9} fill="#64748b"
+              <Bar dataKey="Monthly Target" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
+                <LabelList dataKey="Monthly Target" position="top" fontSize={9} fill="#64748b"
                   formatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
               </Bar>
               {hasActual && (
@@ -639,7 +644,7 @@ export default function MasterPlan({ session }) {
             </ComposedChart>
           </ResponsiveContainer>
           <div className="mpl-legend">
-            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required</span>
+            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Monthly Target (balanced to Dec 2027)</span>
             {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
           </div>
         </div>
