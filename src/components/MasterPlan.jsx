@@ -341,6 +341,34 @@ export default function MasterPlan({ session }) {
     }
   }), [actualCum])
 
+  // Weekly pulling actuals (last 12 weeks)
+  const WEEKLY_DATA = useMemo(() => {
+    const mmap = new Map((master || []).map(c => [c.n, c]))
+    const weekBuckets = new Map()
+    for (const [cno, e] of Object.entries(fieldData || {})) {
+      if (!e?.pullingDate) continue
+      const d = new Date(e.pullingDate)
+      const dow = d.getUTCDay() || 7
+      const mon = new Date(d)
+      mon.setUTCDate(d.getUTCDate() - dow + 1)
+      const wk = mon.toISOString().slice(0, 10)
+      weekBuckets.set(wk, (weekBuckets.get(wk) || 0) + (mmap.get(cno)?.l || 0))
+    }
+    const sorted = [...weekBuckets.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    const recent = sorted.slice(-14)
+    const rows = recent.map(([weekStart, actual], idx, arr) => {
+      const mo = weekStart.slice(0, 7)
+      const mi = MONTHS.indexOf(mo)
+      const target = mi >= 0 ? Math.round(OWNER_MONTHLY[mi] / 4.33) : 0
+      const d2 = new Date(weekStart)
+      const lbl = `${d2.getUTCMonth() + 1}/${String(d2.getUTCDate()).padStart(2, '0')}`
+      const slice = arr.slice(Math.max(0, idx - 3), idx + 1)
+      const avg4 = Math.round(slice.reduce((s, [, v]) => s + v, 0) / slice.length)
+      return { name: lbl, Actual: actual, Target: target, '4W Avg': avg4 }
+    })
+    return rows
+  }, [fieldData, master])
+
   const handleTarget = (name, date) => {
     if (viewer) return
     if (date) saveMilestoneTarget(name, date)
@@ -425,33 +453,71 @@ export default function MasterPlan({ session }) {
         </p>
       </div>
 
-      {/* Timeline Gantt */}
+      {/* Weekly Construction Progress */}
       <div className="chart-card">
         <div className="chart-card-header">
-          <span className="chart-title">Milestone Timeline — Cable Due → Event Date</span>
-          <span className="chart-subtitle">each bar runs from the cable completion deadline to the milestone event</span>
+          <span className="chart-title">Weekly Construction Progress</span>
+          <span className="chart-subtitle">Cable pulling actuals by week (m) · last 14 weeks</span>
         </div>
-        <ResponsiveContainer width="100%" height={420}>
-          <ComposedChart data={TIMELINE_DATA} layout="vertical" margin={{ top: 10, right: 24, left: 8, bottom: 8 }} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" horizontal={false} />
-            <XAxis type="number" domain={[0, TL_END]} ticks={TL_TICKS} tickFormatter={tlLabel}
-              tick={{ fill: '#64748d', fontSize: 11 }} axisLine={{ stroke: '#e3e8ee' }} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={120}
-              tick={{ fill: '#5b5f77', fontSize: 11.5 }} axisLine={false} tickLine={false} />
-            <Tooltip content={<TimelineTooltip />} cursor={{ fill: 'rgba(83,58,253,0.04)' }} />
-            <ReferenceLine x={day(new Date().toISOString().slice(0,10))} stroke="#dc2626" strokeWidth={2}
-              label={{ value: 'TODAY', fill: '#dc2626', fontSize: 10, fontWeight: 700, position: 'top' }} />
-            <Bar dataKey="custOffset" stackId="cust" fill="transparent" barSize={9} isAnimationActive={false} />
-            <Bar dataKey="custSpan" stackId="cust" fill={C_CABLE_OWNER} barSize={9} radius={[4,4,4,4]} isAnimationActive={false} />
-            <Bar dataKey="l3Offset" stackId="l3" fill="transparent" barSize={9} isAnimationActive={false} />
-            <Bar dataKey="l3Span" stackId="l3" fill={C_L3} barSize={9} radius={[4,4,4,4]} isAnimationActive={false} />
-          </ComposedChart>
-        </ResponsiveContainer>
-        <div className="mpl-legend">
-          <span><i className="mpl-sw" style={{ background: C_CABLE_OWNER }} />Customer Required (cable due → event)</span>
-          <span><i className="mpl-sw" style={{ background: C_L3 }} />L3 Schedule (cable due → event)</span>
-          <span><i className="mpl-sw" style={{ background: '#dc2626' }} />TODAY</span>
-        </div>
+        {WEEKLY_DATA.length === 0 ? (
+          <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 13, color: '#94a3b8', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 24px' }}>
+              No weekly actuals yet — enter pulling data in Field Actuals
+            </span>
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={WEEKLY_DATA} margin={{ top: 20, right: 24, left: 0, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="grad-weekly-actual" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C_ACTUAL} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={C_ACTUAL} stopOpacity={0.55} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 11 }} axisLine={{ stroke: '#e3e8ee' }} tickLine={false} />
+                <YAxis tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
+                  tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null
+                    return (
+                      <div style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 8, padding: '10px 14px', fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+                        <div style={{ fontWeight: 700, marginBottom: 6, color: '#0d253d' }}>Week of {label}</div>
+                        {payload.map(p => (
+                          <div key={p.name} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 3 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: p.name === 'Actual' ? 2 : '50%', background: p.color, flexShrink: 0 }} />
+                            <span style={{ color: '#64748b' }}>{p.name}</span>
+                            <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d', fontVariantNumeric: 'tabular-nums' }}>
+                              {Math.round(p.value).toLocaleString()} m
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }}
+                  cursor={{ fill: 'rgba(83,58,253,0.04)' }}
+                />
+                <Bar dataKey="Actual" fill="url(#grad-weekly-actual)" radius={[4, 4, 0, 0]} maxBarSize={36} isAnimationActive={false}>
+                  <LabelList dataKey="Actual" position="top" fontSize={9} fill={C_ACTUAL} fontWeight={700}
+                    formatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v} />
+                </Bar>
+                <Line type="monotone" dataKey="Target" stroke={C_OWNER} strokeWidth={2} strokeDasharray="6 4"
+                  dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="4W Avg" stroke="#f59e0b" strokeWidth={2}
+                  dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                  isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="mpl-legend">
+              <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Weekly Actual</span>
+              <span><i className="mpl-sw" style={{ background: C_OWNER }} />Weekly Target (plan÷4.33)</span>
+              <span><i className="mpl-sw" style={{ background: '#f59e0b' }} />4-Week Rolling Avg</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Monthly Pulling Plan — line + bar side by side */}
@@ -461,35 +527,83 @@ export default function MasterPlan({ session }) {
             <span className="chart-title">Monthly Pulling Plan</span>
             <span className="chart-subtitle">m / month · trend line</span>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={MONTHLY_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 10 }} axisLine={{ stroke: '#e3e8ee' }}
-                tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
-              <YAxis tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
-                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-              <Tooltip content={<MonthlyTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
-              <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
-                label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
-              <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
-                label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
-              <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
-                label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
-              <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.2}
-                strokeDasharray="6 4" dot={false} />
-              {hasActual && (
-                <Line type="monotone" dataKey="Actual" stroke={C_ACTUAL} strokeWidth={2.4}
-                  dot={{ r: 3, fill: C_ACTUAL, strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: C_ACTUAL, stroke: '#fff', strokeWidth: 2 }}
-                  connectNulls={false} />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={MONTHLY_DATA} margin={{ top: 20, right: 8, left: 0, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eef0f6" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#64748d', fontSize: 10 }} axisLine={{ stroke: '#e3e8ee' }}
+                    tickLine={false} interval={0} angle={-30} textAnchor="end" height={48} />
+                  <YAxis tick={{ fill: '#64748d', fontSize: 11 }} axisLine={false} tickLine={false}
+                    tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                  <Tooltip content={<MonthlyTooltip />} cursor={{ stroke: '#c5c9d9', strokeWidth: 1, strokeDasharray: '4 3' }} />
+                  <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
+                    label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
+                  <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
+                    label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
+                  <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
+                    label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
+                  <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.2}
+                    strokeDasharray="6 4" dot={false} />
+                  {hasActual && (
+                    <Line type="monotone" dataKey="Actual" stroke={C_ACTUAL} strokeWidth={2.4}
+                      dot={{ r: 3, fill: C_ACTUAL, strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: C_ACTUAL, stroke: '#fff', strokeWidth: 2 }}
+                      connectNulls={false} />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mpl-legend">
+                <span><i className="mpl-sw" style={{ background: C_OWNER }} />Plan</span>
+                {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
+                <span><i className="mpl-sw" style={{ background: '#b45309' }} />PR</span>
+                <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />GTG#11 Sync</span>
+              </div>
+            </div>
+            {/* Right stats panel */}
+            <div style={{
+              flexShrink: 0, width: 168, marginTop: 8,
+              background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
+              fontSize: 11, fontVariantNumeric: 'tabular-nums', overflow: 'hidden',
+            }}>
+              <div style={{ padding: '7px 10px', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 4 }}>
+                <span style={{ color: '#64748b', fontWeight: 700 }}>Month</span>
+                <span style={{ color: C_OWNER, fontWeight: 700, textAlign: 'right' }}>Plan</span>
+                <span style={{ color: C_ACTUAL, fontWeight: 700, textAlign: 'right' }}>Actual</span>
+              </div>
+              {MONTHLY_DATA.filter((_, i) => i <= Math.max(todayIdx + 1, 5)).map((d, i) => {
+                const plan = d['Customer Required'] || 0
+                const actual = d['Actual'] || 0
+                const isToday = d.name === TODAY_LABEL
+                const gap = plan - actual
+                return (
+                  <div key={d.name} style={{
+                    padding: '5px 10px',
+                    borderBottom: '1px solid #eef0f6',
+                    background: isToday ? '#fffbeb' : 'transparent',
+                    display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 4, alignItems: 'center',
+                  }}>
+                    <span style={{ color: isToday ? '#b45309' : '#64748b', fontWeight: isToday ? 700 : 400 }}>
+                      {d.name}{isToday ? ' ◀' : ''}
+                    </span>
+                    <span style={{ color: '#94a3b8', textAlign: 'right' }}>
+                      {plan >= 1000 ? `${Math.round(plan/1000)}k` : plan || '—'}
+                    </span>
+                    <span style={{ color: actual > 0 ? C_ACTUAL : '#cbd5e1', textAlign: 'right', fontWeight: actual > 0 ? 700 : 400 }}>
+                      {actual > 0 ? (actual >= 1000 ? `${Math.round(actual/1000)}k` : actual) : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+              {hasActual && gapM != null && (
+                <div style={{ padding: '7px 10px', background: '#fef2f2', borderTop: '1px solid #fca5a5' }}>
+                  <div style={{ color: '#64748b', marginBottom: 2 }}>Gap (this month)</div>
+                  <div style={{ color: '#dc2626', fontWeight: 800, fontSize: 13 }}>
+                    ▼ {(OWNER_MONTHLY[todayIdx] - (actualMonthly[todayIdx] || 0)).toLocaleString()} m
+                  </div>
+                </div>
               )}
-            </LineChart>
-          </ResponsiveContainer>
-          <div className="mpl-legend">
-            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Plan</span>
-            {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
-            <span><i className="mpl-sw" style={{ background: '#b45309' }} />PR</span>
-            <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />GTG#11 Sync</span>
+            </div>
           </div>
         </div>
 
