@@ -141,11 +141,11 @@ function SCurveTooltip({ active, payload, label: lb }) {
       {gap != null && gap > 0 && (
         <div style={{ borderTop: '1px solid #eef0f6', marginTop: 6, paddingTop: 6 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#64748d' }}>지연</span>
+            <span style={{ color: '#64748d' }}>Delay</span>
             <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#ef4444' }}>▼ {gap.toFixed(1)}%p</span>
           </div>
           <div style={{ color: '#94a3b8', fontSize: 11.5, marginTop: 3 }}>
-            ≈ {Math.round(gap / 100 * TOTAL_M).toLocaleString()} m 미달
+            ≈ {Math.round(gap / 100 * TOTAL_M).toLocaleString()} m behind
           </div>
         </div>
       )}
@@ -384,39 +384,39 @@ export default function MasterPlan({ session }) {
 
       <div className="mpl-callout">
         ⚠️ <div>
-          <b>Power Receiving 케이블 완료 기한 2026-08-01</b> — Customer Required 기준. GTG #11 Synchronization 케이블
-          완료 기한은 <b>2026-09-23</b>, 이벤트 일자 <b>2026-12-22</b>.
+          <b>Power Receiving cable due 2026-08-01</b> — Customer Required basis. GTG #11 Synchronization cable
+          due <b>2026-09-23</b>, event date <b>2026-12-22</b>.
           {hasActual && gapM != null && gapM > 0 && (
-            <> 현재 실적 기준 계획 대비 <b style={{ color: '#ef4444' }}>{gapM.toLocaleString()} m ({gapPct?.toFixed(1)}%p) 지연</b> 상태.</>
+            <> Current actuals are <b style={{ color: '#ef4444' }}>{gapM.toLocaleString()} m ({gapPct?.toFixed(1)}%p) behind plan</b>.</>
           )}
         </div>
       </div>
 
       <div className="mpl-kpi-row">
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">⚡ Power Receiving 케이블 기한</div>
+          <div className="mpl-kpi-label">⚡ Power Receiving Cable Due</div>
           <div className="mpl-kpi-value" style={{ color: '#b45309' }}>2026-08-01</div>
-          <div className="mpl-kpi-sub">Customer Required — PR 이벤트 2026-10-30</div>
+          <div className="mpl-kpi-sub">Customer Required — PR Event 2026-10-30</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">GTG #11 Sync 케이블 기한</div>
+          <div className="mpl-kpi-label">GTG #11 Sync Cable Due</div>
           <div className="mpl-kpi-value" style={{ color: '#7c3aed' }}>2026-09-23</div>
-          <div className="mpl-kpi-sub">Customer Required — 이벤트 2026-12-22</div>
+          <div className="mpl-kpi-sub">Customer Required — Event 2026-12-22</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">계획 누적 (이번달)</div>
+          <div className="mpl-kpi-label">Plan Cumulative (This Month)</div>
           <div className="mpl-kpi-value" style={{ color: C_OWNER }}>
             {planAtToday != null ? `${planAtToday}%` : '—'}
           </div>
-          <div className="mpl-kpi-sub">Customer Required 기준</div>
+          <div className="mpl-kpi-sub">Customer Required basis</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">실적 지연</div>
+          <div className="mpl-kpi-label">Schedule Delay</div>
           <div className="mpl-kpi-value" style={{ color: gapM != null && gapM > 0 ? '#ef4444' : '#22c55e' }}>
-            {gapM != null ? (gapM > 0 ? `▼ ${gapM.toLocaleString()} m` : '계획 충족') : '—'}
+            {gapM != null ? (gapM > 0 ? `▼ ${gapM.toLocaleString()} m` : 'On Track') : '—'}
           </div>
           <div className="mpl-kpi-sub">
-            {gapPct != null ? `${gapPct.toFixed(1)}%p 미달` : '실적 데이터 집계 중'}
+            {gapPct != null ? `${gapPct.toFixed(1)}%p behind plan` : 'Awaiting actual data'}
           </div>
         </div>
       </div>
@@ -449,7 +449,7 @@ export default function MasterPlan({ session }) {
           </table>
         </div>
         <p className="mpl-note">
-          <b>Cable Due</b> = 해당 마일스톤 케이블 작업 완료 기한 (이벤트 90일 전). Source: completion schedule file · 2026-07-04.
+          <b>Cable Due</b> = cable completion deadline for each milestone (90 days before event). Source: completion schedule file · 2026-07-04.
         </p>
       </div>
 
