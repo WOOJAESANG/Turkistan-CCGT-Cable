@@ -285,9 +285,10 @@ export default function CableActuals({ session }) {
       })
       .map(([cno, e]) => ({ cno, ...e, cat: masterMap.get(cno)?.g || '' }))
       .sort((a, b) => {
-        const da = a.pullingDate || a.termDateFrom || a.termDateTo || ''
-        const db = b.pullingDate || b.termDateFrom || b.termDateTo || ''
-        return db.localeCompare(da) || a.cno.localeCompare(b.cno)
+        const da = a.pullingDate || ''
+        const db = b.pullingDate || ''
+        if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
+        return a.cno.localeCompare(b.cno)
       })
   }, [fieldData, search, masterMap, dateFrom, dateTo])
 
