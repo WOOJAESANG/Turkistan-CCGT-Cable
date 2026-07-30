@@ -23,10 +23,9 @@ const MONTHS = ['2026-07','2026-08','2026-09','2026-10','2026-11','2026-12','202
 const OWNER_MONTHLY = [56380,210585,397950,429915,233757,72846,3795,0,0,0,0,0,0,0,0,0,0,0]
 const OWNER_CUM = [4.0,19.0,47.3,77.9,94.5,99.7,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0]
 const TOTAL_M = 1405228
-// Even distribution of total scope across all 18 months (bar chart plan baseline)
-const BAR_TARGET_BASE = Math.floor(TOTAL_M / MONTHS.length)
-const BAR_TARGET_REM = TOTAL_M - BAR_TARGET_BASE * MONTHS.length
-const BAR_MONTHLY = MONTHS.map((_, i) => BAR_TARGET_BASE + (i < BAR_TARGET_REM ? 1 : 0))
+// Bell-curve distribution peaking at Oct 2026 (PR deadline), tapering to Dec 2027
+// Weights: [0.030,0.060,0.110,0.150,0.130,0.100,0.080,0.070,0.060,0.050,0.040,0.030,0.025,0.020,0.015,0.010,0.010,0.010] × 1,405,228m
+const BAR_MONTHLY = [42157,84314,154575,210784,182680,140523,112418,98366,84314,70261,56209,42157,35131,28105,21078,14052,14052,14052]
 
 const label = m => { const [y,mm] = m.split('-'); return `'${y.slice(2)}.${mm}` }
 
