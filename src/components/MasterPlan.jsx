@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
-  ComposedChart, Bar, Area,
+  ComposedChart, Bar, Area, LabelList,
 } from 'recharts'
 import { loadMilestoneTargets, saveMilestoneTarget, resetMilestoneTarget, loadFieldData } from '../lib/dataStore'
 
@@ -512,9 +512,15 @@ export default function MasterPlan({ session }) {
                 label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
               <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
                 label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
-              <Bar dataKey="Customer Required" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
+              <Bar dataKey="Customer Required" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
+                <LabelList dataKey="Customer Required" position="top" fontSize={9} fill="#64748b"
+                  formatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+              </Bar>
               {hasActual && (
-                <Bar dataKey="Actual" fill={C_ACTUAL} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
+                <Bar dataKey="Actual" fill={C_ACTUAL} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
+                  <LabelList dataKey="Actual" position="top" fontSize={9} fill={C_ACTUAL} fontWeight={700}
+                    formatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                </Bar>
               )}
             </ComposedChart>
           </ResponsiveContainer>
