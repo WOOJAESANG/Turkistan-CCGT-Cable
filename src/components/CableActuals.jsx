@@ -179,6 +179,7 @@ export default function CableActuals({ session }) {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [vendorFilter, setVendorFilter] = useState('')
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
   const importRef = useRef(null)
@@ -283,6 +284,7 @@ export default function CableActuals({ session }) {
         if (!dates.length) return false
         return dates.some(d => (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo))
       })
+      .filter(([, e]) => !vendorFilter || (e.vendor || '') === vendorFilter)
       .map(([cno, e]) => ({ cno, ...e, cat: masterMap.get(cno)?.g || '' }))
       .sort((a, b) => {
         const da = a.pullingDate || ''
@@ -290,7 +292,13 @@ export default function CableActuals({ session }) {
         if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
         return a.cno.localeCompare(b.cno)
       })
-  }, [fieldData, search, masterMap, dateFrom, dateTo])
+  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter])
+
+  const vendorList = useMemo(() => {
+    const set = new Set()
+    Object.values(fieldData).forEach(e => { if (hasActuals(e) && e.vendor) set.add(e.vendor) })
+    return [...set].sort()
+  }, [fieldData])
 
   const totalPulled = useMemo(() => records.reduce((s, r) => {
     const n = parseFloat(String(r.pulledLength ?? '').replace(/[^0-9.]/g, ''))
@@ -480,6 +488,23 @@ export default function CableActuals({ session }) {
               <button className="ca-dr-clear" title="Clear date filter" onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
             )}
           </div>
+          {vendorList.length > 0 && (
+            <div className="ca-date-range" style={{ gap: 4 }}>
+              <span className="ca-dr-label">Vendor</span>
+              <select
+                className={`ca-dr-input${vendorFilter ? ' active' : ''}`}
+                style={{ minWidth: 120, cursor: 'pointer' }}
+                value={vendorFilter}
+                onChange={e => setVendorFilter(e.target.value)}
+              >
+                <option value="">All</option>
+                {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              {vendorFilter && (
+                <button className="ca-dr-clear" title="Clear vendor filter" onClick={() => setVendorFilter('')}>✕</button>
+              )}
+            </div>
+          )}
           <div className="cm-export-inline">
             <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>
               <span className="cm-export-ico xls">XLS</span> Excel
