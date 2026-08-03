@@ -81,13 +81,23 @@ export async function fetchAllFieldData() {
 
 async function _migrateVendor0713(rows) {
   if (!rows) return
-  const targets = rows.filter(r => r.pulling_date === '2026-07-13' && !r.vendor)
-  for (const r of targets) {
-    await supabase.from('cable_actuals').update({ vendor: 'Shymkent Automatika', updated_by: 'migration' }).eq('cable_no', r.cable_no)
-    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = 'Shymkent Automatika'
+  let changed = 0
+  // Step 1: revert non-AIS entries that were wrongly tagged by prior migration
+  const wrongly = rows.filter(r => r.updated_by === 'migration' && r.used_drum && !/^AIS/i.test(r.used_drum))
+  for (const r of wrongly) {
+    await supabase.from('cable_actuals').update({ vendor: null, updated_by: null }).eq('cable_no', r.cable_no)
+    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = ''
+    changed++
   }
-  if (targets.length) {
-    console.log('[migration] Fixed vendor for', targets.map(r => r.cable_no))
+  // Step 2: set vendor for AIS entries on 7/13 that still have no vendor
+  const ais = rows.filter(r => r.pulling_date === '2026-07-13' && !r.vendor && r.used_drum && /^AIS/i.test(r.used_drum))
+  for (const r of ais) {
+    await supabase.from('cable_actuals').update({ vendor: 'Shymkent Automatika', updated_by: 'migration-v2' }).eq('cable_no', r.cable_no)
+    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = 'Shymkent Automatika'
+    changed++
+  }
+  if (changed) {
+    console.log('[migration-v2] Reverted', wrongly.length, 'non-AIS; fixed', ais.length, 'AIS entries')
     window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'migration' } }))
   }
 }
