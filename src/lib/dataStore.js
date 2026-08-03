@@ -76,6 +76,20 @@ export async function fetchAllFieldData() {
   cableCache = next
   cableLoaded = true
   window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'fetch' } }))
+  _migrateVendor0713(data)
+}
+
+async function _migrateVendor0713(rows) {
+  if (!rows) return
+  const targets = rows.filter(r => r.pulling_date === '2026-07-13' && !r.vendor)
+  for (const r of targets) {
+    await supabase.from('cable_actuals').update({ vendor: 'Shymkent Automatika', updated_by: 'migration' }).eq('cable_no', r.cable_no)
+    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = 'Shymkent Automatika'
+  }
+  if (targets.length) {
+    console.log('[migration] Fixed vendor for', targets.map(r => r.cable_no))
+    window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'migration' } }))
+  }
 }
 
 export async function updateFieldEntry(cno, patch) {
