@@ -25,7 +25,7 @@ let cableLoaded = false
 
 function rowToEntry(r) {
   return {
-    vendor: r.vendor || '',
+    vendor: (r.vendor || '').trim(),
     pulledLength: r.pulled_length || '',
     usedDrum: r.used_drum || '',
     pulledBy: r.pulled_by || '',
@@ -42,8 +42,8 @@ function rowToEntry(r) {
 }
 
 function entryToRow(cableNo, e) {
-  const dn = v => (v && String(v).trim() ? v : null)
-  const tn = v => (v && String(v).trim() ? v : null)
+  const dn = v => { const s = v != null ? String(v).trim() : ''; return s || null }
+  const tn = v => { const s = v != null ? String(v).trim() : ''; return s || null }
   return {
     cable_no: cableNo,
     vendor: tn(e.vendor),
@@ -81,14 +81,21 @@ export async function fetchAllFieldData() {
 
 async function _fixVendorOnce(rows) {
   if (!rows) return
+  let changed = 0
   const bad = rows.filter(r => r.updated_by === 'migration' || r.updated_by === 'migration-v2')
-  if (!bad.length) return
   for (const r of bad) {
     await supabase.from('cable_actuals').update({ vendor: null, updated_by: null }).eq('cable_no', r.cable_no)
-    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = ''
+    changed++
   }
-  console.log('[fix] Reverted', bad.length, 'migration entries:', bad.map(r => r.cable_no))
-  await fetchAllFieldData_inner()
+  const dirty = rows.filter(r => r.vendor && r.vendor !== r.vendor.trim())
+  for (const r of dirty) {
+    await supabase.from('cable_actuals').update({ vendor: r.vendor.trim() }).eq('cable_no', r.cable_no)
+    changed++
+  }
+  if (changed) {
+    console.log('[fix] Reverted', bad.length, 'migration entries, trimmed', dirty.length, 'vendor names')
+    await fetchAllFieldData_inner()
+  }
 }
 
 async function fetchAllFieldData_inner() {
