@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
+import { ambiguousDrumTag } from '../lib/drumTag'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -306,6 +307,11 @@ export default function CableActuals({ session }) {
     return s + (isNaN(n) ? 0 : n)
   }, 0), [records])
 
+  // Short drum tag that omits the packing number — resolves to one drum by guess only.
+  const drumWarn = useMemo(
+    () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
+    [form.usedDrum, form.pullingDate])
+
   const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Pulled By',
     'Pulling Date', 'Term Date (From)', 'Terminated By (From)',
     'Term Date (To)', 'Terminated By (To)', 'Line Check', 'ACT No.']
@@ -405,6 +411,19 @@ export default function CableActuals({ session }) {
                   <label>Used Drum <span className="ca-req">*</span></label>
                   <DrumInput value={form.usedDrum} onChange={v => setField('usedDrum', v)}
                     master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')} />
+                  {drumWarn && (
+                    <div className="ca-ctx ca-ctx-free ca-drum-warn">
+                      ⚠ Packing no. missing — this will be counted as <strong>{drumWarn.assumed}</strong>.
+                      PoCable drum {drumWarn.no} exists in both packings. 패킹번호 누락.
+                      <div className="ca-drum-warn-fix">
+                        Select the drum you actually used:
+                        {drumWarn.candidates.map(c => (
+                          <button type="button" key={c} className="ca-drum-warn-pick"
+                            onClick={() => setField('usedDrum', c)}>{c}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="ca-field">
                   <label>Pulled By <span className="ca-req">*</span></label>
