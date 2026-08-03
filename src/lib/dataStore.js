@@ -76,35 +76,6 @@ export async function fetchAllFieldData() {
   cableCache = next
   cableLoaded = true
   window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'fetch' } }))
-  _fixVendorOnce(data)
-}
-
-async function _fixVendorOnce(rows) {
-  if (!rows) return
-  let changed = 0
-  const bad = rows.filter(r => r.updated_by === 'migration' || r.updated_by === 'migration-v2')
-  for (const r of bad) {
-    await supabase.from('cable_actuals').update({ vendor: null, updated_by: null }).eq('cable_no', r.cable_no)
-    changed++
-  }
-  const dirty = rows.filter(r => r.vendor && r.vendor !== r.vendor.trim())
-  for (const r of dirty) {
-    await supabase.from('cable_actuals').update({ vendor: r.vendor.trim() }).eq('cable_no', r.cable_no)
-    changed++
-  }
-  if (changed) {
-    console.log('[fix] Reverted', bad.length, 'migration entries, trimmed', dirty.length, 'vendor names')
-    await fetchAllFieldData_inner()
-  }
-}
-
-async function fetchAllFieldData_inner() {
-  const { data, error } = await supabase.from('cable_actuals').select('*')
-  if (error) return
-  const next = {}
-  for (const r of data || []) next[r.cable_no] = rowToEntry(r)
-  cableCache = next
-  window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'fix' } }))
 }
 
 export async function updateFieldEntry(cno, patch) {
