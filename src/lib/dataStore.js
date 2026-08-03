@@ -76,6 +76,21 @@ export async function fetchAllFieldData() {
   cableCache = next
   cableLoaded = true
   window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'fetch' } }))
+  _fixVendorOnce(data)
+}
+
+async function _fixVendorOnce(rows) {
+  if (!rows || sessionStorage.getItem('_vendorFixDone')) return
+  sessionStorage.setItem('_vendorFixDone', '1')
+  const bad = rows.filter(r => r.updated_by === 'migration' && !(r.used_drum && /^AIS/i.test(r.used_drum)))
+  if (!bad.length) return
+  for (const r of bad) {
+    await supabase.from('cable_actuals').update({ vendor: null, updated_by: null }).eq('cable_no', r.cable_no)
+    if (cableCache[r.cable_no]) cableCache[r.cable_no].vendor = ''
+  }
+  console.log('[fix] Reverted', bad.length, 'non-AIS vendor entries:', bad.map(r => r.cable_no))
+  cableCache = { ...cableCache }
+  window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'fix' } }))
 }
 
 export async function updateFieldEntry(cno, patch) {
