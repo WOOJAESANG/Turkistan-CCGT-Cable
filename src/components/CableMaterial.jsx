@@ -241,8 +241,11 @@ function ExportMenu({ rows }) {
 // ── Drum Usage: per-drum consumption from Work Log vs packing-list capacity ──
 
 // Legacy AIS tags (before packing-prefixed rename) → canonical prefixed tags.
-// Unprefixed PoCable maps to 0481: 0570 is not yet on site, so any existing
-// Work Log entry can only have used a 0481 drum.
+// Unprefixed PoCable maps to 0481. This was unambiguous while 0481 was the only
+// PoCable packing on site; 0570 arrived 2026-07-20, so an unprefixed PoCable tag
+// pulled on/after that date could be either packing. Entries written with the full
+// tag (AIS-PoCable-0570-008) skip this map and resolve correctly — only the short
+// form is guessed. Fix short PoCable tags at the source rather than widening this map.
 const LEGACY_AIS_PK = { pocable: '0481', cocable: '0571', cc: '0585', cmcable: '0587' }
 function canonDrum(tag) {
   const stripped = tag.replace(/^PGU-DE-\d+-/i, '')
