@@ -180,6 +180,7 @@ export default function CableActuals({ session }) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [vendorFilter, setVendorFilter] = useState('')
+  const [visibleCount, setVisibleCount] = useState(50)
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
   const importRef = useRef(null)
@@ -476,7 +477,7 @@ export default function CableActuals({ session }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" placeholder="Search recorded Cable Tag" value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search recorded Cable Tag" value={search} onChange={e => { setSearch(e.target.value); setVisibleCount(50) }} />
             {search && <button className="cs-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
           <div className="ca-date-range">
@@ -495,7 +496,7 @@ export default function CableActuals({ session }) {
                 className={`ca-dr-input${vendorFilter ? ' active' : ''}`}
                 style={{ minWidth: 120, cursor: 'pointer' }}
                 value={vendorFilter}
-                onChange={e => setVendorFilter(e.target.value)}
+                onChange={e => { setVendorFilter(e.target.value); setVisibleCount(50) }}
               >
                 <option value="">All</option>
                 {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
@@ -545,7 +546,7 @@ export default function CableActuals({ session }) {
               </tr>
             </thead>
             <tbody>
-              {records.map(r => {
+              {records.slice(0, visibleCount).map(r => {
                 const cc = CATEGORY_COLORS[r.cat] || { bg: '#f3f4f6', text: '#374151' }
                 const lc = r.lc || 'Pending'
                 const lcC = STATUS_COLORS[lc] || STATUS_COLORS['Pending']
@@ -574,6 +575,12 @@ export default function CableActuals({ session }) {
             </tbody>
           </table>
           {records.length === 0 && <div className="cs-empty">No records yet. Enter a Cable Tag above and save.</div>}
+          {records.length > visibleCount && (
+            <button className="ca-btn ca-btn-more" onClick={() => setVisibleCount(v => v + 50)}
+              style={{ display: 'block', margin: '12px auto', padding: '6px 24px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--ink-secondary)', fontSize: 13 }}>
+              Show more ({visibleCount} / {records.length})
+            </button>
+          )}
         </div>
 
         <p className="cm-note">
