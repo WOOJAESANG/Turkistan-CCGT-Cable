@@ -245,8 +245,9 @@ function ExportMenu({ rows }) {
 // Work Log entry can only have used a 0481 drum.
 const LEGACY_AIS_PK = { pocable: '0481', cocable: '0571', cc: '0585', cmcable: '0587' }
 function canonDrum(tag) {
-  const m = tag.match(/^AIS-(PoCable|CoCable|CC|CMcable)-(\d{1,3})$/i)
-  if (!m) return tag
+  const stripped = tag.replace(/^PGU-DE-\d+-/i, '')
+  const m = stripped.match(/^AIS-(PoCable|CoCable|CC|CMcable)-(\d{1,3})$/i)
+  if (!m) return stripped
   const pk = LEGACY_AIS_PK[m[1].toLowerCase()]
   return `AIS-${m[1]}-${pk}-${m[2].padStart(3, '0')}`
 }
