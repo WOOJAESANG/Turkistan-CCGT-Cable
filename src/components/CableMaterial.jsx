@@ -63,9 +63,11 @@ const STATUS_COLORS = {
   'On-Site':     { bg: '#d1fae5', text: '#065f46' },
   'Cargo Ready': { bg: '#fef3c7', text: '#92400e' },
   'Sailing':     { bg: '#e0f2fe', text: '#0369a1' },
+  // Scope is designed but not yet packed/shipped — packing list follows later.
+  'Later':       { bg: '#f3f4f6', text: '#6b7280' },
 }
 const CATEGORIES = ['All', 'Power Cable', 'Control Cable', 'I&C Cable', 'PKG Cable']
-const DELIVERY = ['All', 'On-Site', 'Cargo Ready', 'Sailing']
+const DELIVERY = ['All', 'On-Site', 'Cargo Ready', 'Sailing', 'Later']
 
 // Per-column header filters (Excel-style filter row under the column titles)
 const EMPTY_CMF = {

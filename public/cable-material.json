@@ -1655,5 +1655,52 @@
       "PE-L1-5C150/95-03"
     ],
     "drumCount": 49
+  },
+  {
+    "no": 29,
+    "category": "PKG Cable",
+    "cableType": "FMS",
+    "title": "FMS | CONTROL CABLE SCHEDULE (F.O)",
+    "inCharge": "",
+    "docNo": "",
+    "docUrl": "/files/docs/fms.xlsx",
+    "docName": "TURKISTAN_CONTROL CABLE SCHEDULE_FMS PKG_260729.xlsx",
+    "packingList": "PGU-DE-0581",
+    "packingUrl": "/files/packing/PGU-DE-0581.xlsx",
+    "packingName": "PGU-DE-0581 Packing List.xlsx",
+    "packingDetail": "PGU-DE-0581-PRP-FC-001 ~ 006",
+    "drumNo": "PRP-FC-001 ~ 006",
+    "status": "On-Site",
+    "eta": "",
+    "remark": "F.O cable 6 drums / 16,100 m. Covers 122 of 150 FMS cables (WONLEE scope).",
+    "drumList": [
+      "PRP-FC-001",
+      "PRP-FC-002",
+      "PRP-FC-003",
+      "PRP-FC-004",
+      "PRP-FC-005",
+      "PRP-FC-006"
+    ],
+    "drumCount": 6
+  },
+  {
+    "no": 30,
+    "category": "PKG Cable",
+    "cableType": "FMS",
+    "title": "FMS | CONTROL CABLE SCHEDULE (MM 16C / CAT.6)",
+    "inCharge": "",
+    "docNo": "",
+    "docUrl": "/files/docs/fms.xlsx",
+    "docName": "TURKISTAN_CONTROL CABLE SCHEDULE_FMS PKG_260729.xlsx",
+    "packingList": "",
+    "packingUrl": "",
+    "packingName": "",
+    "packingDetail": "",
+    "drumNo": "",
+    "status": "Later",
+    "eta": "",
+    "remark": "Not yet delivered — MM 16C and CAT.6 are not in PGU-DE-0581. 28 cables / 1,240 m. Packing list to be added on arrival.",
+    "drumList": [],
+    "drumCount": 0
   }
 ]
