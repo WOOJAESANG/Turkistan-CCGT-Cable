@@ -13,8 +13,17 @@ const EXPORT_COLS = [
 // for F.O-spec rows (drum is assigned to the copper spec only).
 const isFO = c => (c.s || '').startsWith('F.O')
 const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
-// F.O I&C cables have no individual drum but reference packing list PGU-DE-0311
-const pkgFor = (c, drumMap, pkgMap) => (isFO(c) && c.g === 'I&C' ? 'PGU-DE-0311' : (pkgMap[drumFor(c, drumMap)] || ''))
+
+// Cables shipped on their own reels get no design-time drum assignment — the drum is
+// recorded in the Work Log after pulling. They resolve to their packing list directly
+// instead of via the drum map. FMS specs not in PGU-DE-0581 have not been packed yet.
+const FMS_UNPACKED = new Set(['MM 16C', 'CAT.6'])
+const REEL_PACKING = [
+  { pk: 'PGU-DE-0311', match: c => isFO(c) && c.g === 'I&C' },
+  { pk: 'PGU-DE-0581', match: c => c.sys === 'FMS' && !FMS_UNPACKED.has(c.s) },
+]
+const pkgFor = (c, drumMap, pkgMap) =>
+  REEL_PACKING.find(r => r.match(c))?.pk ?? (pkgMap[drumFor(c, drumMap)] || '')
 
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
@@ -144,6 +153,7 @@ const FROM_AREAS = [
   { code: '4',   label: '4 — STG Generator Step-Up (GSU) Transformer' },
   { code: '5',   label: '5 — GTG Generator Step-Up (GSU) Transformer' },
   { code: '6',   label: '6 — Unit Auxiliary Transformer' },
+  { code: '9',   label: '9 — BSDG (Black Start Diesel Generator)' },
   { code: '10',  label: '10-11 — Water Treatment Plant' },
   { code: '16',  label: '16 — CEPB (Condensate Extraction Pump Bldg)' },
   { code: '19',  label: '19 — Distribution Point 10kV' },
@@ -206,9 +216,9 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
 }
 
-function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', aisNAreaMap = {}) {
+function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
-  if (cableNum && aisNAreaMap[cableNum]) return aisNAreaMap[cableNum].from
+  if (cableNum && nAreaMap[cableNum]) return nAreaMap[cableNum].from
   if (tag === 'LATER' || !tag) {
     if (/GTG#(11|12|21|22)\b/.test(sys)) return /GTG#2[12]\b/.test(sys) ? '1.1.2' : '1.1.1'
     if (/^(HRSG|STG|DCS|COMMON DCS)/.test(sys)) return '1.1.1'
@@ -255,10 +265,10 @@ const HTP_TAG_AREA = {
   'B2-HTP-16601': '2.2',  // ACC Block 2
 }
 
-function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '', fromTag = '', aisNAreaMap = {}) {
+function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum = '', fromTag = '', nAreaMap = {}) {
   if (!sys) return ''
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
-  if (cableNum && aisNAreaMap[cableNum]) return aisNAreaMap[cableNum].to
+  if (cableNum && nAreaMap[cableNum]) return nAreaMap[cableNum].to
   // Cable-number-level override (e.g. 10kV SWGR feeder cables with t='-')
   if (cableNum && cableNumAreaMap[cableNum]) return cableNumAreaMap[cableNum]
   // Control/GTG cables where FROM and TO are both literally 'HOLD' in the schedule (user-confirmed: TO = LEB Block 1)
@@ -322,7 +332,7 @@ export default function CableSchedule() {
   const [elecAreaMap, setElecAreaMap] = useState({})
   const [cableNumAreaMap, setCableNumAreaMap] = useState({})
   const [elecFromAreaMap, setElecFromAreaMap] = useState({})
-  const [aisNAreaMap, setAisNAreaMap] = useState({})
+  const [nAreaMap, setNAreaMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
@@ -349,10 +359,12 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setElecFromAreaMap)
       .catch(() => setElecFromAreaMap({}))
-    fetch(dataUrl('/cable-ais-n-area-map.json'))
-      .then(r => r.json())
-      .then(setAisNAreaMap)
-      .catch(() => setAisNAreaMap({}))
+    // Both files key cable number → {from, to}: AIS from the interconnection diagrams,
+    // FMS from the Location columns of the FMS PKG schedule. Same lookup, one map.
+    Promise.all(['/cable-ais-n-area-map.json', '/cable-fms-area-map.json']
+      .map(u => fetch(dataUrl(u)).then(r => r.json()).catch(() => ({}))))
+      .then(maps => setNAreaMap(Object.assign({}, ...maps)))
+      .catch(() => setNAreaMap({}))
   }, [])
 
   useEffect(() => {
@@ -370,8 +382,8 @@ export default function CableSchedule() {
       const fd = fieldData[c.n] || {}
       // FROM / TO area filter
       if (colF.fromArea || colF.toArea) {
-        if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, aisNAreaMap) !== colF.fromArea) return false
-        if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap) !== colF.toArea) return false
+        if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap) !== colF.fromArea) return false
+        if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap) !== colF.toArea) return false
       }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
       if (colF.pri !== 'All' && c.pri !== colF.pri) return false
@@ -406,7 +418,7 @@ export default function CableSchedule() {
       }
       return true
     })
-  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap, aisNAreaMap])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap, nAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
@@ -420,11 +432,11 @@ export default function CableSchedule() {
       let fa, ta
       if (s === 'AIS-OCP') { fa = '38'; ta = '38' }
       else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
-        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, aisNAreaMap)
-        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap)
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap)
+        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap)
       } else {
-        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, aisNAreaMap)
-        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, aisNAreaMap)
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap)
+        ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap)
       }
       if (fa) fromSet.add(fa)
       if (ta) toSet.add(ta)
@@ -432,7 +444,7 @@ export default function CableSchedule() {
       if (ta) { if (!pairTo[ta]) pairTo[ta] = new Set(); if (fa) pairTo[ta].add(fa) }
     }
     return { fromSet, toSet, pairFrom, pairTo }
-  }, [allData, elecAreaMap, cableNumAreaMap, elecFromAreaMap, aisNAreaMap])
+  }, [allData, elecAreaMap, cableNumAreaMap, elecFromAreaMap, nAreaMap])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -677,7 +689,9 @@ export default function CableSchedule() {
           <strong>Drum No.</strong> is the assigned drum from the master schedule — paste it into <strong>Cable Material</strong>'s
           search to find which packing list it ships in. AIS cables use their real interconnection-diagram numbers (e.g. D01_119)
           with drums from the 2026.06.30 revision. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
-          <strong> Packing List</strong> number instead. DCS and FFC are not yet covered (multiple packing lists, no per-cable key).
+          <strong> Packing List</strong> number instead. F.O cables ship on their own reels and carry no design-time drum — I&amp;C F.O
+          shows PGU-DE-0311 and FMS shows PGU-DE-0581, with the drum recorded in Work Log after pulling. FMS MM 16C and CAT.6 are
+          not yet delivered, so they show no packing list. FFC is not yet covered (multiple packing lists, no per-cable key).
           <strong> Used Drum</strong> is the actual drum entered in Work Log after pulling — compare the two to catch cases where a
           different drum was used than planned.
         </p>
