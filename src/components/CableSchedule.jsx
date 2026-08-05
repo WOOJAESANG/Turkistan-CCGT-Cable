@@ -14,16 +14,11 @@ const EXPORT_COLS = [
 const isFO = c => (c.s || '').startsWith('F.O')
 const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
 
-// Cables shipped on their own reels get no design-time drum assignment — the drum is
-// recorded in the Work Log after pulling. They resolve to their packing list directly
-// instead of via the drum map. FMS specs not in PGU-DE-0581 have not been packed yet.
-const FMS_UNPACKED = new Set(['MM 16C', 'CAT.6'])
-const REEL_PACKING = [
-  { pk: 'PGU-DE-0311', match: c => isFO(c) && c.g === 'I&C' },
-  { pk: 'PGU-DE-0581', match: c => c.sys === 'FMS' && !FMS_UNPACKED.has(c.s) },
-]
+// I&C F.O cables are never allocated a drum at design time, so they name their packing
+// list directly. Everything else resolves through the drum it was allocated — a blank
+// packing therefore means no material is allocated to that cable yet.
 const pkgFor = (c, drumMap, pkgMap) =>
-  REEL_PACKING.find(r => r.match(c))?.pk ?? (pkgMap[drumFor(c, drumMap)] || '')
+  (isFO(c) && c.g === 'I&C' ? 'PGU-DE-0311' : (pkgMap[drumFor(c, drumMap)] || ''))
 
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
@@ -689,9 +684,9 @@ export default function CableSchedule() {
           <strong>Drum No.</strong> is the assigned drum from the master schedule — paste it into <strong>Cable Material</strong>'s
           search to find which packing list it ships in. AIS cables use their real interconnection-diagram numbers (e.g. D01_119)
           with drums from the 2026.06.30 revision. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
-          <strong> Packing List</strong> number instead. F.O cables ship on their own reels and carry no design-time drum — I&amp;C F.O
-          shows PGU-DE-0311 and FMS shows PGU-DE-0581, with the drum recorded in Work Log after pulling. FMS MM 16C and CAT.6 are
-          not yet delivered, so they show no packing list. FFC is not yet covered (multiple packing lists, no per-cable key).
+          <strong> Packing List</strong> number instead. I&amp;C F.O cables get no design-time drum and name PGU-DE-0311 directly.
+          FMS reels are allocated by spec from PGU-DE-0581; the 42 cables with no drum are either not yet delivered (MM 16C, CAT.6)
+          or short of stock (MM 8C), so they show no packing list. FFC is not yet covered (multiple packing lists, no per-cable key).
           <strong> Used Drum</strong> is the actual drum entered in Work Log after pulling — compare the two to catch cases where a
           different drum was used than planned.
         </p>
