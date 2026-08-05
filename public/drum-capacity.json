@@ -595,6 +595,18 @@
     "m": 500,
     "pk": "PGU-DE-587"
   },
+  "AIS-CMcable-1017-001": {
+    "m": 1510,
+    "pk": "PGU-DE-1017"
+  },
+  "AIS-CMcable-1017-002": {
+    "m": 1510,
+    "pk": "PGU-DE-1017"
+  },
+  "AIS-CMcable-1017-003": {
+    "m": 980,
+    "pk": "PGU-DE-1017"
+  },
   "AIS-CoCable-0571-001": {
     "m": 1000,
     "pk": "PGU-DE-571"
