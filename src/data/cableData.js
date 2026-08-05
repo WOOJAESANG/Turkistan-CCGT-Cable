@@ -1,5 +1,8 @@
 import { CAT_ID_BY_LABEL } from './constants'
 
+// Fallback figures, shown only in the moment before cable-data.json loads. Once it
+// arrives, masterLengths() derives length, line count and termination points from the
+// per-cable rows, so these values do not need updating when cables are added.
 export const cableCategories = [
   {
     id: 'power',
@@ -50,6 +53,8 @@ export const cableCategories = [
 // SC: Power69,380 + Control46,480 + I&C115,867 + FGSS23,848 + HRSG_B12,924 = 258,499
 // ETC: Power208,310 + Control125,300 + I&C275,804 + STG47,040 + HRSG잔여39,528 + FFC621 = 696,602
 // Total: 450,127 + 258,499 + 696,602 = 1,405,228
+// Fallback figures — see the note on cableCategories. Live values come from
+// masterLengths().byPri / .linesByPri.
 export const priorityData = [
   {
     name: 'PR (수전)',
@@ -104,31 +109,42 @@ export function rollupActuals(fieldData, master) {
   return out;
 }
 
-// Derive per-category and per-priority designed lengths from the per-cable
-// master (cable-data.json) so the Dashboard always matches Cable Schedule sums.
-// Line/termination counts stay on the report values (they use the Line × 2 rule).
+// Derive designed length AND line count, per category and per priority, from the
+// per-cable master (cable-data.json) so the Dashboard always matches Cable Schedule
+// sums. Termination points follow the 1 line = 2 points rule.
 export function masterLengths(master) {
   if (!master || !master.length) return null;
   const byCat = { power: 0, control: 0, iac: 0, pkg: 0 };
   const byPri = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  const linesByCat = { power: 0, control: 0, iac: 0, pkg: 0 };
+  const linesByPri = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
   for (const c of master) {
     const id = CAT_ID_BY_LABEL[c.g];
-    if (id) byCat[id] += c.l || 0;
+    if (id) { byCat[id] += c.l || 0; linesByCat[id] += 1; }
     const bucket = PRIORITY_MAP[c.pri];
-    if (bucket) byPri[bucket] += c.l || 0;
+    if (bucket) { byPri[bucket] += c.l || 0; linesByPri[bucket] += 1; }
   }
   for (const k in byCat) byCat[k] = Math.round(byCat[k]);
   for (const k in byPri) byPri[k] = Math.round(byPri[k]);
-  return { byCat, byPri };
+  return { byCat, byPri, linesByCat, linesByPri };
 }
 
+const TERM_POINTS_PER_LINE = 2; // one cable = two ends = two termination points
+
 function withActuals(actuals, lengths) {
-  return cableCategories.map((c) => ({
-    ...c,
-    designedLength: lengths?.byCat?.[c.id] ?? c.designedLength,
-    pulledLength: Math.round(actuals?.[c.id]?.pulled || 0),
-    terminatedCount: actuals?.[c.id]?.term || 0,
-  }));
+  return cableCategories.map((c) => {
+    const lineCount = lengths?.linesByCat?.[c.id] ?? c.lineCount;
+    return {
+      ...c,
+      designedLength: lengths?.byCat?.[c.id] ?? c.designedLength,
+      lineCount,
+      designedTermination: lengths?.linesByCat
+        ? lineCount * TERM_POINTS_PER_LINE
+        : c.designedTermination,
+      pulledLength: Math.round(actuals?.[c.id]?.pulled || 0),
+      terminatedCount: actuals?.[c.id]?.term || 0,
+    };
+  });
 }
 
 export function getTotals(actuals, lengths) {
@@ -173,7 +189,7 @@ export function getPriorityChartData(lengths) {
   return priorityData.map((p) => ({
     name: p.name,
     value: lengths?.byPri?.[p.name] ?? p.value,
-    lineCount: p.lineCount,
+    lineCount: lengths?.linesByPri?.[p.name] ?? p.lineCount,
     color: p.color,
   }));
 }
