@@ -14,11 +14,13 @@ const EXPORT_COLS = [
 const isFO = c => (c.s || '').startsWith('F.O')
 const drumFor = (c, drumMap) => (isFO(c) ? '' : (drumMap[c.n] || ''))
 
-// I&C F.O cables are never allocated a drum at design time, so they name their packing
-// list directly. Everything else resolves through the drum it was allocated — a blank
-// packing therefore means no material is allocated to that cable yet.
+// Where the cable comes from. A cable outside our supply names its supplier (`sup`) —
+// it still counts in the design quantity and still has to be pulled, but no packing of
+// ours covers it. I&C F.O cables are never allocated a drum at design time, so they name
+// their packing list directly. Everything else resolves through the drum it was
+// allocated, so a blank means no material is allocated to that cable yet.
 const pkgFor = (c, drumMap, pkgMap) =>
-  (isFO(c) && c.g === 'I&C' ? 'PGU-DE-0311' : (pkgMap[drumFor(c, drumMap)] || ''))
+  (c.sup || (isFO(c) && c.g === 'I&C' ? 'PGU-DE-0311' : (pkgMap[drumFor(c, drumMap)] || '')))
 
 function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
   return rows.map(c => {
@@ -683,10 +685,12 @@ export default function CableSchedule() {
         <p className="cm-note">
           <strong>Drum No.</strong> is the assigned drum from the master schedule — paste it into <strong>Cable Material</strong>'s
           search to find which packing list it ships in. AIS cables use their real interconnection-diagram numbers (e.g. D01_119)
-          with drums from the 2026.06.30 revision. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
+          with drums from the 2026.08.05 revision. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
           <strong> Packing List</strong> number instead. I&amp;C F.O cables get no design-time drum and name PGU-DE-0311 directly.
           FMS reels are allocated by spec from PGU-DE-0581; the 42 cables with no drum are either not yet delivered (MM 16C, CAT.6)
-          or short of stock (MM 8C), so they show no packing list. FFC is not yet covered (multiple packing lists, no per-cable key).
+          or short of stock (MM 8C), so they show no packing list. The 48 AT1 cables reading <strong>Asia Trafo</strong> arrive with
+          the auto-transformer rather than from one of our packings — they still count in the design quantity and still have to be
+          pulled. FFC is not yet covered (multiple packing lists, no per-cable key).
           <strong> Used Drum</strong> is the actual drum entered in Work Log after pulling — compare the two to catch cases where a
           different drum was used than planned.
         </p>
