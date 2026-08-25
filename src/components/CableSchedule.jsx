@@ -153,6 +153,7 @@ const FROM_AREAS = [
   { code: '9',   label: '9 — BSDG (Black Start Diesel Generator)' },
   { code: '10',  label: '10-11 — Water Treatment Plant' },
   { code: '16',  label: '16 — CEPB (Condensate Extraction Pump Bldg)' },
+  { code: '18',  label: '18 — Auxiliary Boiler / LER' },
   { code: '19',  label: '19 — Distribution Point 10kV' },
   { code: '24',  label: '24 — Workshop' },
   { code: '25',  label: '25 — Admin Building (CCR/CR/Server Room)' },
@@ -217,7 +218,7 @@ const FROM_TAG_AREA = {
 // motor control centre, UPS panel and power panel that supply the system.
 const FGSS_ELEC_ROOM = /^B\d-(MCC|UPSP|PP)-/i
 
-function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}) {
+function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}, elecAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
   if (cableNum && nAreaMap[cableNum]) return nAreaMap[cableNum].from
   if (tag === 'LATER' || !tag) {
@@ -240,12 +241,16 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
   }
-  // FGSS instruments and panels stand at the gas skid (area 3), so they must be settled
-  // before the B0-/B1-/B2- rules below — those read the block a tag is numbered under,
-  // not where the equipment physically stands, and would put every gas-skid instrument in
-  // the LEB. The switchgear that feeds the system does live in the electrical building,
-  // so it keeps resolving by tag like any other cable.
-  if (sys.includes('FGSS') && !FGSS_ELEC_ROOM.test(tag)) return '3'
+  // FGSS has to be settled before the B0-/B1-/B2- rules below — those read the block a
+  // tag is numbered under, not where the equipment physically stands, and would put the
+  // whole system in the LEB. Instruments and panels stand at the gas skid (area 3). The
+  // switchgear feeding them sits in an electrical room, and the Power Cable Schedule's
+  // load locations say which one, so read that map rather than guess from the prefix —
+  // the local distribution panels are at the aux boiler, not the LEB.
+  if (sys.includes('FGSS')) {
+    if (!FGSS_ELEC_ROOM.test(tag)) return '3'
+    if (elecAreaMap[tag]) return elecAreaMap[tag]
+  }
   if (/^(11|12)[A-Z0-9]/.test(tag)) return '1.1.1'
   if (/^(21|22)[A-Z0-9]/.test(tag)) return '1.1.2'
   if (/^B1J/.test(tag)) return '1.1.1'
@@ -388,7 +393,7 @@ export default function CableSchedule() {
       const fd = fieldData[c.n] || {}
       // FROM / TO area filter
       if (colF.fromArea || colF.toArea) {
-        if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap) !== colF.fromArea) return false
+        if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap, elecAreaMap) !== colF.fromArea) return false
         if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap) !== colF.toArea) return false
       }
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
@@ -438,10 +443,10 @@ export default function CableSchedule() {
       let fa, ta
       if (s === 'AIS-OCP') { fa = '38'; ta = '38' }
       else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
-        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap)
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap, elecAreaMap)
         ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap)
       } else {
-        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap)
+        fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap, elecAreaMap)
         ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap)
       }
       if (fa) fromSet.add(fa)
