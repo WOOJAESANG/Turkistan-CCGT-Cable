@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
+import { loadFieldData, fetchAllFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { ambiguousDrumTag } from '../lib/drumTag'
@@ -188,6 +188,23 @@ export default function CableActuals({ session }) {
 
   // Bulk import vendor actuals from a JSON file. Merges into each cable (existing
   // fields preserved via updateFieldEntry) — used for supplier pulling/termination reports.
+  //
+  // A transient network hiccup on one write must not silently undo it: each entry gets
+  // up to 3 attempts with backoff, and completion is judged by re-reading the affected
+  // rows from the server (loadFieldData() alone only reflects the optimistic local write,
+  // which stays "successful" even if the network write behind it never landed).
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+  async function importOne(cno, patch, attempts = 3) {
+    for (let i = 1; i <= attempts; i++) {
+      try { await updateFieldEntry(cno, patch); return true }
+      catch (err) {
+        if (i === attempts) { console.error(`[import] ${cno} failed after ${attempts} attempts`, err); return false }
+        await sleep(400 * i)
+      }
+    }
+  }
+
   async function handleImport(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -197,16 +214,41 @@ export default function CableActuals({ session }) {
       const entries = parsed.entries || parsed
       const keys = Object.keys(entries)
       if (!keys.length) { setImportMsg('빈 파일'); return }
-      let done = 0, fail = 0
+
+      let done = 0
+      const failed = []
       setImportMsg(`반영 중… 0/${keys.length}`)
       for (const cno of keys) {
-        try { await updateFieldEntry(cno, entries[cno]); done++ }
-        catch { fail++ }
-        if ((done + fail) % 5 === 0 || done + fail === keys.length) setImportMsg(`반영 중… ${done + fail}/${keys.length}`)
+        const ok = await importOne(cno, entries[cno])
+        if (ok) done++
+        else failed.push(cno)
+        if ((done + failed.length) % 5 === 0 || done + failed.length === keys.length) {
+          setImportMsg(`반영 중… ${done + failed.length}/${keys.length}`)
+        }
       }
-      setFieldData(loadFieldData())
-      setImportMsg(`완료: ${done}건 반영${fail ? `, ${fail}건 실패` : ''}`)
-      setTimeout(() => setImportMsg(null), 8000)
+
+      // Trust the server, not the optimistic cache: confirm every "success" actually landed
+      // by re-reading and comparing field-by-field. A row can already exist for a cable from
+      // an earlier entry — its mere presence doesn't prove *this* write's fields landed.
+      setImportMsg(`확인 중…`)
+      await fetchAllFieldData()
+      const server = loadFieldData()
+      const fieldsMatch = (cno, patch) => {
+        const row = server[cno]
+        if (!row) return false
+        return Object.entries(patch).every(([k, v]) => String(row[k] ?? '') === String(v ?? ''))
+      }
+      const unverified = keys.filter(cno => !failed.includes(cno) && !fieldsMatch(cno, entries[cno]))
+      const stillMissing = [...failed, ...unverified]
+
+      setFieldData(server)
+      if (stillMissing.length) {
+        console.error('[import] not confirmed on server:', stillMissing)
+        setImportMsg(`완료: ${keys.length - stillMissing.length}건 반영, ${stillMissing.length}건 실패 (콘솔에 목록 출력됨 — 실패건만 다시 Import 해주세요)`)
+      } else {
+        setImportMsg(`완료: ${keys.length}건 전체 반영 확인됨`)
+      }
+      setTimeout(() => setImportMsg(null), 12000)
     } catch (err) {
       setImportMsg('파일 오류: ' + err.message)
     }
