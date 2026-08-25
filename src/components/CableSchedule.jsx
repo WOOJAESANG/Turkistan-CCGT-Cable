@@ -249,13 +249,13 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
   }
   // Fuel gas has to be settled before the B0-/B1-/B2- rules below — those read the block
   // a tag is numbered under, not where the equipment physically stands, and would put the
-  // whole system in the LEB. Instruments and panels stand at the gas skid (area 3). The
-  // switchgear feeding them sits in an electrical room, and the Power Cable Schedule's
-  // load locations say which one, so read that map rather than guess from the prefix —
-  // the local distribution panels are at the aux boiler, not the LEB.
+  // whole system in the LEB. The Power Cable Schedule's load locations are survey data, so
+  // a tag listed there wins outright: that is what puts the distribution and fire-and-gas
+  // panels in the aux boiler electrical room rather than at the skid. Everything else in
+  // the system stands at the skid itself (area 3).
   if (isFuelGasSys(sys)) {
-    if (!FGSS_ELEC_ROOM.test(tag)) return '3'
     if (elecAreaMap[tag]) return elecAreaMap[tag]
+    if (!FGSS_ELEC_ROOM.test(tag)) return '3'
   }
   if (/^(11|12)[A-Z0-9]/.test(tag)) return '1.1.1'
   if (/^(21|22)[A-Z0-9]/.test(tag)) return '1.1.2'
