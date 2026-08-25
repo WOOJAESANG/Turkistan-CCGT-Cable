@@ -213,6 +213,10 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
 }
 
+// FGSS equipment housed in the electrical building rather than at the gas skid: the
+// motor control centre, UPS panel and power panel that supply the system.
+const FGSS_ELEC_ROOM = /^B\d-(MCC|UPSP|PP)-/i
+
 function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
   if (cableNum && nAreaMap[cableNum]) return nAreaMap[cableNum].from
@@ -236,6 +240,12 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
   }
+  // FGSS instruments and panels stand at the gas skid (area 3), so they must be settled
+  // before the B0-/B1-/B2- rules below — those read the block a tag is numbered under,
+  // not where the equipment physically stands, and would put every gas-skid instrument in
+  // the LEB. The switchgear that feeds the system does live in the electrical building,
+  // so it keeps resolving by tag like any other cable.
+  if (sys.includes('FGSS') && !FGSS_ELEC_ROOM.test(tag)) return '3'
   if (/^(11|12)[A-Z0-9]/.test(tag)) return '1.1.1'
   if (/^(21|22)[A-Z0-9]/.test(tag)) return '1.1.2'
   if (/^B1J/.test(tag)) return '1.1.1'
@@ -243,7 +253,6 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
   if (tag.startsWith('B1-')) return '1.2'
   if (tag.startsWith('B2-')) return '1.3'
   if (tag.startsWith('B0-')) return '1.2'
-  if (sys && sys.includes('FGSS')) return '3'
   return ''
 }
 
