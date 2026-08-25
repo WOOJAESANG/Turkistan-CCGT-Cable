@@ -214,9 +214,15 @@ const FROM_TAG_AREA = {
   'B2-LCP-4101': '1.1.2', 'B2-LCP-4201': '1.1.2',
 }
 
-// FGSS equipment housed in the electrical building rather than at the gas skid: the
+// Fuel gas equipment housed in the electrical building rather than at the gas skid: the
 // motor control centre, UPS panel and power panel that supply the system.
 const FGSS_ELEC_ROOM = /^B\d-(MCC|UPSP|PP)-/i
+
+// Systems that stand at the fuel gas area. Read from the TO_AREAS entry that already
+// decides this for the destination, so the two ends cannot drift apart — testing only
+// for 'FGSS' here once left the gas heater, metering and ignition systems behind.
+const FUEL_GAS_KEYWORDS = ['FGSS', ...(TO_AREAS.find(a => a.code === '3')?.kw || [])]
+const isFuelGasSys = sys => FUEL_GAS_KEYWORDS.some(k => sys.includes(k))
 
 function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}, elecAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
@@ -241,13 +247,13 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
     if (sys === 'FAAP SYSTEM') return '1.2'
     if (sys.startsWith('AIS SYSTEM')) return '38'
   }
-  // FGSS has to be settled before the B0-/B1-/B2- rules below — those read the block a
-  // tag is numbered under, not where the equipment physically stands, and would put the
+  // Fuel gas has to be settled before the B0-/B1-/B2- rules below — those read the block
+  // a tag is numbered under, not where the equipment physically stands, and would put the
   // whole system in the LEB. Instruments and panels stand at the gas skid (area 3). The
   // switchgear feeding them sits in an electrical room, and the Power Cable Schedule's
   // load locations say which one, so read that map rather than guess from the prefix —
   // the local distribution panels are at the aux boiler, not the LEB.
-  if (sys.includes('FGSS')) {
+  if (isFuelGasSys(sys)) {
     if (!FGSS_ELEC_ROOM.test(tag)) return '3'
     if (elecAreaMap[tag]) return elecAreaMap[tag]
   }
