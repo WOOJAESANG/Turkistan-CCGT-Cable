@@ -68,8 +68,25 @@ export function isFieldDataLoaded() {
   return cableLoaded
 }
 
+// PostgREST caps a select at 1000 rows, so a plain select('*') silently returns only the
+// first page once a table passes that — the rest of the table reads as if it were empty.
+// Every full-table read has to page through explicitly.
+export async function fetchAllRows(table, orderBy) {
+  const PAGE = 1000
+  const out = []
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase.from(table).select('*').range(from, from + PAGE - 1)
+    if (orderBy) q = q.order(orderBy)
+    const { data, error } = await q
+    if (error) { console.error(`[fetchAllRows] ${table}`, error); return { data: null, error } }
+    out.push(...(data || []))
+    if (!data || data.length < PAGE) break
+  }
+  return { data: out, error: null }
+}
+
 export async function fetchAllFieldData() {
-  const { data, error } = await supabase.from('cable_actuals').select('*')
+  const { data, error } = await fetchAllRows('cable_actuals', 'cable_no')
   if (error) { console.error('[fetchAllFieldData]', error); return }
   const next = {}
   for (const r of data || []) next[r.cable_no] = rowToEntry(r)
@@ -182,7 +199,7 @@ export function isDailyLoaded() {
 }
 
 export async function fetchAllDaily() {
-  const { data, error } = await supabase.from('daily_manpower').select('*')
+  const { data, error } = await fetchAllRows('daily_manpower', 'work_date')
   if (error) { console.error('[fetchAllDaily]', error); return }
   const next = {}
   for (const r of data || []) next[`${r.work_date}|${r.vendor}`] = dailyRowToEntry(r)
@@ -290,7 +307,7 @@ export function loadMilestoneTargets() { return targetCache }
 export function isMilestoneTargetsLoaded() { return targetLoaded }
 
 export async function fetchAllMilestoneTargets() {
-  const { data, error } = await supabase.from('milestone_targets').select('*')
+  const { data, error } = await fetchAllRows('milestone_targets')
   if (error) {
     targetCache = readTargetLS()
   } else {
@@ -338,7 +355,7 @@ export function activeVendorNames() {
 }
 
 export async function fetchAllVendors() {
-  const { data, error } = await supabase.from('vendors').select('*').order('name')
+  const { data, error } = await fetchAllRows('vendors', 'name')
   if (error) { console.error('[fetchAllVendors]', error); return }
   vendorCache = data || []
   vendorLoaded = true
@@ -393,9 +410,9 @@ export async function fetchRecentActivity(limit = 30) {
 // =========================================================
 export async function fetchAllForExport() {
   const [ca, dm, v] = await Promise.all([
-    supabase.from('cable_actuals').select('*').order('cable_no'),
-    supabase.from('daily_manpower').select('*').order('work_date'),
-    supabase.from('vendors').select('*').order('name'),
+    fetchAllRows('cable_actuals', 'cable_no'),
+    fetchAllRows('daily_manpower', 'work_date'),
+    fetchAllRows('vendors', 'name'),
   ])
   return {
     cableActuals: ca.data || [],
