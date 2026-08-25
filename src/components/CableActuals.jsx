@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { loadFieldData, fetchAllFieldData, updateFieldEntry, deleteFieldEntry, loadVendors } from '../lib/dataStore'
+import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { ambiguousDrumTag } from '../lib/drumTag'
@@ -186,25 +186,14 @@ export default function CableActuals({ session }) {
   const [importMsg, setImportMsg] = useState(null)
   const importRef = useRef(null)
 
-  // Bulk import vendor actuals from a JSON file. Merges into each cable (existing
-  // fields preserved via updateFieldEntry) — used for supplier pulling/termination reports.
+  // Bulk import vendor actuals from a JSON file. Existing fields on each cable are
+  // preserved — only the keys present in the file are overwritten.
   //
-  // A transient network hiccup on one write must not silently undo it: each entry gets
-  // up to 3 attempts with backoff, and completion is judged by re-reading the affected
-  // rows from the server (loadFieldData() alone only reflects the optimistic local write,
-  // which stays "successful" even if the network write behind it never landed).
-  const sleep = ms => new Promise(r => setTimeout(r, ms))
-
-  async function importOne(cno, patch, attempts = 3) {
-    for (let i = 1; i <= attempts; i++) {
-      try { await updateFieldEntry(cno, patch); return true }
-      catch (err) {
-        if (i === attempts) { console.error(`[import] ${cno} failed after ${attempts} attempts`, err); return false }
-        await sleep(400 * i)
-      }
-    }
-  }
-
+  // The rows go up in chunks rather than one request each: a per-row loop over a few
+  // hundred cables trips Supabase's rate limit partway through, which surfaced as
+  // "160건 실패" on an import whose data was perfectly valid. Completion is judged by
+  // re-reading from the server, since the local cache is written optimistically and
+  // would still look successful if the request behind it never landed.
   async function handleImport(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -215,17 +204,11 @@ export default function CableActuals({ session }) {
       const keys = Object.keys(entries)
       if (!keys.length) { setImportMsg('빈 파일'); return }
 
-      let done = 0
-      const failed = []
       setImportMsg(`반영 중… 0/${keys.length}`)
-      for (const cno of keys) {
-        const ok = await importOne(cno, entries[cno])
-        if (ok) done++
-        else failed.push(cno)
-        if ((done + failed.length) % 5 === 0 || done + failed.length === keys.length) {
-          setImportMsg(`반영 중… ${done + failed.length}/${keys.length}`)
-        }
-      }
+      const failed = await bulkUpsertFieldEntries(
+        keys.map(cno => ({ cno, patch: entries[cno] })),
+        (n, total) => setImportMsg(`반영 중… ${n}/${total}`),
+      )
 
       // Trust the server, not the optimistic cache: confirm every "success" actually landed
       // by re-reading and comparing field-by-field. A row can already exist for a cable from

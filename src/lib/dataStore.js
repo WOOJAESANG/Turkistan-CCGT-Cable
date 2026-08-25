@@ -86,6 +86,34 @@ export async function updateFieldEntry(cno, patch) {
   if (error) { console.error('[updateFieldEntry]', error); throw error }
 }
 
+// Bulk import path. Writing 500 rows as 500 separate upserts trips Supabase's request
+// rate limit partway through — the failures are the connection being refused, not the
+// data. PostgREST takes an array in one call, so send them in chunks instead: a few
+// requests total, each retried as a unit.
+export async function bulkUpsertFieldEntries(items, onProgress) {
+  const CHUNK = 100
+  const rows = items.map(({ cno, patch }) => {
+    const merged = { ...(cableCache[cno] || {}), ...patch }
+    cableCache = { ...cableCache, [cno]: merged }
+    return entryToRow(cno, merged)
+  })
+  const failed = []
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const slice = rows.slice(i, i + CHUNK)
+    let ok = false
+    for (let attempt = 1; attempt <= 4 && !ok; attempt++) {
+      const { error } = await supabase.from('cable_actuals').upsert(slice)
+      if (!error) { ok = true; break }
+      console.error(`[bulkUpsert] chunk ${i / CHUNK + 1} attempt ${attempt}`, error)
+      if (attempt < 4) await new Promise(r => setTimeout(r, 600 * attempt))
+    }
+    if (!ok) failed.push(...slice.map(r => r.cable_no))
+    onProgress?.(Math.min(i + CHUNK, rows.length), rows.length)
+  }
+  window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'bulk' } }))
+  return failed
+}
+
 export async function deleteFieldEntry(cno) {
   if (!(cno in cableCache)) return
   const next = { ...cableCache }
