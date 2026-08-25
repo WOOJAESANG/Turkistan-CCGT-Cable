@@ -92,6 +92,14 @@ export async function updateFieldEntry(cno, patch) {
 // requests total, each retried as a unit.
 export async function bulkUpsertFieldEntries(items, onProgress) {
   const CHUNK = 100
+
+  // Re-read first. The cache is a snapshot from when the page loaded, and merging onto a
+  // stale snapshot writes back whatever someone else has entered since as the value it
+  // had then — an import that only carries pulling fields silently wiped another user's
+  // termination entries that way. Merging onto the current server row keeps every column
+  // the file does not mention.
+  await fetchAllFieldData()
+
   const rows = items.map(({ cno, patch }) => {
     const merged = { ...(cableCache[cno] || {}), ...patch }
     cableCache = { ...cableCache, [cno]: merged }
