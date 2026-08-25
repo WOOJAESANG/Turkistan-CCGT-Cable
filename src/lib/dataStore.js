@@ -86,25 +86,48 @@ export async function updateFieldEntry(cno, patch) {
   if (error) { console.error('[updateFieldEntry]', error); throw error }
 }
 
-// Bulk import path. Writing 500 rows as 500 separate upserts trips Supabase's request
-// rate limit partway through — the failures are the connection being refused, not the
-// data. PostgREST takes an array in one call, so send them in chunks instead: a few
-// requests total, each retried as a unit.
+// Bulk import path. Writing 500 rows as 500 separate requests trips Supabase's rate limit
+// partway through — the failures are the connection being refused, not the data — so rows
+// go up in chunks, each retried as a unit.
+//
+// Column each import field writes to; a field the file omits is left at whatever the
+// server currently holds.
+const IMPORT_COLUMNS = {
+  vendor: 'vendor', pulledLength: 'pulled_length', usedDrum: 'used_drum',
+  pulledBy: 'pulled_by', pullingDate: 'pulling_date', termDateFrom: 'term_date_from',
+  termByFrom: 'term_by_from', termDateTo: 'term_date_to', termByTo: 'term_by_to',
+  lc: 'lc', act: 'act',
+}
+
 export async function bulkUpsertFieldEntries(items, onProgress) {
   const CHUNK = 100
 
-  // Re-read first. The cache is a snapshot from when the page loaded, and merging onto a
-  // stale snapshot writes back whatever someone else has entered since as the value it
-  // had then — an import that only carries pulling fields silently wiped another user's
-  // termination entries that way. Merging onto the current server row keeps every column
-  // the file does not mention.
+  // Re-read first, so the local view of these cables matches the server before we touch
+  // them and the caller's verification compares against reality.
   await fetchAllFieldData()
 
+  // An upsert replaces the whole row, so a column the file omits would come back as its
+  // default — that is what blanked entries made from another tab. Each row is therefore
+  // built from the values just fetched, with only the file's own fields laid over the top,
+  // and still goes up in batches (per-row PATCHes would hit the rate limit again).
   const rows = items.map(({ cno, patch }) => {
-    const merged = { ...(cableCache[cno] || {}), ...patch }
-    cableCache = { ...cableCache, [cno]: merged }
-    return entryToRow(cno, merged)
+    const server = cableCache[cno] || {}
+    const row = { ...entryToRow(cno, server), updated_by: currentEmail() }
+    for (const [field, column] of Object.entries(IMPORT_COLUMNS)) {
+      if (!(field in patch)) continue
+      const s = patch[field] != null ? String(patch[field]).trim() : ''
+      row[column] = s || null
+    }
+    return row
   })
+  // Only reflect the file locally once the request for it has gone out successfully.
+  const applyToCache = slice => {
+    for (const r of slice) {
+      const item = items.find(x => x.cno === r.cable_no)
+      if (item) cableCache = { ...cableCache, [r.cable_no]: { ...(cableCache[r.cable_no] || {}), ...item.patch } }
+    }
+  }
+
   const failed = []
   for (let i = 0; i < rows.length; i += CHUNK) {
     const slice = rows.slice(i, i + CHUNK)
@@ -115,7 +138,8 @@ export async function bulkUpsertFieldEntries(items, onProgress) {
       console.error(`[bulkUpsert] chunk ${i / CHUNK + 1} attempt ${attempt}`, error)
       if (attempt < 4) await new Promise(r => setTimeout(r, 600 * attempt))
     }
-    if (!ok) failed.push(...slice.map(r => r.cable_no))
+    if (ok) applyToCache(slice)
+    else failed.push(...slice.map(r => r.cable_no))
     onProgress?.(Math.min(i + CHUNK, rows.length), rows.length)
   }
   window.dispatchEvent(new CustomEvent('cable-field-update', { detail: { source: 'bulk' } }))
