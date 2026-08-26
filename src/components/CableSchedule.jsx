@@ -331,6 +331,17 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
 }
 
 // Per-column header filters (Excel-style filter row under the column titles)
+// Shared by the row filter and by the option lists that feed the dropdowns, so a dropdown
+// can offer exactly the values that survive the other filters.
+const inc = (val, f) => !f || String(val || '').toLowerCase().includes(f.toLowerCase())
+
+// Exact when a name was picked from the list, substring when it was half-typed.
+const matchesSystem = (c, f) => {
+  if (f === 'All' || !f) return true
+  const s = c.sys || ''
+  return s === f || inc(s, f)
+}
+
 const EMPTY_COLF = {
   cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: 'All', pri: 'All',
   from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
@@ -392,7 +403,6 @@ export default function CableSchedule() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
-    const inc = (val, f) => !f || String(val || '').toLowerCase().includes(f.toLowerCase())
     const lmin = colF.lmin !== '' ? parseFloat(colF.lmin) : null
     const lmax = colF.lmax !== '' ? parseFloat(colF.lmax) : null
     return allData.filter(c => {
@@ -408,11 +418,7 @@ export default function CableSchedule() {
       if (!inc(c.s, colF.spec)) return false
       if (lmin != null && !((c.l || 0) >= lmin)) return false
       if (lmax != null && !((c.l || 0) <= lmax)) return false
-      // Exact when a name was picked from the list, substring when it was half-typed.
-      if (colF.sys !== 'All') {
-        const s = c.sys || ''
-        if (s !== colF.sys && !inc(s, colF.sys)) return false
-      }
+      if (!matchesSystem(c, colF.sys)) return false
       if (!inc(c.f, colF.from)) return false
       if (!inc(c.t, colF.to)) return false
       if (!inc(drumFor(c, drumMap), colF.drum)) return false
@@ -444,16 +450,45 @@ export default function CableSchedule() {
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
 
   // System names come from the data rather than a fixed list, so a newly imported system
-  // appears without a code change. Narrowed to the chosen category, since the two are
-  // nested — picking a category then scanning ~40 unrelated systems is the slow way round.
+  // appears without a code change — and only the systems that survive every *other* filter
+  // are offered, so the list never contains a value that would return an empty table.
   const systemOptions = useMemo(() => {
+    const lmin = colF.lmin !== '' ? parseFloat(colF.lmin) : null
+    const lmax = colF.lmax !== '' ? parseFloat(colF.lmax) : null
+    const q = search.toLowerCase()
     const set = new Set()
     for (const c of allData) {
+      if (!c.sys) continue
+      const fd = fieldData[c.n] || {}
+      if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap, elecAreaMap) !== colF.fromArea) continue
+      if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap) !== colF.toArea) continue
       if (colF.cat !== 'All' && c.g !== colF.cat) continue
-      if (c.sys) set.add(c.sys)
+      if (colF.pri !== 'All' && c.pri !== colF.pri) continue
+      if (!inc(c.n, colF.cn)) continue
+      if (!inc(c.s, colF.spec)) continue
+      if (lmin != null && !((c.l || 0) >= lmin)) continue
+      if (lmax != null && !((c.l || 0) <= lmax)) continue
+      if (!inc(c.f, colF.from)) continue
+      if (!inc(c.t, colF.to)) continue
+      if (!inc(drumFor(c, drumMap), colF.drum)) continue
+      if (!inc(pkgFor(c, drumMap, pkgMap), colF.pkg)) continue
+      if (!inc(fd.usedDrum, colF.used)) continue
+      if (!inc(fd.act, colF.act)) continue
+      if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) continue
+      if (colF.term !== 'All' && deriveTermStatus(c, fd) !== colF.term) continue
+      if (colF.lc !== 'All' && (fd.lc || 'Pending') !== colF.lc) continue
+      if (q && !(
+        c.n.toLowerCase().includes(q) || c.s.toLowerCase().includes(q) ||
+        c.sys.toLowerCase().includes(q) || c.f.toLowerCase().includes(q) ||
+        c.t.toLowerCase().includes(q) ||
+        drumFor(c, drumMap).toLowerCase().includes(q) ||
+        (fd.usedDrum || '').toLowerCase().includes(q) ||
+        pkgFor(c, drumMap, pkgMap).toLowerCase().includes(q)
+      )) continue
+      set.add(c.sys)
     }
     return ['All', ...[...set].sort((a, b) => a.localeCompare(b))]
-  }, [allData, colF.cat])
+  }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap, nAreaMap])
 
   const areaPairs = useMemo(() => {
     const fromSet = new Set()
@@ -494,13 +529,11 @@ export default function CableSchedule() {
         const valid = areaPairs.pairTo[v]
         if (valid && !valid.has(next.fromArea)) next.fromArea = ''
       }
-      // Changing category drops a system that has no rows under it, which would otherwise
-      // leave the table empty with no visible reason why.
-      if (k === 'cat' && next.sys !== 'All') {
-        const q = next.sys.toLowerCase()
-        const hit = allData.some(c => (v === 'All' || c.g === v) &&
-          (c.sys === next.sys || (c.sys || '').toLowerCase().includes(q)))
-        if (!hit) next.sys = 'All'
+      // Tightening another filter can strand the chosen system with no rows under it,
+      // which would leave the table empty with no visible reason why. Drop it instead.
+      if (k !== 'sys' && next.sys !== 'All' && !allData.some(c => matchesSystem(c, next.sys) &&
+        (next.cat === 'All' || c.g === next.cat) && (next.pri === 'All' || c.pri === next.pri))) {
+        next.sys = 'All'
       }
       return next
     })
