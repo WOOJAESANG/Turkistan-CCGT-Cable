@@ -332,7 +332,7 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
 
 // Per-column header filters (Excel-style filter row under the column titles)
 const EMPTY_COLF = {
-  cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: '', pri: 'All',
+  cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: 'All', pri: 'All',
   from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
   fromArea: '', toArea: '',
 }
@@ -408,7 +408,11 @@ export default function CableSchedule() {
       if (!inc(c.s, colF.spec)) return false
       if (lmin != null && !((c.l || 0) >= lmin)) return false
       if (lmax != null && !((c.l || 0) <= lmax)) return false
-      if (!inc(c.sys, colF.sys)) return false
+      // Exact when a name was picked from the list, substring when it was half-typed.
+      if (colF.sys !== 'All') {
+        const s = c.sys || ''
+        if (s !== colF.sys && !inc(s, colF.sys)) return false
+      }
       if (!inc(c.f, colF.from)) return false
       if (!inc(c.t, colF.to)) return false
       if (!inc(drumFor(c, drumMap), colF.drum)) return false
@@ -438,6 +442,18 @@ export default function CableSchedule() {
   }, [allData, search, colF, fieldData, drumMap, pkgMap, elecAreaMap, cableNumAreaMap, elecFromAreaMap, nAreaMap])
 
   const totalMeters = useMemo(() => filtered.reduce((s, c) => s + (c.l || 0), 0), [filtered])
+
+  // System names come from the data rather than a fixed list, so a newly imported system
+  // appears without a code change. Narrowed to the chosen category, since the two are
+  // nested — picking a category then scanning ~40 unrelated systems is the slow way round.
+  const systemOptions = useMemo(() => {
+    const set = new Set()
+    for (const c of allData) {
+      if (colF.cat !== 'All' && c.g !== colF.cat) continue
+      if (c.sys) set.add(c.sys)
+    }
+    return ['All', ...[...set].sort((a, b) => a.localeCompare(b))]
+  }, [allData, colF.cat])
 
   const areaPairs = useMemo(() => {
     const fromSet = new Set()
@@ -478,6 +494,14 @@ export default function CableSchedule() {
         const valid = areaPairs.pairTo[v]
         if (valid && !valid.has(next.fromArea)) next.fromArea = ''
       }
+      // Changing category drops a system that has no rows under it, which would otherwise
+      // leave the table empty with no visible reason why.
+      if (k === 'cat' && next.sys !== 'All') {
+        const q = next.sys.toLowerCase()
+        const hit = allData.some(c => (v === 'All' || c.g === v) &&
+          (c.sys === next.sys || (c.sys || '').toLowerCase().includes(q)))
+        if (!hit) next.sys = 'All'
+      }
       return next
     })
     setCurrentPage(1)
@@ -493,6 +517,24 @@ export default function CableSchedule() {
       value={colF[key]}
       onChange={e => setCF(key, e.target.value)}
     />
+  )
+  // 244 systems is too many to scroll, and the names are long enough that a plain select
+  // truncates them. A datalist gives the same pick-from-the-real-values behaviour while
+  // narrowing as you type, and still shows the full name in the popup.
+  const cfCombo = (key, options, ph = 'All') => (
+    <>
+      <input
+        type="text"
+        list={`cs-dl-${key}`}
+        className={`cs-cf${colF[key] !== 'All' ? ' active' : ''}`}
+        placeholder={ph}
+        value={colF[key] === 'All' ? '' : colF[key]}
+        onChange={e => setCF(key, e.target.value.trim() || 'All')}
+      />
+      <datalist id={`cs-dl-${key}`}>
+        {options.filter(o => o !== 'All').map(o => <option key={o} value={o} />)}
+      </datalist>
+    </>
   )
   const cfSelect = (key, options) => (
     <select
@@ -615,7 +657,7 @@ export default function CableSchedule() {
                       value={colF.lmax} onChange={e => setCF('lmax', e.target.value)} />
                   </div>
                 </th>
-                <th>{cfText('sys')}</th>
+                <th>{cfCombo('sys', systemOptions)}</th>
                 <th>{cfSelect('pri', PRIORITIES)}</th>
                 <th>{cfText('from')}</th>
                 <th>{cfText('to')}</th>
