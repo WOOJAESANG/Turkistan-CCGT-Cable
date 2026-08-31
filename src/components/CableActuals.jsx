@@ -117,52 +117,32 @@ function CableTagInput({ value, onChange, onPick, master, invalid }) {
   )
 }
 
-// ---- Used Drum autocomplete (drum master from Cable Material) + manual entry ----
+// ---- Used Drum: a real dropdown, not free text ----
+// Free-typing let the field carry a packing "Package No." (e.g. PGU-DE-439-PCC-046) instead
+// of the drum tag design uses (e.g. PE-L1-3C4-09) — the two number a physical drum
+// differently, and only the drum-tag form can be compared against the designed Drum No.
+// Restricting entry to the master list is what actually closes that gap; a searchable
+// combo would still accept anything typed.
 function DrumInput({ value, onChange, master, cat, invalid }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open) return
-    const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [open])
-
-  const matches = useMemo(() => {
-    const q = (value || '').trim().toLowerCase()
-    let pool
-    if (q) pool = master.filter(d => d.drum.toLowerCase().includes(q))
-    else if (cat) pool = master.filter(d => d.cat === cat)
-    else return []
-    return pool.slice(0, 60)
-  }, [value, master, cat])
+  const options = useMemo(() => {
+    const pool = cat ? master.filter(d => d.cat === cat) : master
+    const drums = pool.map(d => d.drum)
+    // Keep the current value selectable even if it falls outside today's master list —
+    // an already-saved entry (or a drum whose packing isn't registered yet) must not
+    // silently disappear from its own field.
+    if (value && !drums.includes(value)) drums.push(value)
+    return [...new Set(drums)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  }, [master, cat, value])
 
   return (
-    <div className="ca-combo" ref={ref}>
-      <input
-        className={`ca-input${invalid ? ' ca-err' : ''}`}
-        type="text"
-        placeholder="Pick from list or type manually"
-        value={value}
-        onChange={e => { onChange(e.target.value); setOpen(true) }}
-        onFocus={() => setOpen(true)}
-        autoComplete="off"
-      />
-      {open && matches.length > 0 && (
-        <div className="ca-combo-list">
-          {matches.map(d => {
-            const cc = CATEGORY_COLORS[d.cat] || { bg: '#f3f4f6', text: '#374151' }
-            return (
-              <button type="button" key={d.drum} className="ca-combo-item ca-combo-item-drum"
-                onClick={() => { onChange(d.drum); setOpen(false) }}>
-                <span className="ca-combo-no">{d.drum}</span>
-                {d.cat && <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{d.cat}</span>}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
+    <select
+      className={`ca-input ca-select${invalid ? ' ca-err' : ''}`}
+      value={value || ''}
+      onChange={e => onChange(e.target.value)}
+    >
+      <option value="">Select drum…</option>
+      {options.map(d => <option key={d} value={d}>{d}</option>)}
+    </select>
   )
 }
 
