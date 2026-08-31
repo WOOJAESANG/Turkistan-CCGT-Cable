@@ -322,7 +322,7 @@
     "packingName": "PGU-DE-590 Packing List.xlsx",
     "packingDetail": "PGU-DE-590-PCC-001 ~ 032",
     "drumNo": "PE-M1-3C120-18 ~ 30, PE-M1-1C240-01 ~ 13, PE-M1-1C185-02 ~ 07",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-08-30",
     "remark": "",
     "drumList": [
@@ -375,7 +375,7 @@
     "packingName": "PGU-DE-590 Packing List.xlsx",
     "packingDetail": "PGU-DE-590-PCC-033 ~ 071",
     "drumNo": "PE-L1-1C300-01 ~ 08, PE-L1-2C10-02, PE-L1-3C4-19 ~ 21, PE-L1-3C6-03 ~ 06, PE-L1-3C16-01 ~ 02, PE-L1-4C4-16 ~ 22, PE-L1-4C95/50-19 ~ 31, PE-L1-5C25/16-03",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-08-30",
     "remark": "",
     "drumList": [
@@ -498,7 +498,7 @@
     "packingName": "PGU-DE-590 Packing List.xlsx",
     "packingDetail": "PGU-DE-590-PCC-072 ~ 109",
     "drumNo": "PE-C-12C2.5-09 ~ 11, PE-C-8C2.5-11 ~ 20, PE-C-4C2.5-15 ~ 28, PE-C-4C4-11 ~ 20, PE-C-4C6-1",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-08-30",
     "remark": "Power & Control Cable",
     "drumList": [
@@ -1568,7 +1568,7 @@
     "packingName": "PGU-DE-0595-002 Power & Control Cable Truck CIPL(Rev.2).xlsx",
     "packingDetail": "PGU-DE-0595-CAB-001 ~ 013",
     "drumNo": "PE-M1-1C300-34 ~ 41, PE-M3-1C240-01 ~ 02, PE-M3-1C240-04",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-09-30",
     "remark": "Truck",
     "drumList": [
@@ -1600,7 +1600,7 @@
     "packingName": "PGU-DE-0595-002 Power & Control Cable Truck CIPL(Rev.2).xlsx",
     "packingDetail": "PGU-DE-0595-CAB-015 ~ 099",
     "drumNo": "PE-L1-1C240-02 ~ 11, PE-L1-1C400-01 ~ 02, PE-L1-1C500-33 ~ 36, PE-L1-3C50/25-02, PE-L1-3C120/70-01, PE-L1-3C150/95-01 ~ 03, PE-L1-4C50/25-03 ~ 06, PE-L1-4C70/35-01 ~ 06, PE-L1-4C95/50-32 ~ 33, PE-L1-4C120/70-01 ~ 02, PE-L1-4C150/95-01 ~ 04, PE-L1-5C70/35-05, PE-L1-5C95/50-02 ~ 04, PE-L1-5C120/70-05 ~ 07, PE-L1-5C150/95-01 ~ 03",
-    "status": "Cargo Ready",
+    "status": "On-Site",
     "eta": "2026-09-30",
     "remark": "Truck",
     "drumList": [
