@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getTotals, getCategoryProgress, getPriorityChartData, masterLengths, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
 import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
@@ -10,15 +10,17 @@ import PieChartSection from './PieChartSection'
 import MonthlyPullingChart from './MonthlyPullingChart'
 import TerminationGauges from './TerminationGauges'
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const [master, setMaster] = useState(null)
   const [fieldData, setFieldData] = useState({})
   const [actuals, setActuals] = useState(null)
 
   const [supplyInfo, setSupplyInfo] = useState(null)
+  const [drumMap, setDrumMap] = useState({})
 
   useEffect(() => {
     fetch(dataUrl('/cable-data.json')).then(r => r.json()).then(setMaster).catch(() => setMaster([]))
+    fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).then(setDrumMap).catch(() => setDrumMap({}))
     Promise.all([
       fetch(dataUrl('/cable-material.json')).then(r => r.json()),
       fetch(dataUrl('/drum-capacity.json')).then(r => r.json()),
@@ -57,6 +59,24 @@ export default function Dashboard() {
     return () => window.removeEventListener('cable-field-update', recompute)
   }, [master])
 
+  // A field record whose cable is not in the master is dropped by rollupActuals(), and
+  // a drum that disagrees with the design quietly distorts material planning. Neither is
+  // visible unless something says so on the page everyone lands on.
+  const integrity = useMemo(() => {
+    if (!master) return null
+    const names = new Set(master.map(c => c.n))
+    let orphan = 0, drumDiff = 0
+    for (const [cno, e] of Object.entries(fieldData || {})) {
+      const touched = e && (e.pullingDate || e.pulledLength || e.usedDrum ||
+        e.termDateFrom || e.termDateTo || e.act)
+      if (!touched) continue
+      if (!names.has(cno)) { orphan++; continue }
+      const design = drumMap[cno]
+      if (design && e.usedDrum && e.usedDrum !== design) drumDiff++
+    }
+    return { orphan, drumDiff }
+  }, [master, fieldData, drumMap])
+
   const lengths = masterLengths(master)
   const totals = getTotals(actuals, lengths)
   const categoryProgress = getCategoryProgress(actuals, lengths)
@@ -94,6 +114,32 @@ export default function Dashboard() {
           <span className="date-label">{dateStr} 기준</span>
         </div>
       </div>
+
+      {integrity && (integrity.orphan > 0 || integrity.drumDiff > 0) && (
+        <div className="db-integrity">
+          <span className="db-integrity-ico">&#9888;</span>
+          <div className="db-integrity-text">
+            <strong>실적 데이터 확인이 필요합니다.</strong>
+            {integrity.orphan > 0 && (
+              <span className="db-integrity-item">
+                케이블 마스터에 없는 실적 <b>{integrity.orphan.toLocaleString()}건</b>
+                <span className="db-integrity-why"> — 진도율에 집계되지 않습니다</span>
+              </span>
+            )}
+            {integrity.drumDiff > 0 && (
+              <span className="db-integrity-item">
+                설계와 다른 드럼 사용 <b>{integrity.drumDiff.toLocaleString()}건</b>
+                <span className="db-integrity-why"> — 자재 수급 확인 필요</span>
+              </span>
+            )}
+          </div>
+          {onNavigate && (
+            <button type="button" className="db-integrity-go" onClick={() => onNavigate('actuals')}>
+              Work Log에서 보기 &rarr;
+            </button>
+          )}
+        </div>
+      )}
 
       <KpiCards totals={totals} />
 
