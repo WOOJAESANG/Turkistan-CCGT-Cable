@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
-import { ambiguousDrumTag, canonDrum } from '../lib/drumTag'
+import { ambiguousDrumTag } from '../lib/drumTag'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -117,29 +117,22 @@ function CableTagInput({ value, onChange, onPick, master, invalid }) {
   )
 }
 
-// A tag that is not in the master is invisible to the Dashboard: rollupActuals()
-// skips any cable it cannot find, so the record is stored yet never counted. Most of
-// these are typos, so normalising away the usual slips finds the intended cable.
-const normTag = t => (t || '').toUpperCase().replace(/[\s._-]/g, '')
-
 // ---- Used Drum: a real dropdown, not free text ----
 // Free-typing let the field carry a packing "Package No." (e.g. PGU-DE-439-PCC-046) instead
 // of the drum tag design uses (e.g. PE-L1-3C4-09) — the two number a physical drum
 // differently, and only the drum-tag form can be compared against the designed Drum No.
 // Restricting entry to the master list is what actually closes that gap; a searchable
 // combo would still accept anything typed.
-function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
+function DrumInput({ value, onChange, master, cat, invalid }) {
   const options = useMemo(() => {
     const pool = cat ? master.filter(d => d.cat === cat) : master
     const drums = pool.map(d => d.drum)
-    // The designed drum must always be offered, even if its packing is not registered yet.
-    if (designDrum) drums.push(designDrum)
     // Keep the current value selectable even if it falls outside today's master list —
     // an already-saved entry (or a drum whose packing isn't registered yet) must not
     // silently disappear from its own field.
     if (value && !drums.includes(value)) drums.push(value)
     return [...new Set(drums)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-  }, [master, cat, value, designDrum])
+  }, [master, cat, value])
 
   return (
     <select
@@ -148,8 +141,7 @@ function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
       onChange={e => onChange(e.target.value)}
     >
       <option value="">Select drum…</option>
-      {designDrum && <option value={designDrum}>{designDrum}  ← as designed</option>}
-      {options.filter(d => d !== designDrum).map(d => <option key={d} value={d}>{d}</option>)}
+      {options.map(d => <option key={d} value={d}>{d}</option>)}
     </select>
   )
 }
@@ -160,8 +152,6 @@ export default function CableActuals({ session }) {
   const [master, setMaster] = useState([])
   const [masterMap, setMasterMap] = useState(new Map())
   const [drumMaster, setDrumMaster] = useState([])
-  const [drumMap, setDrumMap] = useState({})
-  const [drumCap, setDrumCap] = useState({})
   const [loading, setLoading] = useState(true)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [tag, setTag] = useState('')
@@ -171,8 +161,6 @@ export default function CableActuals({ session }) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [vendorFilter, setVendorFilter] = useState('')
-  const [diffOnly, setDiffOnly] = useState(false)
-  const [orphanOnly, setOrphanOnly] = useState(false)
   const [visibleCount, setVisibleCount] = useState(50)
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
@@ -233,11 +221,7 @@ export default function CableActuals({ session }) {
     Promise.all([
       fetch(dataUrl('/cable-data.json')).then(r => r.json()),
       fetch(dataUrl('/cable-material.json')).then(r => r.json()).catch(() => []),
-      fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).catch(() => ({})),
-      fetch(dataUrl('/drum-capacity.json')).then(r => r.json()).catch(() => ({})),
-    ]).then(([cables, materials, dmap, dcap]) => {
-      setDrumMap(dmap || {})
-      setDrumCap(dcap || {})
+    ]).then(([cables, materials]) => {
       setMaster(cables)
       setMasterMap(new Map(cables.map(c => [c.n, c])))
       const dm = []; const seen = new Set()
@@ -279,11 +263,6 @@ export default function CableActuals({ session }) {
       setFlash({ type: 'err', msg: `필수 항목을 입력하세요 — ${labels.join(', ')}` })
       return
     }
-    if (!masterMap.has(t) && !window.confirm(
-      [`"${t}" 은(는) 케이블 마스터에 없습니다.`, '',
-       '저장은 되지만 대시보드 진도율에는 집계되지 않습니다.',
-       '번호가 정확한지 다시 확인해 주세요.', '',
-       '이대로 저장할까요?'].join('\n'))) return
     updateFieldEntry(t, { ...form })
     setMissing(new Set())
     setFlash({ type: 'ok', msg: `저장 완료 · ${t}` })
@@ -313,35 +292,14 @@ export default function CableActuals({ session }) {
         return dates.some(d => (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo))
       })
       .filter(([, e]) => !vendorFilter || (e.vendor || '') === vendorFilter)
-      .map(([cno, e]) => {
-        const design = drumMap[cno] || ''
-        return {
-          cno, ...e,
-          cat: masterMap.get(cno)?.g || '',
-          designDrum: design,
-          // Only a drum that was actually entered can disagree with the design.
-          drumDiff: !!(design && e.usedDrum && e.usedDrum !== design),
-          orphan: !masterMap.has(cno),
-        }
-      })
-      .filter(r => !diffOnly || r.drumDiff)
-      .filter(r => !orphanOnly || r.orphan)
+      .map(([cno, e]) => ({ cno, ...e, cat: masterMap.get(cno)?.g || '' }))
       .sort((a, b) => {
         const da = a.pullingDate || ''
         const db = b.pullingDate || ''
         if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
         return a.cno.localeCompare(b.cno)
       })
-  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap, diffOnly, orphanOnly])
-
-  const diffCount = useMemo(() => Object.entries(fieldData).filter(([cno, e]) => {
-    const design = drumMap[cno]
-    return hasActuals(e) && design && e.usedDrum && e.usedDrum !== design
-  }).length, [fieldData, drumMap])
-
-  const orphanCount = useMemo(
-    () => Object.keys(fieldData).filter(cno => hasActuals(fieldData[cno]) && !masterMap.has(cno)).length,
-    [fieldData, masterMap])
+  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter])
 
   const vendorList = useMemo(() => {
     const set = new Set()
@@ -355,46 +313,15 @@ export default function CableActuals({ session }) {
   }, 0), [records])
 
   // Short drum tag that omits the packing number — resolves to one drum by guess only.
-  // The drum design allocated to this cable. Field crews do sometimes pull from a
-  // different drum, so a mismatch is surfaced as a warning and never blocks saving —
-  // what matters is that it stops being invisible.
-  const designDrum = tag ? (drumMap[tag.trim()] || '') : ''
-  const drumMismatch = !!(designDrum && form.usedDrum && form.usedDrum !== designDrum)
-
-  // Every drum is allocated to 99-100% of its capacity, so pulling past the reel is
-  // not a rounding matter - it leaves the cables the drum was assigned to with nothing.
-  // The current cable's own saved length is excluded so editing an entry never
-  // double-counts it against the drum.
-  const drumBudget = useMemo(() => {
-    const drum = (form.usedDrum || '').trim()
-    if (!drum) return null
-    const key = canonDrum(drum).toUpperCase()
-    const cap = Object.entries(drumCap).find(([k]) => k.toUpperCase() === key)?.[1]?.m
-    if (cap == null) return { drum, cap: null }
-    const me = tag.trim()
-    let used = 0
-    for (const [cno, e] of Object.entries(fieldData)) {
-      if (cno === me) continue
-      if (canonDrum((e?.usedDrum || '').trim()).toUpperCase() !== key) continue
-      const v = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''))
-      if (!isNaN(v)) used += v
-    }
-    const mine = parseFloat(String(form.pulledLength ?? '').replace(/[^0-9.]/g, ''))
-    const entered = isNaN(mine) ? 0 : mine
-    return { drum, cap, used, remaining: cap - used, after: cap - used - entered, entered }
-  }, [form.usedDrum, form.pulledLength, fieldData, drumCap, tag])
-
   const drumWarn = useMemo(
     () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
     [form.usedDrum, form.pullingDate])
 
-  const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Designed Drum', 'Drum Match', 'Pulled By',
+  const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Pulled By',
     'Pulling Date', 'Term Date (From)', 'Terminated By (From)',
     'Term Date (To)', 'Terminated By (To)', 'Line Check', 'ACT No.']
   const buildRows = () => records.map(r => [
-    r.cno, r.cat, r.vendor || '', r.pulledLength || '', r.usedDrum || '',
-    r.designDrum || '', r.designDrum ? (r.drumDiff ? 'MISMATCH' : 'OK') : '',
-    r.pulledBy || '',
+    r.cno, r.cat, r.vendor || '', r.pulledLength || '', r.usedDrum || '', r.pulledBy || '',
     r.pullingDate || '', r.termDateFrom || '', r.termByFrom || '',
     r.termDateTo || '', r.termByTo || '', r.lc || 'Pending', r.act || '',
   ])
@@ -425,14 +352,6 @@ export default function CableActuals({ session }) {
   }
 
   const tagTrim = tag.trim()
-  // Cables whose number differs from what was typed only by spacing or punctuation.
-  const tagSuggest = useMemo(() => {
-    if (!tagTrim || context) return []
-    const key = normTag(tagTrim)
-    if (key.length < 4) return []
-    return master.filter(c => normTag(c.n) === key).map(c => c.n).slice(0, 5)
-  }, [tagTrim, context, master])
-
   const tagState = !tagTrim ? null : (context ? 'in' : 'free')
 
   return (
@@ -471,23 +390,7 @@ export default function CableActuals({ session }) {
                 </div>
               )}
               {tagState === 'free' && (
-                <div className="ca-ctx ca-tag-unknown">
-                  <div className="ca-tag-unknown-top">
-                    ⚠ Not in the cable master — 마스터에 없는 케이블 번호입니다.
-                  </div>
-                  <div className="ca-tag-unknown-why">
-                    저장은 되지만 <strong>대시보드 진도율에 집계되지 않습니다.</strong> 번호를 다시 확인해 주세요.
-                  </div>
-                  {tagSuggest.length > 0 && (
-                    <div className="ca-drum-warn-fix">
-                      혹시 이 번호인가요?
-                      {tagSuggest.map(n => (
-                        <button type="button" key={n} className="ca-drum-warn-pick"
-                          onClick={() => { setTag(n); setForm(pickForm(fieldData[n])); clearErr() }}>{n}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <div className="ca-ctx ca-ctx-free">⚠ 마스터 목록에 없는 태그 — 직접 입력으로 저장됩니다.</div>
               )}
             </div>
             <div className="ca-field ca-field-vendor">
@@ -512,47 +415,7 @@ export default function CableActuals({ session }) {
                 <div className="ca-field">
                   <label>Used Drum <span className="ca-req">*</span></label>
                   <DrumInput value={form.usedDrum} onChange={v => setField('usedDrum', v)}
-                    master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')}
-                    designDrum={designDrum} />
-                  {designDrum && !form.usedDrum && (
-                    <div className="ca-ctx ca-ctx-design">
-                      Designed drum: <strong>{designDrum}</strong>
-                    </div>
-                  )}
-                  {drumBudget && drumBudget.cap != null && (
-                    drumBudget.after < 0 ? (
-                      <div className="ca-ctx ca-drum-over">
-                        &#9888; Exceeds the drum — 드럼 잔여 <strong>{Math.round(drumBudget.remaining).toLocaleString()} m</strong>
-                        인데 <strong>{Math.round(drumBudget.entered).toLocaleString()} m</strong>를 입력했습니다
-                        ({Math.round(-drumBudget.after).toLocaleString()} m 초과).
-                        <div className="ca-drum-over-sub">
-                          드럼 번호나 포설 길이를 확인해 주세요. 실제로 초과했다면 그대로 저장하셔도 됩니다.
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`ca-ctx ca-drum-budget${drumBudget.after < drumBudget.cap * 0.05 ? ' low' : ''}`}>
-                        Drum {drumBudget.drum} · 정격 {Math.round(drumBudget.cap).toLocaleString()} m ·
-                        기사용 {Math.round(drumBudget.used).toLocaleString()} m ·
-                        <strong> 잔여 {Math.round(drumBudget.after).toLocaleString()} m</strong>
-                        {drumBudget.entered > 0 && ' (이번 입력 반영)'}
-                      </div>
-                    )
-                  )}
-                  {drumMismatch && (
-                    <div className="ca-ctx ca-drum-diff">
-                      ⚠ Differs from the designed drum <strong>{designDrum}</strong>.
-                      설계 드럼과 다릅니다 — 실제 사용한 드럼이 맞는지 확인해 주세요.
-                      <div className="ca-drum-warn-fix">
-                        <button type="button" className="ca-drum-warn-pick"
-                          onClick={() => setField('usedDrum', designDrum)}>
-                          Use designed drum ({designDrum})
-                        </button>
-                        <span className="ca-drum-diff-keep">
-                          다른 드럼을 실제로 사용했다면 그대로 저장하셔도 됩니다.
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')} />
                   {drumWarn && (
                     <div className="ca-ctx ca-ctx-free ca-drum-warn">
                       ⚠ Packing no. missing — this will be counted as <strong>{drumWarn.assumed}</strong>.
@@ -667,24 +530,6 @@ export default function CableActuals({ session }) {
               )}
             </div>
           )}
-          <button
-            type="button"
-            className={`ca-diff-toggle ca-orphan-toggle${orphanOnly ? ' on' : ''}`}
-            title="케이블 마스터에 없는 번호로 입력된 실적만 보기 — 대시보드 집계에서 누락됩니다"
-            onClick={() => { setOrphanOnly(v => !v); setVisibleCount(50) }}
-          >
-            ⛔ Not in master
-            <span className="ca-diff-count">{orphanCount}</span>
-          </button>
-          <button
-            type="button"
-            className={`ca-diff-toggle${diffOnly ? ' on' : ''}`}
-            title="설계 드럼과 다른 드럼으로 입력된 실적만 보기"
-            onClick={() => { setDiffOnly(v => !v); setVisibleCount(50) }}
-          >
-            ⚠ Drum mismatch
-            <span className="ca-diff-count">{diffCount}</span>
-          </button>
           <div className="cm-export-inline">
             <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>
               <span className="cm-export-ico xls">XLS</span> Excel
@@ -731,21 +576,11 @@ export default function CableActuals({ session }) {
                 const lcC = STATUS_COLORS[lc] || STATUS_COLORS['Pending']
                 return (
                   <tr key={r.cno}>
-                    <td className="cs-cable-no">
-                      {r.cno}
-                      {r.orphan && <span className="ca-orphan-flag" title="케이블 마스터에 없음 — 대시보드 집계 제외">not in master</span>}
-                    </td>
+                    <td className="cs-cable-no">{r.cno}</td>
                     <td>{r.cat ? <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{r.cat}</span> : <span className="cm-muted">—</span>}</td>
                     <td>{r.vendor || '—'}</td>
                     <td className="num">{r.pulledLength || '—'}</td>
-                    <td className="ca-mono">
-                      {r.usedDrum || '—'}
-                      {r.drumDiff && (
-                        <span className="ca-drum-flag" title={`설계 드럼: ${r.designDrum}`}>
-                          ≠ {r.designDrum}
-                        </span>
-                      )}
-                    </td>
+                    <td className="ca-mono">{r.usedDrum || '—'}</td>
                     <td>{r.pulledBy || '—'}</td>
                     <td className="ca-mono">{r.pullingDate || '—'}</td>
                     <td className="ca-mono">{r.termDateFrom || '—'}</td>

@@ -68,7 +68,7 @@ function App() {
         onToggleCollapse={() => setSidebarCollapsed(c => !c)}
       />
       <main className="main-content">
-        {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
+        {page === 'dashboard' && <Dashboard />}
         {page === 'masterplan' && session?.user?.user_metadata?.role === 'admin' && <MasterPlan session={session} />}
         {page === 'schedule' && <CableSchedule />}
         {page === 'material' && <CableMaterial />}
