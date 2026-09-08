@@ -1259,6 +1259,29 @@
   white-space: nowrap;
 }
 
+/* Cable tag absent from the master: the record saves but the Dashboard never counts
+   it, so the warning has to state that consequence, not just the fact. */
+.ca-tag-unknown {
+  flex-direction: column; align-items: flex-start; gap: 5px;
+  padding: 9px 12px; border-radius: 8px; line-height: 1.55;
+  background: #fff7ed; border: 1px solid #fdba74; color: #9a3412;
+}
+.ca-tag-unknown-top { font-weight: 700; }
+.ca-tag-unknown-why { font-weight: 400; }
+.ca-tag-unknown-why strong { font-weight: 700; color: #9a3412; }
+.ca-tag-unknown .ca-drum-warn-pick { color: #9a3412; border-color: #fdba74; }
+.ca-tag-unknown .ca-drum-warn-pick:hover { background: #ffedd5; border-color: #fb923c; }
+
+.ca-orphan-toggle:hover { border-color: #fdba74; color: #9a3412; }
+.ca-orphan-toggle.on { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+.ca-orphan-toggle .ca-diff-count { color: #9a3412; background: #ffedd5; }
+.ca-orphan-toggle.on .ca-diff-count { color: #fff; background: #ea580c; }
+.ca-orphan-flag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 5px;
+  font-size: 10.5px; font-weight: 700; color: #9a3412; background: #ffedd5;
+  white-space: nowrap;
+}
+
 .ca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .ca-block { border: 1px solid var(--hairline, #eceef5); border-radius: 11px; overflow: visible; }
 .ca-block-head {

@@ -117,6 +117,11 @@ function CableTagInput({ value, onChange, onPick, master, invalid }) {
   )
 }
 
+// A tag that is not in the master is invisible to the Dashboard: rollupActuals()
+// skips any cable it cannot find, so the record is stored yet never counted. Most of
+// these are typos, so normalising away the usual slips finds the intended cable.
+const normTag = t => (t || '').toUpperCase().replace(/[\s._-]/g, '')
+
 // ---- Used Drum: a real dropdown, not free text ----
 // Free-typing let the field carry a packing "Package No." (e.g. PGU-DE-439-PCC-046) instead
 // of the drum tag design uses (e.g. PE-L1-3C4-09) — the two number a physical drum
@@ -166,6 +171,7 @@ export default function CableActuals({ session }) {
   const [dateTo, setDateTo] = useState('')
   const [vendorFilter, setVendorFilter] = useState('')
   const [diffOnly, setDiffOnly] = useState(false)
+  const [orphanOnly, setOrphanOnly] = useState(false)
   const [visibleCount, setVisibleCount] = useState(50)
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
@@ -270,6 +276,11 @@ export default function CableActuals({ session }) {
       setFlash({ type: 'err', msg: `필수 항목을 입력하세요 — ${labels.join(', ')}` })
       return
     }
+    if (!masterMap.has(t) && !window.confirm(
+      [`"${t}" 은(는) 케이블 마스터에 없습니다.`, '',
+       '저장은 되지만 대시보드 진도율에는 집계되지 않습니다.',
+       '번호가 정확한지 다시 확인해 주세요.', '',
+       '이대로 저장할까요?'].join('\n'))) return
     updateFieldEntry(t, { ...form })
     setMissing(new Set())
     setFlash({ type: 'ok', msg: `저장 완료 · ${t}` })
@@ -307,21 +318,27 @@ export default function CableActuals({ session }) {
           designDrum: design,
           // Only a drum that was actually entered can disagree with the design.
           drumDiff: !!(design && e.usedDrum && e.usedDrum !== design),
+          orphan: !masterMap.has(cno),
         }
       })
       .filter(r => !diffOnly || r.drumDiff)
+      .filter(r => !orphanOnly || r.orphan)
       .sort((a, b) => {
         const da = a.pullingDate || ''
         const db = b.pullingDate || ''
         if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
         return a.cno.localeCompare(b.cno)
       })
-  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap, diffOnly])
+  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap, diffOnly, orphanOnly])
 
   const diffCount = useMemo(() => Object.entries(fieldData).filter(([cno, e]) => {
     const design = drumMap[cno]
     return hasActuals(e) && design && e.usedDrum && e.usedDrum !== design
   }).length, [fieldData, drumMap])
+
+  const orphanCount = useMemo(
+    () => Object.keys(fieldData).filter(cno => hasActuals(fieldData[cno]) && !masterMap.has(cno)).length,
+    [fieldData, masterMap])
 
   const vendorList = useMemo(() => {
     const set = new Set()
@@ -382,6 +399,14 @@ export default function CableActuals({ session }) {
   }
 
   const tagTrim = tag.trim()
+  // Cables whose number differs from what was typed only by spacing or punctuation.
+  const tagSuggest = useMemo(() => {
+    if (!tagTrim || context) return []
+    const key = normTag(tagTrim)
+    if (key.length < 4) return []
+    return master.filter(c => normTag(c.n) === key).map(c => c.n).slice(0, 5)
+  }, [tagTrim, context, master])
+
   const tagState = !tagTrim ? null : (context ? 'in' : 'free')
 
   return (
@@ -420,7 +445,23 @@ export default function CableActuals({ session }) {
                 </div>
               )}
               {tagState === 'free' && (
-                <div className="ca-ctx ca-ctx-free">⚠ 마스터 목록에 없는 태그 — 직접 입력으로 저장됩니다.</div>
+                <div className="ca-ctx ca-tag-unknown">
+                  <div className="ca-tag-unknown-top">
+                    ⚠ Not in the cable master — 마스터에 없는 케이블 번호입니다.
+                  </div>
+                  <div className="ca-tag-unknown-why">
+                    저장은 되지만 <strong>대시보드 진도율에 집계되지 않습니다.</strong> 번호를 다시 확인해 주세요.
+                  </div>
+                  {tagSuggest.length > 0 && (
+                    <div className="ca-drum-warn-fix">
+                      혹시 이 번호인가요?
+                      {tagSuggest.map(n => (
+                        <button type="button" key={n} className="ca-drum-warn-pick"
+                          onClick={() => { setTag(n); setForm(pickForm(fieldData[n])); clearErr() }}>{n}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <div className="ca-field ca-field-vendor">
@@ -583,6 +624,15 @@ export default function CableActuals({ session }) {
           )}
           <button
             type="button"
+            className={`ca-diff-toggle ca-orphan-toggle${orphanOnly ? ' on' : ''}`}
+            title="케이블 마스터에 없는 번호로 입력된 실적만 보기 — 대시보드 집계에서 누락됩니다"
+            onClick={() => { setOrphanOnly(v => !v); setVisibleCount(50) }}
+          >
+            ⛔ Not in master
+            <span className="ca-diff-count">{orphanCount}</span>
+          </button>
+          <button
+            type="button"
             className={`ca-diff-toggle${diffOnly ? ' on' : ''}`}
             title="설계 드럼과 다른 드럼으로 입력된 실적만 보기"
             onClick={() => { setDiffOnly(v => !v); setVisibleCount(50) }}
@@ -636,7 +686,10 @@ export default function CableActuals({ session }) {
                 const lcC = STATUS_COLORS[lc] || STATUS_COLORS['Pending']
                 return (
                   <tr key={r.cno}>
-                    <td className="cs-cable-no">{r.cno}</td>
+                    <td className="cs-cable-no">
+                      {r.cno}
+                      {r.orphan && <span className="ca-orphan-flag" title="케이블 마스터에 없음 — 대시보드 집계 제외">not in master</span>}
+                    </td>
                     <td>{r.cat ? <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{r.cat}</span> : <span className="cm-muted">—</span>}</td>
                     <td>{r.vendor || '—'}</td>
                     <td className="num">{r.pulledLength || '—'}</td>
