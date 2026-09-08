@@ -1238,6 +1238,27 @@
 .ca-drum-diff .ca-drum-warn-pick:hover { background: #fee2e2; border-color: #f87171; }
 .ca-drum-diff-keep { font-size: 11.5px; font-weight: 400; color: #9f6b6b; }
 
+/* Records list: filter to entries whose drum disagrees with the design. */
+.ca-diff-toggle {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  padding: 7px 12px; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink-secondary, #5b5f77); background: #fff;
+  border: 1px solid var(--hairline, #eceef5); border-radius: 9px; cursor: pointer;
+}
+.ca-diff-toggle:hover { border-color: #fca5a5; color: #b91c1c; }
+.ca-diff-toggle.on { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+.ca-diff-count {
+  min-width: 20px; padding: 1px 6px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; text-align: center;
+  color: #b91c1c; background: #fee2e2;
+}
+.ca-diff-toggle.on .ca-diff-count { color: #fff; background: #dc2626; }
+.ca-drum-flag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 5px;
+  font-size: 10.5px; font-weight: 700; color: #b91c1c; background: #fee2e2;
+  white-space: nowrap;
+}
+
 .ca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .ca-block { border: 1px solid var(--hairline, #eceef5); border-radius: 11px; overflow: visible; }
 .ca-block-head {

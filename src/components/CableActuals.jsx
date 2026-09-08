@@ -165,6 +165,7 @@ export default function CableActuals({ session }) {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [vendorFilter, setVendorFilter] = useState('')
+  const [diffOnly, setDiffOnly] = useState(false)
   const [visibleCount, setVisibleCount] = useState(50)
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
@@ -298,14 +299,29 @@ export default function CableActuals({ session }) {
         return dates.some(d => (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo))
       })
       .filter(([, e]) => !vendorFilter || (e.vendor || '') === vendorFilter)
-      .map(([cno, e]) => ({ cno, ...e, cat: masterMap.get(cno)?.g || '' }))
+      .map(([cno, e]) => {
+        const design = drumMap[cno] || ''
+        return {
+          cno, ...e,
+          cat: masterMap.get(cno)?.g || '',
+          designDrum: design,
+          // Only a drum that was actually entered can disagree with the design.
+          drumDiff: !!(design && e.usedDrum && e.usedDrum !== design),
+        }
+      })
+      .filter(r => !diffOnly || r.drumDiff)
       .sort((a, b) => {
         const da = a.pullingDate || ''
         const db = b.pullingDate || ''
         if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
         return a.cno.localeCompare(b.cno)
       })
-  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter])
+  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap, diffOnly])
+
+  const diffCount = useMemo(() => Object.entries(fieldData).filter(([cno, e]) => {
+    const design = drumMap[cno]
+    return hasActuals(e) && design && e.usedDrum && e.usedDrum !== design
+  }).length, [fieldData, drumMap])
 
   const vendorList = useMemo(() => {
     const set = new Set()
@@ -329,11 +345,13 @@ export default function CableActuals({ session }) {
     () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
     [form.usedDrum, form.pullingDate])
 
-  const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Pulled By',
+  const EXPORT_COLS = ['Cable Tag', 'Category', 'Vendor', 'Pulled Length(m)', 'Used Drum', 'Designed Drum', 'Drum Match', 'Pulled By',
     'Pulling Date', 'Term Date (From)', 'Terminated By (From)',
     'Term Date (To)', 'Terminated By (To)', 'Line Check', 'ACT No.']
   const buildRows = () => records.map(r => [
-    r.cno, r.cat, r.vendor || '', r.pulledLength || '', r.usedDrum || '', r.pulledBy || '',
+    r.cno, r.cat, r.vendor || '', r.pulledLength || '', r.usedDrum || '',
+    r.designDrum || '', r.designDrum ? (r.drumDiff ? 'MISMATCH' : 'OK') : '',
+    r.pulledBy || '',
     r.pullingDate || '', r.termDateFrom || '', r.termByFrom || '',
     r.termDateTo || '', r.termByTo || '', r.lc || 'Pending', r.act || '',
   ])
@@ -563,6 +581,15 @@ export default function CableActuals({ session }) {
               )}
             </div>
           )}
+          <button
+            type="button"
+            className={`ca-diff-toggle${diffOnly ? ' on' : ''}`}
+            title="설계 드럼과 다른 드럼으로 입력된 실적만 보기"
+            onClick={() => { setDiffOnly(v => !v); setVisibleCount(50) }}
+          >
+            ⚠ Drum mismatch
+            <span className="ca-diff-count">{diffCount}</span>
+          </button>
           <div className="cm-export-inline">
             <button className="cm-export-btn" onClick={exportExcel} disabled={records.length === 0}>
               <span className="cm-export-ico xls">XLS</span> Excel
@@ -613,7 +640,14 @@ export default function CableActuals({ session }) {
                     <td>{r.cat ? <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{r.cat}</span> : <span className="cm-muted">—</span>}</td>
                     <td>{r.vendor || '—'}</td>
                     <td className="num">{r.pulledLength || '—'}</td>
-                    <td className="ca-mono">{r.usedDrum || '—'}</td>
+                    <td className="ca-mono">
+                      {r.usedDrum || '—'}
+                      {r.drumDiff && (
+                        <span className="ca-drum-flag" title={`설계 드럼: ${r.designDrum}`}>
+                          ≠ {r.designDrum}
+                        </span>
+                      )}
+                    </td>
                     <td>{r.pulledBy || '—'}</td>
                     <td className="ca-mono">{r.pullingDate || '—'}</td>
                     <td className="ca-mono">{r.termDateFrom || '—'}</td>
