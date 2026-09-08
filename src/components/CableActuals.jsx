@@ -123,16 +123,18 @@ function CableTagInput({ value, onChange, onPick, master, invalid }) {
 // differently, and only the drum-tag form can be compared against the designed Drum No.
 // Restricting entry to the master list is what actually closes that gap; a searchable
 // combo would still accept anything typed.
-function DrumInput({ value, onChange, master, cat, invalid }) {
+function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
   const options = useMemo(() => {
     const pool = cat ? master.filter(d => d.cat === cat) : master
     const drums = pool.map(d => d.drum)
+    // The designed drum must always be offered, even if its packing is not registered yet.
+    if (designDrum) drums.push(designDrum)
     // Keep the current value selectable even if it falls outside today's master list —
     // an already-saved entry (or a drum whose packing isn't registered yet) must not
     // silently disappear from its own field.
     if (value && !drums.includes(value)) drums.push(value)
     return [...new Set(drums)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-  }, [master, cat, value])
+  }, [master, cat, value, designDrum])
 
   return (
     <select
@@ -141,7 +143,8 @@ function DrumInput({ value, onChange, master, cat, invalid }) {
       onChange={e => onChange(e.target.value)}
     >
       <option value="">Select drum…</option>
-      {options.map(d => <option key={d} value={d}>{d}</option>)}
+      {designDrum && <option value={designDrum}>{designDrum}  ← as designed</option>}
+      {options.filter(d => d !== designDrum).map(d => <option key={d} value={d}>{d}</option>)}
     </select>
   )
 }
@@ -152,6 +155,7 @@ export default function CableActuals({ session }) {
   const [master, setMaster] = useState([])
   const [masterMap, setMasterMap] = useState(new Map())
   const [drumMaster, setDrumMaster] = useState([])
+  const [drumMap, setDrumMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [tag, setTag] = useState('')
@@ -221,7 +225,9 @@ export default function CableActuals({ session }) {
     Promise.all([
       fetch(dataUrl('/cable-data.json')).then(r => r.json()),
       fetch(dataUrl('/cable-material.json')).then(r => r.json()).catch(() => []),
-    ]).then(([cables, materials]) => {
+      fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).catch(() => ({})),
+    ]).then(([cables, materials, dmap]) => {
+      setDrumMap(dmap || {})
       setMaster(cables)
       setMasterMap(new Map(cables.map(c => [c.n, c])))
       const dm = []; const seen = new Set()
@@ -313,6 +319,12 @@ export default function CableActuals({ session }) {
   }, 0), [records])
 
   // Short drum tag that omits the packing number — resolves to one drum by guess only.
+  // The drum design allocated to this cable. Field crews do sometimes pull from a
+  // different drum, so a mismatch is surfaced as a warning and never blocks saving —
+  // what matters is that it stops being invisible.
+  const designDrum = tag ? (drumMap[tag.trim()] || '') : ''
+  const drumMismatch = !!(designDrum && form.usedDrum && form.usedDrum !== designDrum)
+
   const drumWarn = useMemo(
     () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
     [form.usedDrum, form.pullingDate])
@@ -415,7 +427,28 @@ export default function CableActuals({ session }) {
                 <div className="ca-field">
                   <label>Used Drum <span className="ca-req">*</span></label>
                   <DrumInput value={form.usedDrum} onChange={v => setField('usedDrum', v)}
-                    master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')} />
+                    master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')}
+                    designDrum={designDrum} />
+                  {designDrum && !form.usedDrum && (
+                    <div className="ca-ctx ca-ctx-design">
+                      Designed drum: <strong>{designDrum}</strong>
+                    </div>
+                  )}
+                  {drumMismatch && (
+                    <div className="ca-ctx ca-drum-diff">
+                      ⚠ Differs from the designed drum <strong>{designDrum}</strong>.
+                      설계 드럼과 다릅니다 — 실제 사용한 드럼이 맞는지 확인해 주세요.
+                      <div className="ca-drum-warn-fix">
+                        <button type="button" className="ca-drum-warn-pick"
+                          onClick={() => setField('usedDrum', designDrum)}>
+                          Use designed drum ({designDrum})
+                        </button>
+                        <span className="ca-drum-diff-keep">
+                          다른 드럼을 실제로 사용했다면 그대로 저장하셔도 됩니다.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {drumWarn && (
                     <div className="ca-ctx ca-ctx-free ca-drum-warn">
                       ⚠ Packing no. missing — this will be counted as <strong>{drumWarn.assumed}</strong>.
