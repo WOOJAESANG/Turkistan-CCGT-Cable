@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
-import { ambiguousDrumTag } from '../lib/drumTag'
+import { ambiguousDrumTag, canonDrum } from '../lib/drumTag'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -161,6 +161,7 @@ export default function CableActuals({ session }) {
   const [masterMap, setMasterMap] = useState(new Map())
   const [drumMaster, setDrumMaster] = useState([])
   const [drumMap, setDrumMap] = useState({})
+  const [drumCap, setDrumCap] = useState({})
   const [loading, setLoading] = useState(true)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [tag, setTag] = useState('')
@@ -233,8 +234,10 @@ export default function CableActuals({ session }) {
       fetch(dataUrl('/cable-data.json')).then(r => r.json()),
       fetch(dataUrl('/cable-material.json')).then(r => r.json()).catch(() => []),
       fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).catch(() => ({})),
-    ]).then(([cables, materials, dmap]) => {
+      fetch(dataUrl('/drum-capacity.json')).then(r => r.json()).catch(() => ({})),
+    ]).then(([cables, materials, dmap, dcap]) => {
       setDrumMap(dmap || {})
+      setDrumCap(dcap || {})
       setMaster(cables)
       setMasterMap(new Map(cables.map(c => [c.n, c])))
       const dm = []; const seen = new Set()
@@ -357,6 +360,29 @@ export default function CableActuals({ session }) {
   // what matters is that it stops being invisible.
   const designDrum = tag ? (drumMap[tag.trim()] || '') : ''
   const drumMismatch = !!(designDrum && form.usedDrum && form.usedDrum !== designDrum)
+
+  // Every drum is allocated to 99-100% of its capacity, so pulling past the reel is
+  // not a rounding matter - it leaves the cables the drum was assigned to with nothing.
+  // The current cable's own saved length is excluded so editing an entry never
+  // double-counts it against the drum.
+  const drumBudget = useMemo(() => {
+    const drum = (form.usedDrum || '').trim()
+    if (!drum) return null
+    const key = canonDrum(drum).toUpperCase()
+    const cap = Object.entries(drumCap).find(([k]) => k.toUpperCase() === key)?.[1]?.m
+    if (cap == null) return { drum, cap: null }
+    const me = tag.trim()
+    let used = 0
+    for (const [cno, e] of Object.entries(fieldData)) {
+      if (cno === me) continue
+      if (canonDrum((e?.usedDrum || '').trim()).toUpperCase() !== key) continue
+      const v = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''))
+      if (!isNaN(v)) used += v
+    }
+    const mine = parseFloat(String(form.pulledLength ?? '').replace(/[^0-9.]/g, ''))
+    const entered = isNaN(mine) ? 0 : mine
+    return { drum, cap, used, remaining: cap - used, after: cap - used - entered, entered }
+  }, [form.usedDrum, form.pulledLength, fieldData, drumCap, tag])
 
   const drumWarn = useMemo(
     () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
@@ -492,6 +518,25 @@ export default function CableActuals({ session }) {
                     <div className="ca-ctx ca-ctx-design">
                       Designed drum: <strong>{designDrum}</strong>
                     </div>
+                  )}
+                  {drumBudget && drumBudget.cap != null && (
+                    drumBudget.after < 0 ? (
+                      <div className="ca-ctx ca-drum-over">
+                        &#9888; Exceeds the drum — 드럼 잔여 <strong>{Math.round(drumBudget.remaining).toLocaleString()} m</strong>
+                        인데 <strong>{Math.round(drumBudget.entered).toLocaleString()} m</strong>를 입력했습니다
+                        ({Math.round(-drumBudget.after).toLocaleString()} m 초과).
+                        <div className="ca-drum-over-sub">
+                          드럼 번호나 포설 길이를 확인해 주세요. 실제로 초과했다면 그대로 저장하셔도 됩니다.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`ca-ctx ca-drum-budget${drumBudget.after < drumBudget.cap * 0.05 ? ' low' : ''}`}>
+                        Drum {drumBudget.drum} · 정격 {Math.round(drumBudget.cap).toLocaleString()} m ·
+                        기사용 {Math.round(drumBudget.used).toLocaleString()} m ·
+                        <strong> 잔여 {Math.round(drumBudget.after).toLocaleString()} m</strong>
+                        {drumBudget.entered > 0 && ' (이번 입력 반영)'}
+                      </div>
+                    )
                   )}
                   {drumMismatch && (
                     <div className="ca-ctx ca-drum-diff">
