@@ -1327,17 +1327,8 @@
 .ca-drum-over strong { font-weight: 800; }
 .ca-drum-over-sub { font-size: 11.5px; font-weight: 400; color: #9f6b6b; }
 
-/* Used Drum: list by default, free entry behind a switch. A drum whose packing is not
-   registered yet has to remain enterable, or the record never gets made at all. */
-.ca-drum-input { display: flex; gap: 6px; align-items: stretch; }
-.ca-drum-input > .ca-input { flex: 1 1 auto; min-width: 0; }
-.ca-drum-mode {
-  flex: 0 0 auto; padding: 0 11px; font: inherit; font-size: 11.5px; font-weight: 600;
-  color: var(--ink-secondary, #5b5f77); background: var(--canvas-soft, #f6f9fc);
-  border: 1px solid var(--hairline, #eceef5); border-radius: 9px; cursor: pointer;
-  white-space: nowrap;
-}
-.ca-drum-mode:hover { background: #eef2f8; color: var(--ink, #23263b); }
+/* Used Drum and Packing No. are typed, with the list as suggestions rather than a gate:
+   a drum whose packing is not registered yet still has to be enterable. */
 .ca-mono-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .ca-opt { font-size: 11px; font-weight: 400; color: var(--ink-mute, #9498ad); }
 

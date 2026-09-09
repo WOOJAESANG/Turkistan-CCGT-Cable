@@ -129,51 +129,33 @@ const normTag = t => (t || '').toUpperCase().replace(/[\s._-]/g, '')
 // Restricting entry to the master list is what actually closes that gap; a searchable
 // combo would still accept anything typed.
 function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
-  // A drum whose packing has not been registered yet cannot appear in the list, and
-  // refusing it would push the record out of the system entirely. Free entry stays
-  // available, but behind a switch so the list is what people reach for first.
-  const [manual, setManual] = useState(false)
   const options = useMemo(() => {
     const pool = cat ? master.filter(d => d.cat === cat) : master
     const drums = pool.map(d => d.drum)
     // The designed drum must always be offered, even if its packing is not registered yet.
     if (designDrum) drums.push(designDrum)
-    // Keep the current value selectable even if it falls outside today's master list —
-    // an already-saved entry (or a drum whose packing isn't registered yet) must not
-    // silently disappear from its own field.
     if (value && !drums.includes(value)) drums.push(value)
     return [...new Set(drums)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   }, [master, cat, value, designDrum])
 
-  const listed = !value || options.includes(value)
-
+  // Typed entry with the list as suggestions, not a gate: a drum whose packing is not
+  // registered yet still has to be enterable, or the record never gets made at all.
   return (
-    <div className="ca-drum-input">
-      {manual || !listed ? (
-        <input
-          className={`ca-input ca-mono-input${invalid ? ' ca-err' : ''}`}
-          type="text"
-          placeholder="드럼번호 직접 입력 — 예: PE-L1-3C4-09"
-          value={value || ''}
-          onChange={e => onChange(e.target.value)}
-          autoComplete="off"
-        />
-      ) : (
-        <select
-          className={`ca-input ca-select${invalid ? ' ca-err' : ''}`}
-          value={value || ''}
-          onChange={e => onChange(e.target.value)}
-        >
-          <option value="">Select drum…</option>
-          {designDrum && <option value={designDrum}>{designDrum}  ← as designed</option>}
-          {options.filter(d => d !== designDrum).map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
-      )}
-      <button type="button" className="ca-drum-mode" onClick={() => setManual(v => !v)}
-        title={manual ? '목록에서 선택' : '목록에 없는 드럼 직접 입력'}>
-        {manual || !listed ? '목록' : '직접입력'}
-      </button>
-    </div>
+    <>
+      <input
+        className={`ca-input ca-mono-input${invalid ? ' ca-err' : ''}`}
+        type="text"
+        list="ca-drums"
+        placeholder="드럼번호 입력 또는 목록에서 선택 — 예: PE-L1-3C4-09"
+        value={value || ''}
+        onChange={e => onChange(e.target.value)}
+        autoComplete="off"
+      />
+      <datalist id="ca-drums">
+        {designDrum && <option value={designDrum}>설계 배정</option>}
+        {options.filter(d => d !== designDrum).map(d => <option key={d} value={d} />)}
+      </datalist>
+    </>
   )
 }
 
