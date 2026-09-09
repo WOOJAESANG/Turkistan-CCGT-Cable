@@ -129,6 +129,10 @@ const normTag = t => (t || '').toUpperCase().replace(/[\s._-]/g, '')
 // Restricting entry to the master list is what actually closes that gap; a searchable
 // combo would still accept anything typed.
 function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
+  // A drum whose packing has not been registered yet cannot appear in the list, and
+  // refusing it would push the record out of the system entirely. Free entry stays
+  // available, but behind a switch so the list is what people reach for first.
+  const [manual, setManual] = useState(false)
   const options = useMemo(() => {
     const pool = cat ? master.filter(d => d.cat === cat) : master
     const drums = pool.map(d => d.drum)
@@ -141,16 +145,35 @@ function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
     return [...new Set(drums)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   }, [master, cat, value, designDrum])
 
+  const listed = !value || options.includes(value)
+
   return (
-    <select
-      className={`ca-input ca-select${invalid ? ' ca-err' : ''}`}
-      value={value || ''}
-      onChange={e => onChange(e.target.value)}
-    >
-      <option value="">Select drum…</option>
-      {designDrum && <option value={designDrum}>{designDrum}  ← as designed</option>}
-      {options.filter(d => d !== designDrum).map(d => <option key={d} value={d}>{d}</option>)}
-    </select>
+    <div className="ca-drum-input">
+      {manual || !listed ? (
+        <input
+          className={`ca-input ca-mono-input${invalid ? ' ca-err' : ''}`}
+          type="text"
+          placeholder="드럼번호 직접 입력 — 예: PE-L1-3C4-09"
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          autoComplete="off"
+        />
+      ) : (
+        <select
+          className={`ca-input ca-select${invalid ? ' ca-err' : ''}`}
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+        >
+          <option value="">Select drum…</option>
+          {designDrum && <option value={designDrum}>{designDrum}  ← as designed</option>}
+          {options.filter(d => d !== designDrum).map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+      )}
+      <button type="button" className="ca-drum-mode" onClick={() => setManual(v => !v)}
+        title={manual ? '목록에서 선택' : '목록에 없는 드럼 직접 입력'}>
+        {manual || !listed ? '목록' : '직접입력'}
+      </button>
+    </div>
   )
 }
 
@@ -162,6 +185,8 @@ export default function CableActuals({ session }) {
   const [drumMaster, setDrumMaster] = useState([])
   const [drumMap, setDrumMap] = useState({})
   const [drumCap, setDrumCap] = useState({})
+  const [pkgDrum, setPkgDrum] = useState({})
+  const [pkgNo, setPkgNo] = useState('')
   const [loading, setLoading] = useState(true)
   const [fieldData, setFieldData] = useState(loadFieldData)
   const [tag, setTag] = useState('')
@@ -235,7 +260,9 @@ export default function CableActuals({ session }) {
       fetch(dataUrl('/cable-material.json')).then(r => r.json()).catch(() => []),
       fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).catch(() => ({})),
       fetch(dataUrl('/drum-capacity.json')).then(r => r.json()).catch(() => ({})),
-    ]).then(([cables, materials, dmap, dcap]) => {
+      fetch(dataUrl('/packing-drum-map.json')).then(r => r.json()).catch(() => ({})),
+    ]).then(([cables, materials, dmap, dcap, pmap]) => {
+      setPkgDrum(pmap || {})
       setDrumMap(dmap || {})
       setDrumCap(dcap || {})
       setMaster(cables)
@@ -289,7 +316,7 @@ export default function CableActuals({ session }) {
     setFlash({ type: 'ok', msg: `저장 완료 · ${t}` })
     setTimeout(() => setFlash(null), 2800)
   }
-  const clear = () => { setTag(''); setForm(EMPTY_FORM); setMissing(new Set()); setFlash(null) }
+  const clear = () => { setTag(''); setForm(EMPTY_FORM); setPkgNo(''); setMissing(new Set()); setFlash(null) }
 
   const editRecord = cno => {
     setTag(cno); setForm(pickForm(fieldData[cno])); setMissing(new Set()); setFlash(null)
@@ -383,6 +410,21 @@ export default function CableActuals({ session }) {
     const entered = isNaN(mine) ? 0 : mine
     return { drum, cap, used, remaining: cap - used, after: cap - used - entered, entered }
   }, [form.usedDrum, form.pulledLength, fieldData, drumCap, tag])
+
+  // The physical drum carries only the packing number, so the field writes that down
+  // and someone converts it to a drum tag by hand — which is where PGU-DE-439-PCC-046
+  // became PE-L1-3C4-15 instead of -09. Entering the packing number does the lookup.
+  const pkgIndex = useMemo(() => {
+    const m = new Map()
+    for (const [k, v] of Object.entries(pkgDrum)) m.set(k.toUpperCase().replace(/\s/g, ''), v)
+    return m
+  }, [pkgDrum])
+  const pkgLookup = useMemo(() => {
+    const q = pkgNo.trim()
+    if (!q) return null
+    const hit = pkgIndex.get(q.toUpperCase().replace(/\s/g, ''))
+    return hit ? { drum: hit } : { drum: null }
+  }, [pkgNo, pkgIndex])
 
   const drumWarn = useMemo(
     () => ambiguousDrumTag(form.usedDrum, form.pullingDate),
@@ -510,6 +552,32 @@ export default function CableActuals({ session }) {
                   <label>Pulled Length (m) <span className="ca-req">*</span></label>
                   <input className={ic('pulledLength')} type="text" inputMode="decimal" placeholder="e.g. 478"
                     value={form.pulledLength} onChange={e => setField('pulledLength', e.target.value)} />
+                </div>
+                <div className="ca-field">
+                  <label>Packing No. <span className="ca-opt">(드럼에 적힌 번호)</span></label>
+                  <input className="ca-input ca-mono-input" type="text" list="ca-pkgs"
+                    placeholder="예: PGU-DE-439-PCC-046"
+                    value={pkgNo} onChange={e => setPkgNo(e.target.value)} autoComplete="off" />
+                  <datalist id="ca-pkgs">
+                    {Object.keys(pkgDrum).slice(0, 1000).map(p => <option key={p} value={p} />)}
+                  </datalist>
+                  {pkgLookup && (pkgLookup.drum ? (
+                    <div className="ca-ctx ca-pkg-hit">
+                      → 드럼 <strong>{pkgLookup.drum}</strong>
+                      {form.usedDrum === pkgLookup.drum ? (
+                        <span className="ca-pkg-ok">Used Drum에 반영됨</span>
+                      ) : (
+                        <button type="button" className="ca-drum-warn-pick"
+                          onClick={() => setField('usedDrum', pkgLookup.drum)}>
+                          Used Drum에 넣기
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="ca-ctx ca-pkg-miss">
+                      해당 패킹번호를 찾지 못했습니다. 번호를 확인하시거나 드럼번호를 직접 입력해 주세요.
+                    </div>
+                  ))}
                 </div>
                 <div className="ca-field">
                   <label>Used Drum <span className="ca-req">*</span></label>
