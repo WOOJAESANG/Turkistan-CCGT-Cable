@@ -310,7 +310,10 @@ export default function CableActuals({ session }) {
     if (tag.trim() === cno) clear()
   }
 
-  const records = useMemo(() => {
+  // Search / date / vendor narrow the working set; the mismatch and orphan toggles
+  // pick from within it. Both the list and the badge counts read this same set, so
+  // the number on a badge is always the number of rows clicking it produces.
+  const scoped = useMemo(() => {
     const q = search.trim().toLowerCase()
     return Object.entries(fieldData)
       .filter(([, e]) => hasActuals(e))
@@ -333,24 +336,20 @@ export default function CableActuals({ session }) {
           orphan: !masterMap.has(cno),
         }
       })
-      .filter(r => !diffOnly || r.drumDiff)
-      .filter(r => !orphanOnly || r.orphan)
-      .sort((a, b) => {
-        const da = a.pullingDate || ''
-        const db = b.pullingDate || ''
-        if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
-        return a.cno.localeCompare(b.cno)
-      })
-  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap, diffOnly, orphanOnly])
+  }, [fieldData, search, masterMap, dateFrom, dateTo, vendorFilter, drumMap])
 
-  const diffCount = useMemo(() => Object.entries(fieldData).filter(([cno, e]) => {
-    const design = drumMap[cno]
-    return hasActuals(e) && design && e.usedDrum && !sameDrum(e.usedDrum, design)
-  }).length, [fieldData, drumMap])
+  const records = useMemo(() => scoped
+    .filter(r => !diffOnly || r.drumDiff)
+    .filter(r => !orphanOnly || r.orphan)
+    .sort((a, b) => {
+      const da = a.pullingDate || ''
+      const db = b.pullingDate || ''
+      if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
+      return a.cno.localeCompare(b.cno)
+    }), [scoped, diffOnly, orphanOnly])
 
-  const orphanCount = useMemo(
-    () => Object.keys(fieldData).filter(cno => hasActuals(fieldData[cno]) && !masterMap.has(cno)).length,
-    [fieldData, masterMap])
+  const diffCount = useMemo(() => scoped.filter(r => r.drumDiff).length, [scoped])
+  const orphanCount = useMemo(() => scoped.filter(r => r.orphan).length, [scoped])
 
   const vendorList = useMemo(() => {
     const set = new Set()
