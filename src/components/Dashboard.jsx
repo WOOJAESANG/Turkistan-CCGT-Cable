@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { getTotals, getCategoryProgress, getPriorityChartData, masterLengths, rollupActuals, rollupPriorityActuals, rollupInspection } from '../data/cableData'
 import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
+import { sameDrum } from '../lib/drumTag'
 import KpiCards from './KpiCards'
 import LifecycleSummary from './LifecycleSummary'
 import WeeklyProgressChart from './WeeklyProgressChart'
@@ -72,7 +73,7 @@ export default function Dashboard({ onNavigate }) {
       if (!touched) continue
       if (!names.has(cno)) { orphan++; continue }
       const design = drumMap[cno]
-      if (design && e.usedDrum && e.usedDrum !== design) drumDiff++
+      if (design && e.usedDrum && !sameDrum(e.usedDrum, design)) drumDiff++
     }
     return { orphan, drumDiff }
   }, [master, fieldData, drumMap])

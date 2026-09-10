@@ -31,6 +31,18 @@ export function canonDrum(tag) {
   return `AIS-${m[1]}-${packing}-${m[2].padStart(3, '0')}`
 }
 
+// True when two tags name the same drum. The field types tags by hand, sometimes
+// on a Chinese IME, so a trailing space or a full-width dash must not read as a
+// different drum — that false alarm is what the mismatch warning must never raise.
+export function sameDrum(a, b) {
+  // \s already covers the nbsp / ideographic space / BOM a paste can carry in.
+  const DASHES = /[‐‑‒–—―−－]/g
+  const norm = t => canonDrum(String(t || '').replace(DASHES, '-'))
+    .replace(/\s+/g, '')
+    .toUpperCase()
+  return norm(a) === norm(b)
+}
+
 // Returns null when the tag resolves to exactly one drum, or details of the
 // ambiguity when the packing number is missing and more than one packing is on
 // site. pullingDate is optional — without it we cannot rule the ambiguity out.

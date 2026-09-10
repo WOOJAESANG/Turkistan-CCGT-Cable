@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
-import { ambiguousDrumTag, canonDrum } from '../lib/drumTag'
+import { ambiguousDrumTag, canonDrum, sameDrum } from '../lib/drumTag'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -329,7 +329,7 @@ export default function CableActuals({ session }) {
           cat: masterMap.get(cno)?.g || '',
           designDrum: design,
           // Only a drum that was actually entered can disagree with the design.
-          drumDiff: !!(design && e.usedDrum && e.usedDrum !== design),
+          drumDiff: !!(design && e.usedDrum && !sameDrum(e.usedDrum, design)),
           orphan: !masterMap.has(cno),
         }
       })
@@ -345,7 +345,7 @@ export default function CableActuals({ session }) {
 
   const diffCount = useMemo(() => Object.entries(fieldData).filter(([cno, e]) => {
     const design = drumMap[cno]
-    return hasActuals(e) && design && e.usedDrum && e.usedDrum !== design
+    return hasActuals(e) && design && e.usedDrum && !sameDrum(e.usedDrum, design)
   }).length, [fieldData, drumMap])
 
   const orphanCount = useMemo(
@@ -368,7 +368,7 @@ export default function CableActuals({ session }) {
   // different drum, so a mismatch is surfaced as a warning and never blocks saving —
   // what matters is that it stops being invisible.
   const designDrum = tag ? (drumMap[tag.trim()] || '') : ''
-  const drumMismatch = !!(designDrum && form.usedDrum && form.usedDrum !== designDrum)
+  const drumMismatch = !!(designDrum && form.usedDrum && !sameDrum(form.usedDrum, designDrum))
 
   // Every drum is allocated to 99-100% of its capacity, so pulling past the reel is
   // not a rounding matter - it leaves the cables the drum was assigned to with nothing.
