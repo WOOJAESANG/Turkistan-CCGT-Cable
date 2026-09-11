@@ -10,6 +10,7 @@ import BarChartSection from './BarChartSection'
 import PieChartSection from './PieChartSection'
 import MonthlyPullingChart from './MonthlyPullingChart'
 import TerminationGauges from './TerminationGauges'
+import AisScopeSection from './AisScopeSection'
 
 export default function Dashboard({ onNavigate }) {
   const [master, setMaster] = useState(null)
@@ -159,6 +160,8 @@ export default function Dashboard({ onNavigate }) {
         <BarChartSection categories={categoryProgress} />
         <TerminationGauges categories={categoryProgress} inspection={inspection} />
       </div>
+
+      <AisScopeSection master={master} fieldData={fieldData} drumMap={drumMap} />
     </div>
   )
 }

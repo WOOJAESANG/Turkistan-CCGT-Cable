@@ -2013,3 +2013,44 @@ select.cs-cf { padding: 4px 2px; }
   width: 20px; height: 0; border-top: 2px dashed #16a34a;
   flex-shrink: 0;
 }
+
+/* ---- AIS scope section (Dashboard) ---------------------------------- */
+.ais-scope {
+  background: #fff; border: 1px solid #e6e8ee; border-radius: 12px;
+  padding: 20px 22px 22px; margin-top: 18px;
+}
+.ais-head h3 { margin: 0; font-size: 15px; font-weight: 700; color: #1f2937; }
+.ais-head p { margin: 4px 0 0; font-size: 11px; color: #8b93a3; }
+
+.ais-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 16px 0 20px; }
+.ais-card { border: 1px solid #e6e8ee; border-radius: 10px; padding: 14px 16px; }
+.ais-card-main { background: #f5f4ff; border-color: #d9d4ff; }
+.ais-card-alt  { background: #fff7f7; border-color: #f3d6d6; }
+.ais-card header { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 700; color: #374151; }
+.ais-card header small { font-size: 10px; font-weight: 500; color: #9aa1af; }
+.ais-card strong { display: block; margin: 6px 0 8px; font-size: 26px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: #533afd; }
+.ais-card-alt strong { color: #c0392b; }
+.ais-card dl { display: flex; gap: 18px; margin: 10px 0 0; }
+.ais-card dl div { display: flex; flex-direction: column; gap: 2px; }
+.ais-card dt { font-size: 10px; color: #9aa1af; }
+.ais-card dd { margin: 0; font-size: 12px; font-weight: 600; color: #374151; font-variant-numeric: tabular-nums; }
+
+.ais-bar { height: 6px; border-radius: 3px; background: #eceef3; overflow: hidden; }
+.ais-bar span { display: block; height: 100%; border-radius: 3px; }
+.ais-bar-main span { background: #533afd; }
+.ais-bar-alt  span { background: #e06b60; }
+.ais-bar-row  span { background: #10b981; }
+
+.ais-table-wrap { overflow-x: auto; }
+.ais-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ais-table th {
+  text-align: left; padding: 8px 10px; background: #f7f8fa; color: #6b7280;
+  font-size: 11px; font-weight: 600; border-bottom: 1px solid #e6e8ee; white-space: nowrap;
+}
+.ais-table td { padding: 7px 10px; border-bottom: 1px solid #f0f1f5; color: #374151; white-space: nowrap; }
+.ais-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ais-table td:last-child { width: 120px; }
+.ais-r-sum td { font-weight: 700; background: #fafaff; }
+.ais-r-sub td { color: #6b7280; }
+.ais-r-comm td { color: #b4453a; background: #fffafa; }
