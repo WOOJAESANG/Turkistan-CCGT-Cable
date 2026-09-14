@@ -21,7 +21,7 @@ const num = n => Math.round(n).toLocaleString()
 export default function AisScopeSection({ master, fieldData, drumMap }) {
   const data = useMemo(() => {
     if (!master) return null
-    const blank = () => ({ n: 0, len: 0, doneN: 0, done: 0 })
+    const blank = () => ({ n: 0, len: 0, doneN: 0, done: 0, left: 0 })
     const cell = {}
     const at = (sec, sc) => (cell[`${sec}|${sc}`] ||= blank())
     for (const c of master) {
@@ -37,10 +37,12 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
         const r = at(sec, sc)
         r.n++; r.len += design
         if (has) { r.doneN++; r.done += isNaN(pulled) ? design : pulled }
+        else r.left += design
       }
     }
     const sum = (...rs) => rs.filter(Boolean).reduce((a, r) => ({
-      n: a.n + r.n, len: a.len + r.len, doneN: a.doneN + r.doneN, done: a.done + r.done,
+      n: a.n + r.n, len: a.len + r.len, doneN: a.doneN + r.doneN,
+      done: a.done + r.done, left: a.left + r.left,
     }), blank())
     const shym = sec => sum(cell[`${sec}|Power`], cell[`${sec}|Control`])
     const rows = SECTIONS.filter(s => cell[`${s}|Power`] || cell[`${s}|Control`] || cell[`${s}|Communication`])
@@ -48,7 +50,10 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
   }, [master, fieldData, drumMap])
 
   if (!data || !data.total.len) return null
-  const pct = r => (r.len ? (r.done / r.len) * 100 : 0)
+  // Pulled length is measured and design length is planned, so a cable's two numbers
+  // rarely match. Progress therefore weighs what was actually pulled against what is
+  // still designed but unpulled — not against the design total, which would mix bases.
+  const pct = r => { const b = r.done + r.left; return b ? (r.done / b) * 100 : 0 }
 
   const Bar = ({ r, tone }) => (
     <div className={`ais-bar ais-bar-${tone}`}>
@@ -70,7 +75,7 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
           <Bar r={data.total} tone="main" />
           <dl>
             <div><dt>완료</dt><dd>{num(data.total.done)} m</dd></div>
-            <div><dt>잔여</dt><dd>{num(data.total.len - data.total.done)} m</dd></div>
+            <div><dt>잔여</dt><dd>{num(data.total.left)} m</dd></div>
             <div><dt>설계</dt><dd>{num(data.total.len)} m</dd></div>
           </dl>
         </article>
@@ -80,7 +85,7 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
           <Bar r={data.comm} tone="alt" />
           <dl>
             <div><dt>완료</dt><dd>{num(data.comm.done)} m</dd></div>
-            <div><dt>잔여</dt><dd>{num(data.comm.len - data.comm.done)} m</dd></div>
+            <div><dt>잔여</dt><dd>{num(data.comm.left)} m</dd></div>
             <div><dt>설계</dt><dd>{num(data.comm.len)} m</dd></div>
           </dl>
         </article>
@@ -107,7 +112,7 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
                   <td className="num">{num(r.n)}</td>
                   <td className="num">{num(r.len)}</td>
                   <td className="num">{num(r.done)}</td>
-                  <td className="num">{num(r.len - r.done)}</td>
+                  <td className="num">{num(r.left)}</td>
                   <td className="num">{pct(r).toFixed(1)}%</td>
                   <td><Bar r={r} tone={cls === 'ais-r-comm' ? 'alt' : 'row'} /></td>
                 </tr>
