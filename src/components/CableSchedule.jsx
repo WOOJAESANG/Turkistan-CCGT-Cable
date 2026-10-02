@@ -28,7 +28,7 @@ function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
     const drum = drumFor(c, drumMap)
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
-      c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), c.p || '', fd.usedDrum || '', c.e || '', fd.lc || 'Pending', fd.act || '',
+      c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), derivePullStatus(c, fd), fd.usedDrum || '', deriveTermStatus(c, fd), fd.lc || 'Pending', fd.act || '',
     ]
   })
 }
