@@ -498,7 +498,7 @@ export default function CableSchedule() {
     for (const c of allData) {
       const s = c.sys || ''
       let fa, ta
-      if (s === 'AIS-OCP') { fa = '38'; ta = '38' }
+      if (s.startsWith('AIS-OCP')) { fa = '38'; ta = '38' }
       else if (s.startsWith('AIS 220kV') || s.startsWith('AIS 500kV')) {
         fa = getFromArea(c.f, elecFromAreaMap, c.t, s, c.n, nAreaMap, elecAreaMap)
         ta = getToArea(s, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap)

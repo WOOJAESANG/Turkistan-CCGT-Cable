@@ -15,7 +15,8 @@ const SCOPE = [
 ]
 const scopeOf = drum => SCOPE.find(([re]) => re.test(drum))?.[1] || null
 
-const SECTIONS = ['AIS 500kV', 'AIS 220kV', 'AIS-OCP']
+// OCP-internal cables are split by the interconnection diagram they come from.
+const SECTIONS = ['AIS 500kV', 'AIS 220kV', 'AIS-OCP 500kV', 'AIS-OCP 220kV']
 const num = n => Math.round(n).toLocaleString()
 
 export default function AisScopeSection({ master, fieldData, drumMap }) {
