@@ -244,7 +244,7 @@ function ProjectionPanel({ actualMonthly, hasActual, gapM, gapPct }) {
   )
 }
 
-function MilestoneRows({ rows, targets, onTarget, admin, viewer }) {
+function MilestoneRows({ rows, targets, onTarget, admin }) {
   return rows.map(r => {
     const override = targets[r.name]
     const isDefault = !override
@@ -258,7 +258,7 @@ function MilestoneRows({ rows, targets, onTarget, admin, viewer }) {
         <td className="mpl-target-cell">
           <input
             type="date"
-            disabled={viewer}
+            disabled={!admin}
             className={`mpl-target-input${isDefault ? ' is-default' : ''}`}
             value={override || r.l3Cable}
             onChange={e => e.target.value && onTarget(r.name, e.target.value)}
@@ -280,8 +280,8 @@ function MilestoneRows({ rows, targets, onTarget, admin, viewer }) {
 }
 
 export default function MasterPlan({ session }) {
+  // Everyone can view the plan; only admins change target dates.
   const admin = session?.user?.user_metadata?.role === 'admin'
-  const viewer = session?.user?.user_metadata?.role === 'viewer'
   const [targets, setTargets] = useState(() => ({ ...loadMilestoneTargets() }))
   const [fieldData, setFieldData] = useState({})
   const [master, setMaster] = useState([])
@@ -374,7 +374,7 @@ export default function MasterPlan({ session }) {
   }, [fieldData, master])
 
   const handleTarget = (name, date) => {
-    if (viewer) return
+    if (!admin) return
     if (date) saveMilestoneTarget(name, date)
     else resetMilestoneTarget(name)
   }
@@ -446,9 +446,9 @@ export default function MasterPlan({ session }) {
             </thead>
             <tbody>
               <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 1 (GT#11 / GT#12 / ST#10)</td></tr>
-              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} admin={admin} viewer={viewer} />
+              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} admin={admin} />
               <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 2 (GT#21 / GT#22 / ST#20)</td></tr>
-              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} admin={admin} viewer={viewer} />
+              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} admin={admin} />
             </tbody>
           </table>
         </div>

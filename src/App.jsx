@@ -69,7 +69,7 @@ function App() {
       />
       <main className="main-content">
         {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
-        {page === 'masterplan' && session?.user?.user_metadata?.role === 'admin' && <MasterPlan session={session} />}
+        {page === 'masterplan' && <MasterPlan session={session} />}
         {page === 'schedule' && <CableSchedule />}
         {page === 'material' && <CableMaterial />}
         {page === 'actuals' && <CableActuals session={session} />}

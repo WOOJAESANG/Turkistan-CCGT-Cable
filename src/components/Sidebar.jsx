@@ -39,15 +39,13 @@ export default function Sidebar({ activePage, onNavigate, session, mobileOpen, c
           </svg>
           {!collapsed && 'Dashboard'}
         </button>
-        {admin && (
-          <button className={`nav-item${activePage === 'masterplan' ? ' active' : ''}`} onClick={() => onNavigate('masterplan')} title="Cable Master Plan">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 3v18h18" />
-              <path d="M7 15l4-6 4 3 5-8" />
-            </svg>
-            {!collapsed && <><span>Cable Master Plan</span><span className="nav-admin-badge">Admin</span></>}
-          </button>
-        )}
+        <button className={`nav-item${activePage === 'masterplan' ? ' active' : ''}`} onClick={() => onNavigate('masterplan')} title="Cable Master Plan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3v18h18" />
+            <path d="M7 15l4-6 4 3 5-8" />
+          </svg>
+          {!collapsed && 'Cable Master Plan'}
+        </button>
         <button className={`nav-item${activePage === 'schedule' ? ' active' : ''}`} onClick={() => onNavigate('schedule')} title="Cable Schedule">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
