@@ -4,6 +4,7 @@ import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp, num } from '../lib/format'
 import { canonDrum } from '../lib/drumTag'
+import { t } from '../lib/i18n'
 
 const EXPORT_COLS = [
   'No.', 'Category', 'Type', 'Title', 'In-Charge', 'Document No.',
@@ -88,9 +89,9 @@ function DownloadIcon() {
 
 function DownloadLink({ url, label, name }) {
   if (!label) return <span className="cm-muted">—</span>
-  if (!url) return <span className="cm-code cm-muted" title="No file available">{label}</span>
+  if (!url) return <span className="cm-code cm-muted" title={t('No file available')}>{label}</span>
   return (
-    <a className="cm-dl" href={dataUrl(url)} download={name} title={`Download ${name}`}>
+    <a className="cm-dl" href={dataUrl(url)} download={name} title={t('Download {f}', { f: name })}>
       <DownloadIcon />
       <span>{label}</span>
     </a>
@@ -156,7 +157,7 @@ function DrumDropdown({ list, compact, highlight }) {
         title={compact}
       >
         <span className="cm-drumdd-count">{list.length}</span>
-        <span className="cm-drumdd-label">drum{list.length > 1 ? 's' : ''}</span>
+        <span className="cm-drumdd-label">{list.length > 1 ? t('drums') : t('drum')}</span>
         <svg className="cm-drumdd-caret" width="11" height="11" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9" />
@@ -175,14 +176,14 @@ function DrumDropdown({ list, compact, highlight }) {
             <input
               autoFocus
               type="text"
-              placeholder="Find drum no."
+              placeholder={t('Find drum no.')}
               value={q}
               onChange={e => setQ(e.target.value)}
             />
             {q && <button className="cm-drumdd-clear" onClick={() => setQ('')}>✕</button>}
           </div>
           <div className="cm-drumdd-list">
-            {shown.length === 0 && <div className="cm-drumdd-empty">No match</div>}
+            {shown.length === 0 && <div className="cm-drumdd-empty">{t('No match')}</div>}
             {shown.map(d => {
               const hl = highlight && d.toLowerCase().includes(highlight)
               return (
@@ -191,7 +192,7 @@ function DrumDropdown({ list, compact, highlight }) {
             })}
           </div>
           <div className="cm-drumdd-foot">
-            {ql ? `${shown.length} of ${list.length}` : `${list.length} total`}
+            {ql ? t('{a} of {b}', { a: shown.length, b: list.length }) : t('{n} total', { n: list.length })}
           </div>
         </div>
       )}
@@ -219,7 +220,7 @@ function ExportMenu({ rows }) {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        <span>Export</span>
+        <span>{t('Export')}</span>
         <svg className="cm-export-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -233,7 +234,7 @@ function ExportMenu({ rows }) {
             <span className="cm-export-ico csv">CSV</span> CSV (.csv)
           </button>
           <button onClick={() => { setOpen(false); setTimeout(() => window.print(), 60) }}>
-            <span className="cm-export-ico pdf">PDF</span> PDF / Print
+            <span className="cm-export-ico pdf">PDF</span> {t('PDF / Print')}
           </button>
         </div>
       )}
@@ -299,12 +300,12 @@ function DrumUsage({ capacity }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input type="text" placeholder="Search Drum No / Packing List" value={q} onChange={e => setQ(e.target.value)} />
+          <input type="text" placeholder={t('Search Drum No / Packing List')} value={q} onChange={e => setQ(e.target.value)} />
           {q && <button className="cs-clear" onClick={() => setQ('')}>✕</button>}
         </div>
         <span className="du-totals">
-          {totals.drums} drums in use · <b>{Math.round(totals.used).toLocaleString()} m</b> pulled ·{' '}
-          <b className="du-remain">{Math.round(totals.remaining).toLocaleString()} m</b> remaining
+          {t('{n} drums in use', { n: totals.drums })} · <b>{Math.round(totals.used).toLocaleString()} m</b> {t('pulled')} ·{' '}
+          <b className="du-remain">{Math.round(totals.remaining).toLocaleString()} m</b> {t('remaining')}
         </span>
       </div>
 
@@ -312,13 +313,13 @@ function DrumUsage({ capacity }) {
         <table className="cs-table">
           <thead>
             <tr>
-              <th>DRUM NO.</th>
-              <th>PACKING LIST</th>
-              <th className="num">CAPACITY (M)</th>
-              <th className="num">USED (M)</th>
-              <th className="num">REMAINING (M)</th>
-              <th>USAGE</th>
-              <th className="num">CABLES</th>
+              <th>{t('DRUM NO.')}</th>
+              <th>{t('PACKING LIST')}</th>
+              <th className="num">{t('CAPACITY (M)')}</th>
+              <th className="num">{t('USED (M)')}</th>
+              <th className="num">{t('REMAINING (M)')}</th>
+              <th>{t('USAGE')}</th>
+              <th className="num">{t('CABLES')}</th>
             </tr>
           </thead>
           <tbody>
@@ -339,7 +340,7 @@ function DrumUsage({ capacity }) {
                       <div className="du-bar-track" title={`${r.pct.toFixed(1)}%`}>
                         <div className={`du-bar-fill${over ? ' over' : low ? ' low' : ''}`} style={{ width: `${r.pct}%` }} />
                       </div>
-                    ) : <span className="cm-muted">no capacity data</span>}
+                    ) : <span className="cm-muted">{t('no capacity data')}</span>}
                   </td>
                   <td className="num" title={r.cables.join(', ')}>{r.cables.length}</td>
                 </tr>
@@ -348,15 +349,12 @@ function DrumUsage({ capacity }) {
           </tbody>
         </table>
         {rows.length === 0 && (
-          <div className="cs-empty">No drums recorded yet — enter a Used Drum in Work Log and it will appear here.</div>
+          <div className="cs-empty">{t('No drums recorded yet — enter a Used Drum in Work Log and it will appear here.')}</div>
         )}
       </div>
 
       <p className="cm-note">
-        <strong>Used (m)</strong> = sum of pulled lengths entered in Work Log for each drum. <strong>Capacity</strong> comes
-        from the packing lists (Detail PL sheets). Rows without capacity data are drums whose packing file does not state
-        a length (e.g. ACC, FFC-CAB, DCS cabinets) or free-text drum names that don't match a packing tag — check spelling
-        against the Drum No. dropdown on the Packing List view. Remaining under 10% is highlighted amber; negative (over-pulled) red.
+        {t('DRUM_USAGE_NOTE')}
       </p>
     </>
   )
@@ -407,21 +405,21 @@ export default function CableMaterial() {
   const setCF = (k, v) => setColF(f => ({ ...f, [k]: v }))
   const anyColF = Object.keys(EMPTY_CMF).some(k => colF[k] !== EMPTY_CMF[k])
   const cfText = key => (
-    <input type="text" className={`cs-cf${colF[key] ? ' active' : ''}`} placeholder="Filter"
+    <input type="text" className={`cs-cf${colF[key] ? ' active' : ''}`} placeholder={t('Filter')}
       value={colF[key]} onChange={e => setCF(key, e.target.value)} />
   )
   const cfSelect = (key, options) => (
     <select className={`cs-cf${colF[key] !== 'All' ? ' active' : ''}`} value={colF[key]}
       onChange={e => setCF(key, e.target.value)}>
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {options.map(o => <option key={o} value={o}>{t(o)}</option>)}
     </select>
   )
 
   if (loading) {
     return (
       <div className="cs-page"><div className="cs-body">
-        <div className="page-header"><h2>Cable Material Information</h2></div>
-        <div className="cs-loading">Loading data…</div>
+        <div className="page-header"><h2>{t('Cable Material Information')}</h2></div>
+        <div className="cs-loading">{t('Loading data…')}</div>
       </div></div>
     )
   }
@@ -431,15 +429,15 @@ export default function CableMaterial() {
       <div className="cs-body">
         <div className="page-header">
           <div className="cm-header-left">
-            <h2>Cable Material Information</h2>
-            <div className="cm-subtitle">Packing &amp; Drum</div>
+            <h2>{t('Cable Material Information')}</h2>
+            <div className="cm-subtitle">{t('Packing & Drum')}</div>
           </div>
           <div className="cm-header-right">
             <div className="cm-view-toggle">
-              <button className={view === 'packing' ? 'active' : ''} onClick={() => setView('packing')}>Packing List</button>
-              <button className={view === 'drums' ? 'active' : ''} onClick={() => setView('drums')}>Drum Usage</button>
+              <button className={view === 'packing' ? 'active' : ''} onClick={() => setView('packing')}>{t('Packing List')}</button>
+              <button className={view === 'drums' ? 'active' : ''} onClick={() => setView('drums')}>{t('Drum Usage')}</button>
             </div>
-            {view === 'packing' && <span className="cs-total">{filtered.length} of {data.length} items</span>}
+            {view === 'packing' && <span className="cs-total">{t('{a} of {b} items', { a: filtered.length, b: data.length })}</span>}
           </div>
         </div>
 
@@ -449,8 +447,8 @@ export default function CableMaterial() {
         <div className="cm-print-head">
           <div className="cm-print-title">Cable Material Information — Packing &amp; Drum</div>
           <div className="cm-print-meta">
-            Turkistan CCGT · {colF.cat === 'All' ? 'All Categories' : colF.cat}
-            {search ? ` · Filter: “${search}”` : ''} · {filtered.length} items · {stamp()}
+            Turkistan CCGT · {colF.cat === 'All' ? t('All Categories') : t(colF.cat)}
+            {search ? ` · ${t('Filter')}: “${search}”` : ''} · {t('{n} items', { n: filtered.length })} · {stamp()}
           </div>
         </div>
 
@@ -459,13 +457,13 @@ export default function CableMaterial() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" placeholder="Search Title / Drum No / Packing List / Document / In-Charge"
+            <input type="text" placeholder={t('Search Title / Drum No / Packing List / Document / In-Charge')}
               value={search} onChange={e => setSearch(e.target.value)} />
             {search && <button className="cs-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
           {anyColF && (
             <button type="button" className="cs-reset-filters" onClick={() => setColF(EMPTY_CMF)}>
-              ✕ Reset Filters
+              ✕ {t('Reset Filters')}
             </button>
           )}
           <ExportMenu rows={filtered} />
@@ -475,18 +473,18 @@ export default function CableMaterial() {
           <table className="cs-table cm-table">
             <thead>
               <tr>
-                <th>No.</th>
-                <th>Category</th>
-                <th>Type</th>
-                <th>Title</th>
-                <th>In-Charge</th>
-                <th>Document No. (Drawing)</th>
-                <th>Packing List</th>
-                <th>Packing Detail</th>
-                <th>Drum No.</th>
-                <th>Delivery</th>
-                <th>ETA</th>
-                <th>Remark</th>
+                <th>{t('No.')}</th>
+                <th>{t('Category')}</th>
+                <th>{t('Type')}</th>
+                <th>{t('Title')}</th>
+                <th>{t('In-Charge')}</th>
+                <th>{t('Document No. (Drawing)')}</th>
+                <th>{t('Packing List')}</th>
+                <th>{t('Packing Detail')}</th>
+                <th>{t('Drum No.')}</th>
+                <th>{t('Delivery')}</th>
+                <th>{t('ETA')}</th>
+                <th>{t('Remark')}</th>
               </tr>
               <tr className="cs-filter-row">
                 <th />
@@ -510,7 +508,7 @@ export default function CableMaterial() {
                 return (
                   <tr key={r.no}>
                     <td className="cm-no">{r.no}</td>
-                    <td><span className="cs-badge" style={{ background: catC.bg, color: catC.text }}>{CAT_SHORT[r.category] || r.category}</span></td>
+                    <td><span className="cs-badge" style={{ background: catC.bg, color: catC.text }}>{t(CAT_SHORT[r.category] || r.category)}</span></td>
                     <td className="cm-type">{r.cableType || '—'}</td>
                     <td className="cm-title">{r.title}</td>
                     <td className="cm-charge">{r.inCharge}</td>
@@ -533,7 +531,7 @@ export default function CableMaterial() {
                       <DrumDropdown list={r.drumList} compact={r.drumNo} highlight={search.trim().toLowerCase()} />
                       <span className="cm-drum-print">{r.drumNo || '—'}{r.drumCount ? ` (${r.drumCount})` : ''}</span>
                     </td>
-                    <td><span className="cs-badge" style={{ background: stC.bg, color: stC.text }}>{r.status || '—'}</span></td>
+                    <td><span className="cs-badge" style={{ background: stC.bg, color: stC.text }}>{r.status ? t(r.status) : '—'}</span></td>
                     <td className="cm-eta">{r.eta || '—'}</td>
                     <td className="cm-remark">{r.remark || '—'}</td>
                   </tr>
@@ -541,12 +539,11 @@ export default function CableMaterial() {
               })}
             </tbody>
           </table>
-          {filtered.length === 0 && <div className="cs-empty">No results found.</div>}
+          {filtered.length === 0 && <div className="cs-empty">{t('No results found.')}</div>}
         </div>
 
         <p className="cm-note">
-          Click a <strong>Document No.</strong> or <strong>Packing List</strong> number to download the source Excel file.
-          Open the <strong>Drum No.</strong> dropdown to browse or search every individual drum tag; the top search box also matches drum numbers across all rows.
+          {t('PACKING_NOTE')}
         </p>
         </>}
       </div>

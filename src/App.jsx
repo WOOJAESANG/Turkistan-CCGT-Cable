@@ -11,6 +11,7 @@ import CableActuals from './components/CableActuals'
 import DailyReport from './components/DailyReport'
 import Settings from './components/Settings'
 import Login from './components/Login'
+import { useLang, t } from './lib/i18n'
 
 function App() {
   const [page, setPage] = useState('dashboard')
@@ -18,6 +19,8 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Switching language remounts the pages so every label is re-read in the new language.
+  const lang = useLang()
 
   // Auth state
   useEffect(() => {
@@ -41,7 +44,7 @@ function App() {
     return () => { /* keep subscription across page nav */ }
   }, [session])
 
-  if (!authChecked) return <div className="boot-loading">Loading…</div>
+  if (!authChecked) return <div className="boot-loading">{t('Loading…')}</div>
   if (!session) return <Login />
 
   return (
@@ -49,7 +52,7 @@ function App() {
       <button
         type="button"
         className="mobile-hamburger"
-        aria-label="Open menu"
+        aria-label={t('Open menu')}
         onClick={() => setMobileOpen(true)}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -60,6 +63,7 @@ function App() {
       </button>
       {mobileOpen && <div className="mobile-backdrop" onClick={() => setMobileOpen(false)} />}
       <Sidebar
+        key={`sb-${lang}`}
         activePage={page}
         onNavigate={p => { setPage(p); setMobileOpen(false) }}
         session={session}
@@ -67,7 +71,7 @@ function App() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(c => !c)}
       />
-      <main className="main-content">
+      <main className="main-content" key={`main-${lang}`}>
         {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
         {page === 'masterplan' && <MasterPlan session={session} />}
         {page === 'schedule' && <CableSchedule />}

@@ -1,4 +1,5 @@
 import { formatNumber } from '../lib/format'
+import { t } from '../lib/i18n'
 
 export default function KpiCards({ totals }) {
   return (
@@ -8,14 +9,14 @@ export default function KpiCards({ totals }) {
           <svg className="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
-          Total Cable Length
+          {t('Total Cable Length')}
         </div>
         <div className="kpi-value">
           {formatNumber(totals.totalDesignedLength)}
           <span className="unit">m</span>
         </div>
         <div className="kpi-sub">
-          Cable {formatNumber(totals.totalLineCount)} Line · Termination {formatNumber(totals.totalDesignedTermination)}P
+          {t('Cable {n} lines · Termination {p} pts', { n: formatNumber(totals.totalLineCount), p: formatNumber(totals.totalDesignedTermination) })}
         </div>
       </div>
 
@@ -25,7 +26,7 @@ export default function KpiCards({ totals }) {
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
             <polyline points="17 6 23 6 23 12" />
           </svg>
-          Pulling Progress
+          {t('Pulling Progress')}
         </div>
         <div className="kpi-value" style={{ color: 'var(--primary)' }}>
           {totals.pullingPercent.toFixed(1)}
@@ -51,7 +52,7 @@ export default function KpiCards({ totals }) {
             <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
             <path d="m9 12 2 2 4-4" />
           </svg>
-          Termination Progress
+          {t('Termination Progress')}
         </div>
         <div className="kpi-value" style={{ color: 'var(--cat-control)' }}>
           {totals.terminationPercent.toFixed(1)}
@@ -67,7 +68,7 @@ export default function KpiCards({ totals }) {
           />
         </div>
         <div className="kpi-sub">
-          {formatNumber(totals.totalTerminatedCount)}P / {formatNumber(totals.totalDesignedTermination)}P
+          {formatNumber(totals.totalTerminatedCount)} / {formatNumber(totals.totalDesignedTermination)} {t('pts')}
         </div>
       </div>
     </div>

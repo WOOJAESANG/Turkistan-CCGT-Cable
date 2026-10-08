@@ -1,3 +1,5 @@
+import { t } from '../lib/i18n'
+
 // Semi-circle gauges showing Line Check / Inspection completion per category.
 // (Bar chart on the left already shows Pulling vs Termination progress, so
 // the right-side gauges surface the different metric: inspection completion.)
@@ -39,7 +41,7 @@ function Gauge({ label, pct, color, total, done }) {
         <div className="tg-nums">
           <span className="tg-done">{done.toLocaleString()}</span>
           <span className="tg-slash"> / </span>
-          <span className="tg-designed">{total.toLocaleString()} EA</span>
+          <span className="tg-designed">{total.toLocaleString()} {t('ea')}</span>
         </div>
       </div>
     </div>
@@ -50,8 +52,8 @@ export default function TerminationGauges({ categories, inspection }) {
   return (
     <div className="chart-card">
       <div className="chart-card-header">
-        <span className="chart-title">Inspection Status</span>
-        <span className="chart-subtitle">Line Check Done · By Category</span>
+        <span className="chart-title">{t('Inspection Status')}</span>
+        <span className="chart-subtitle">{t('Line Check Done · By Category')}</span>
       </div>
       <div className="tg-grid">
         {categories.map(c => {
@@ -61,7 +63,7 @@ export default function TerminationGauges({ categories, inspection }) {
           return (
             <Gauge
               key={c.id}
-              label={c.label}
+              label={t(c.label)}
               pct={pct}
               color={c.color}
               total={total}

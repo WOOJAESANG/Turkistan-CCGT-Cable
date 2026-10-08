@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { t } from '../lib/i18n'
 
 // AIS cables all sit under the PKG category, but two different contractors pull them:
 // Shymkent Automatika takes Power and Control, communication cable is someone else's
@@ -65,29 +66,29 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
   return (
     <section className="ais-scope">
       <div className="ais-head">
-        <h3>AIS 포설 현황 — 업체 범위별</h3>
-        <p>드럼 태그로 자동 구분 · PoCable=Power, CoCable/CC=Control, CMcable=Communication</p>
+        <h3>{t('AIS Pulling — by Contractor Scope')}</h3>
+        <p>{t('Split automatically by drum tag · PoCable=Power, CoCable/CC=Control, CMcable=Communication')}</p>
       </div>
 
       <div className="ais-cards">
         <article className="ais-card ais-card-main">
-          <header>Shymkent Automatika<small>Power + Control</small></header>
+          <header>Shymkent Automatika<small>{t('Power + Control')}</small></header>
           <strong>{pct(data.total).toFixed(1)}%</strong>
           <Bar r={data.total} tone="main" />
           <dl>
-            <div><dt>완료</dt><dd>{num(data.total.done)} m</dd></div>
-            <div><dt>잔여</dt><dd>{num(data.total.left)} m</dd></div>
-            <div><dt>설계</dt><dd>{num(data.total.len)} m</dd></div>
+            <div><dt>{t('Done')}</dt><dd>{num(data.total.done)} m</dd></div>
+            <div><dt>{t('Remaining')}</dt><dd>{num(data.total.left)} m</dd></div>
+            <div><dt>{t('Design')}</dt><dd>{num(data.total.len)} m</dd></div>
           </dl>
         </article>
         <article className="ais-card ais-card-alt">
-          <header>Communication<small>타 업체 범위</small></header>
+          <header>{t('Communication')}<small>{t('Other contractor scope')}</small></header>
           <strong>{pct(data.comm).toFixed(1)}%</strong>
           <Bar r={data.comm} tone="alt" />
           <dl>
-            <div><dt>완료</dt><dd>{num(data.comm.done)} m</dd></div>
-            <div><dt>잔여</dt><dd>{num(data.comm.left)} m</dd></div>
-            <div><dt>설계</dt><dd>{num(data.comm.len)} m</dd></div>
+            <div><dt>{t('Done')}</dt><dd>{num(data.comm.done)} m</dd></div>
+            <div><dt>{t('Remaining')}</dt><dd>{num(data.comm.left)} m</dd></div>
+            <div><dt>{t('Design')}</dt><dd>{num(data.comm.len)} m</dd></div>
           </dl>
         </article>
       </div>
@@ -96,10 +97,10 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
         <table className="ais-table">
           <thead>
             <tr>
-              <th>구간</th><th>범위</th>
-              <th className="num">본수</th><th className="num">설계 (m)</th>
-              <th className="num">완료 (m)</th><th className="num">잔여 (m)</th>
-              <th className="num">진도</th><th>　</th>
+              <th>{t('Section')}</th><th>{t('Scope')}</th>
+              <th className="num">{t('Cables')}</th><th className="num">{t('Design (m)')}</th>
+              <th className="num">{t('Done (m)')}</th><th className="num">{t('Remaining (m)')}</th>
+              <th className="num">{t('Progress')}</th><th>　</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +110,7 @@ export default function AisScopeSection({ master, fieldData, drumMap }) {
               const line = (label, r, cls) => r && r.n > 0 && (
                 <tr key={`${sec}-${label}`} className={cls}>
                   {label === 'Shymkent' && <td rowSpan={cm?.n ? 4 : 3}>{sec.replace('AIS ', '').replace('AIS-', '')}</td>}
-                  <td>{label}</td>
+                  <td>{label.replace(/Control|Power|Communication/, w => t(w))}</td>
                   <td className="num">{num(r.n)}</td>
                   <td className="num">{num(r.len)}</td>
                   <td className="num">{num(r.done)}</td>

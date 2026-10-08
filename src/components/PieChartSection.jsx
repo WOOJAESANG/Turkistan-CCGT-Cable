@@ -1,7 +1,8 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { t, locale } from '../lib/i18n'
 
 function formatNumber(n) {
-  return Math.round(n).toLocaleString('ko-KR')
+  return Math.round(n).toLocaleString(locale())
 }
 
 function CustomTooltip({ active, payload, pulled }) {
@@ -15,21 +16,21 @@ function CustomTooltip({ active, payload, pulled }) {
       padding: '12px 14px', boxShadow: '0 8px 24px rgba(0,55,112,0.08)',
       fontSize: 13, fontFeatureSettings: '"tnum"', minWidth: 190,
     }}>
-      <div style={{ fontWeight: 600, color: '#0d253d', marginBottom: 6 }}>{d.name}</div>
+      <div style={{ fontWeight: 600, color: '#0d253d', marginBottom: 6 }}>{t(d.name)}</div>
       <div style={{ display: 'flex', gap: 8, color: '#64748d', fontSize: 12 }}>
-        <span>Pulled</span>
+        <span>{t('Pulled')}</span>
         <span style={{ marginLeft: 'auto', fontWeight: 600, color: d.payload.color }}>
           {formatNumber(done)}m
         </span>
       </div>
       <div style={{ display: 'flex', gap: 8, color: '#64748d', fontSize: 12, marginTop: 3 }}>
-        <span>Designed</span>
+        <span>{t('Designed')}</span>
         <span style={{ marginLeft: 'auto', fontWeight: 500, color: '#0d253d' }}>
           {formatNumber(d.value)}m
         </span>
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid #eef0f6' }}>
-        <span style={{ color: '#64748d', fontSize: 12 }}>Progress</span>
+        <span style={{ color: '#64748d', fontSize: 12 }}>{t('Progress')}</span>
         <span style={{ marginLeft: 'auto', fontWeight: 700, color: d.payload.color }}>
           {pct.toFixed(1)}%
         </span>
@@ -60,8 +61,8 @@ export default function PieChartSection({ data, pulled = {} }) {
   return (
     <div className="chart-card">
       <div className="chart-card-header">
-        <span className="chart-title">Priority Distribution</span>
-        <span className="chart-subtitle">Progress by Priority</span>
+        <span className="chart-title">{t('Priority Distribution')}</span>
+        <span className="chart-subtitle">{t('Progress by Priority')}</span>
       </div>
       <div className="pie-shell">
         <ResponsiveContainer width="100%" height={220}>
@@ -80,7 +81,7 @@ export default function PieChartSection({ data, pulled = {} }) {
         </ResponsiveContainer>
         <div className="pie-center">
           <div className="pie-center-pct">{overallPct.toFixed(1)}<span>%</span></div>
-          <div className="pie-center-label">Pulled</div>
+          <div className="pie-center-label">{t('Pulled')}</div>
         </div>
       </div>
 
@@ -92,7 +93,7 @@ export default function PieChartSection({ data, pulled = {} }) {
             <div className="pie-legend-item pri-row" key={d.name}>
               <div className="pri-row-head">
                 <span className="pie-legend-dot" style={{ background: d.color }} />
-                <span className="pie-legend-name">{d.name}</span>
+                <span className="pie-legend-name">{t(d.name)}</span>
                 <span className="pri-pct" style={{ color: d.color }}>{pct.toFixed(1)}%</span>
               </div>
               <div className="pri-bar-track">
@@ -102,7 +103,7 @@ export default function PieChartSection({ data, pulled = {} }) {
                 <span className="pri-done">{formatNumber(done)}m</span>
                 <span className="pri-slash"> / </span>
                 <span className="pri-total">{formatNumber(d.value)}m</span>
-                <span className="pri-lines">· {formatNumber(d.lineCount)} Line</span>
+                <span className="pri-lines">· {formatNumber(d.lineCount)} {t('lines')}</span>
               </div>
             </div>
           )
@@ -110,7 +111,7 @@ export default function PieChartSection({ data, pulled = {} }) {
         <div className="pie-legend-item pri-row pri-total-row">
           <div className="pri-row-head">
             <span className="pie-legend-dot" style={{ background: 'transparent' }} />
-            <span className="pie-legend-name" style={{ fontWeight: 600 }}>Total</span>
+            <span className="pie-legend-name" style={{ fontWeight: 600 }}>{t('Total')}</span>
             <span className="pri-pct" style={{ color: '#533afd' }}>{overallPct.toFixed(1)}%</span>
           </div>
           <div className="pri-nums">

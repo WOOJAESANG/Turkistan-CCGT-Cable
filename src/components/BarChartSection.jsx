@@ -10,6 +10,7 @@ import {
   Cell,
 } from 'recharts'
 import { formatNumber } from '../lib/format'
+import { t } from '../lib/i18n'
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
@@ -37,7 +38,7 @@ function CustomTooltip({ active, payload, label }) {
 
 export default function BarChartSection({ categories }) {
   const data = categories.map((c) => ({
-    name: c.label,
+    name: t(c.label),
     Pulling: c.pullPct,
     Termination: c.termPct,
     color: c.color,
@@ -48,8 +49,8 @@ export default function BarChartSection({ categories }) {
   return (
     <div className="chart-card">
       <div className="chart-card-header">
-        <span className="chart-title">Category Progress</span>
-        <span className="chart-subtitle">Pulling vs Termination</span>
+        <span className="chart-title">{t('Category Progress')}</span>
+        <span className="chart-subtitle">{t('Pulling vs Termination')}</span>
       </div>
       <div style={{ position: 'relative' }}>
         {allZero && (
@@ -70,7 +71,7 @@ export default function BarChartSection({ categories }) {
               borderRadius: 9999,
               border: '1px solid #e3e8ee',
             }}>
-              실적 데이터가 입력되면 그래프가 표시됩니다
+              {t('The chart appears once field records are entered')}
             </span>
           </div>
         )}
@@ -96,12 +97,12 @@ export default function BarChartSection({ categories }) {
               iconSize={8}
               wrapperStyle={{ fontSize: 14, color: '#64748d', paddingTop: 8 }}
             />
-            <Bar dataKey="Pulling" radius={[4, 4, 0, 0]} maxBarSize={36}>
+            <Bar dataKey="Pulling" name={t('Pulling')} radius={[4, 4, 0, 0]} maxBarSize={36}>
               {data.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
             </Bar>
-            <Bar dataKey="Termination" radius={[4, 4, 0, 0]} maxBarSize={36} opacity={0.45}>
+            <Bar dataKey="Termination" name={t('Termination')} radius={[4, 4, 0, 0]} maxBarSize={36} opacity={0.45}>
               {data.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}

@@ -11,6 +11,7 @@ import PieChartSection from './PieChartSection'
 import MonthlyPullingChart from './MonthlyPullingChart'
 import TerminationGauges from './TerminationGauges'
 import AisScopeSection from './AisScopeSection'
+import { t, locale } from '../lib/i18n'
 
 export default function Dashboard({ onNavigate }) {
   const [master, setMaster] = useState(null)
@@ -87,7 +88,7 @@ export default function Dashboard({ onNavigate }) {
   const inspection = master ? rollupInspection(fieldData, master) : { power: 0, control: 0, iac: 0, pkg: 0 }
 
   const today = new Date()
-  const dateStr = today.toLocaleDateString('ko-KR', {
+  const dateStr = today.toLocaleDateString(locale(), {
     year: 'numeric', month: '2-digit', day: '2-digit',
   })
 
@@ -97,9 +98,9 @@ export default function Dashboard({ onNavigate }) {
     return (
       <div className="content-body">
         <div className="page-header">
-          <h2>Cable Dashboard</h2>
+          <h2>{t('Cable Dashboard')}</h2>
         </div>
-        <div className="cs-loading">Loading data…</div>
+        <div className="cs-loading">{t('Loading data…')}</div>
       </div>
     )
   }
@@ -107,13 +108,13 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="content-body">
       <div className="page-header">
-        <h2>Cable Dashboard</h2>
+        <h2>{t('Cable Dashboard')}</h2>
         <div className="header-meta">
           <div className="live-badge">
             <span className="live-dot" />
             LIVE
           </div>
-          <span className="date-label">{dateStr} 기준</span>
+          <span className="date-label">{t('as of {date}', { date: dateStr })}</span>
         </div>
       </div>
 
@@ -121,23 +122,23 @@ export default function Dashboard({ onNavigate }) {
         <div className="db-integrity">
           <span className="db-integrity-ico">&#9888;</span>
           <div className="db-integrity-text">
-            <strong>실적 데이터 확인이 필요합니다.</strong>
+            <strong>{t('Field records need checking.')}</strong>
             {integrity.orphan > 0 && (
               <span className="db-integrity-item">
-                케이블 마스터에 없는 실적 <b>{integrity.orphan.toLocaleString()}건</b>
-                <span className="db-integrity-why"> — 진도율에 집계되지 않습니다</span>
+                {t('Records not in the cable master')} <b>{integrity.orphan.toLocaleString()}</b>
+                <span className="db-integrity-why"> — {t('not counted in progress')}</span>
               </span>
             )}
             {integrity.drumDiff > 0 && (
               <span className="db-integrity-item">
-                설계와 다른 드럼 사용 <b>{integrity.drumDiff.toLocaleString()}건</b>
-                <span className="db-integrity-why"> — 자재 수급 확인 필요</span>
+                {t('Drum differs from design')} <b>{integrity.drumDiff.toLocaleString()}</b>
+                <span className="db-integrity-why"> — {t('check material supply')}</span>
               </span>
             )}
           </div>
           {onNavigate && (
             <button type="button" className="db-integrity-go" onClick={() => onNavigate('actuals')}>
-              Work Log에서 보기 &rarr;
+              {t('View in Work Log')} &rarr;
             </button>
           )}
         </div>

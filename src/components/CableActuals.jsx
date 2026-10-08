@@ -4,6 +4,7 @@ import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntr
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { ambiguousDrumTag, canonDrum, sameDrum } from '../lib/drumTag'
+import { t } from '../lib/i18n'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -45,21 +46,21 @@ function pickForm(e = {}) {
 function validate(tag, form) {
   const miss = new Set()
   const labels = []
-  if (!(tag || '').trim()) { miss.add('tag'); labels.push('Cable Tag') }
-  const PULL = [['pulledLength', 'Pulled Length'], ['usedDrum', 'Used Drum (Drum No.)'],
-    ['pulledBy', 'Pulled By'], ['pullingDate', 'Pulling Date']]
+  if (!(tag || '').trim()) { miss.add('tag'); labels.push(t('Cable Tag')) }
+  const PULL = [['pulledLength', t('Pulled Length')], ['usedDrum', t('Used Drum (Drum No.)')],
+    ['pulledBy', t('Pulled By')], ['pullingDate', t('Pulling Date')]]
   const pullFilled = PULL.some(([k]) => String(form[k] || '').trim())
   if (pullFilled) for (const [k, l] of PULL) if (!String(form[k] || '').trim()) { miss.add(k); labels.push(l) }
   if (['termDateFrom', 'termByFrom'].some(k => String(form[k] || '').trim())) {
-    if (!String(form.termDateFrom || '').trim()) { miss.add('termDateFrom'); labels.push('Termination Date (From)') }
-    if (!String(form.termByFrom || '').trim()) { miss.add('termByFrom'); labels.push('Terminated By (From)') }
+    if (!String(form.termDateFrom || '').trim()) { miss.add('termDateFrom'); labels.push(t('Termination Date (From)')) }
+    if (!String(form.termByFrom || '').trim()) { miss.add('termByFrom'); labels.push(t('Terminated By (From)')) }
   }
   if (['termDateTo', 'termByTo'].some(k => String(form[k] || '').trim())) {
-    if (!String(form.termDateTo || '').trim()) { miss.add('termDateTo'); labels.push('Termination Date (To)') }
-    if (!String(form.termByTo || '').trim()) { miss.add('termByTo'); labels.push('Terminated By (To)') }
+    if (!String(form.termDateTo || '').trim()) { miss.add('termDateTo'); labels.push(t('Termination Date (To)')) }
+    if (!String(form.termByTo || '').trim()) { miss.add('termByTo'); labels.push(t('Terminated By (To)')) }
   }
   const anyPhase = pullFilled || ['termDateFrom', 'termByFrom', 'termDateTo', 'termByTo'].some(k => String(form[k] || '').trim())
-  if ((tag || '').trim() && !anyPhase) labels.push('Pulling 또는 Termination 실적 1개 이상')
+  if ((tag || '').trim() && !anyPhase) labels.push(t('at least one Pulling or Termination entry'))
   return { ok: miss.size === 0 && labels.length === 0, miss, labels }
 }
 
@@ -90,7 +91,7 @@ function CableTagInput({ value, onChange, onPick, master, invalid }) {
       <input
         className={`ca-input ca-tag-input${invalid ? ' ca-err' : ''}`}
         type="text"
-        placeholder="Type cable no. — e.g. B1-SWG-64601-P2001"
+        placeholder={t('Type cable no. — e.g. B1-SWG-64601-P2001')}
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => value && setOpen(true)}
@@ -146,13 +147,13 @@ function DrumInput({ value, onChange, master, cat, invalid, designDrum }) {
         className={`ca-input ca-mono-input${invalid ? ' ca-err' : ''}`}
         type="text"
         list="ca-drums"
-        placeholder="드럼번호 입력 또는 목록에서 선택 — 예: PE-L1-3C4-09"
+        placeholder={t('Type a drum no. or pick from the list — e.g. PE-L1-3C4-09')}
         value={value || ''}
         onChange={e => onChange(e.target.value)}
         autoComplete="off"
       />
       <datalist id="ca-drums">
-        {designDrum && <option value={designDrum}>설계 배정</option>}
+        {designDrum && <option value={designDrum}>{t('Design allocation')}</option>}
         {options.filter(d => d !== designDrum).map(d => <option key={d} value={d} />)}
       </datalist>
     </>
@@ -201,18 +202,18 @@ export default function CableActuals({ session }) {
       const parsed = JSON.parse(await file.text())
       const entries = parsed.entries || parsed
       const keys = Object.keys(entries)
-      if (!keys.length) { setImportMsg('빈 파일'); return }
+      if (!keys.length) { setImportMsg(t('Empty file')); return }
 
-      setImportMsg(`반영 중… 0/${keys.length}`)
+      setImportMsg(`${t('Applying…')} 0/${keys.length}`)
       const failed = await bulkUpsertFieldEntries(
         keys.map(cno => ({ cno, patch: entries[cno] })),
-        (n, total) => setImportMsg(`반영 중… ${n}/${total}`),
+        (n, total) => setImportMsg(`${t('Applying…')} ${n}/${total}`),
       )
 
       // Trust the server, not the optimistic cache: confirm every "success" actually landed
       // by re-reading and comparing field-by-field. A row can already exist for a cable from
       // an earlier entry — its mere presence doesn't prove *this* write's fields landed.
-      setImportMsg(`확인 중…`)
+      setImportMsg(t('Verifying…'))
       await fetchAllFieldData()
       const server = loadFieldData()
       const fieldsMatch = (cno, patch) => {
@@ -226,13 +227,13 @@ export default function CableActuals({ session }) {
       setFieldData(server)
       if (stillMissing.length) {
         console.error('[import] not confirmed on server:', stillMissing)
-        setImportMsg(`완료: ${keys.length - stillMissing.length}건 반영, ${stillMissing.length}건 실패 (콘솔에 목록 출력됨 — 실패건만 다시 Import 해주세요)`)
+        setImportMsg(t('Done: {ok} applied, {bad} failed (listed in the console — import only the failed ones again)', { ok: keys.length - stillMissing.length, bad: stillMissing.length }))
       } else {
-        setImportMsg(`완료: ${keys.length}건 전체 반영 확인됨`)
+        setImportMsg(t('Done: all {n} confirmed on the server', { n: keys.length }))
       }
       setTimeout(() => setImportMsg(null), 12000)
     } catch (err) {
-      setImportMsg('파일 오류: ' + err.message)
+      setImportMsg(t('File error: ') + err.message)
     }
   }
 
@@ -281,21 +282,21 @@ export default function CableActuals({ session }) {
 
   const save = () => {
     if (viewer) return
-    const t = tag.trim()
+    const cno = tag.trim()
     const { ok, miss, labels } = validate(tag, form)
     if (!ok) {
       setMissing(miss)
-      setFlash({ type: 'err', msg: `필수 항목을 입력하세요 — ${labels.join(', ')}` })
+      setFlash({ type: 'err', msg: `${t('Fill in the required fields')} — ${labels.join(', ')}` })
       return
     }
-    if (!masterMap.has(t) && !window.confirm(
-      [`"${t}" 은(는) 케이블 마스터에 없습니다.`, '',
-       '저장은 되지만 대시보드 진도율에는 집계되지 않습니다.',
-       '번호가 정확한지 다시 확인해 주세요.', '',
-       '이대로 저장할까요?'].join('\n'))) return
-    updateFieldEntry(t, { ...form })
+    if (!masterMap.has(cno) && !window.confirm(
+      [t('"{c}" is not in the cable master.', { c: cno }), '',
+       t('It will be saved, but not counted in Dashboard progress.'),
+       t('Please check the number again.'), '',
+       t('Save anyway?')].join('\n'))) return
+    updateFieldEntry(cno, { ...form })
     setMissing(new Set())
-    setFlash({ type: 'ok', msg: `저장 완료 · ${t}` })
+    setFlash({ type: 'ok', msg: `${t('Saved')} · ${cno}` })
     setTimeout(() => setFlash(null), 2800)
   }
   const clear = () => { setTag(''); setForm(EMPTY_FORM); setPkgNo(''); setMissing(new Set()); setFlash(null) }
@@ -305,7 +306,7 @@ export default function CableActuals({ session }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const removeRecord = cno => {
-    if (!window.confirm(`${cno} 실적을 삭제할까요?`)) return
+    if (!window.confirm(t('Delete the record for {c}?', { c: cno }))) return
     deleteFieldEntry(cno)
     if (tag.trim() === cno) clear()
   }
@@ -452,8 +453,8 @@ export default function CableActuals({ session }) {
   if (loading) {
     return (
       <div className="cs-page"><div className="cs-body">
-        <div className="page-header"><h2>Work Log</h2></div>
-        <div className="cs-loading">Loading data…</div>
+        <div className="page-header"><h2>{t('Work Log')}</h2></div>
+        <div className="cs-loading">{t('Loading data…')}</div>
       </div></div>
     )
   }
@@ -465,24 +466,24 @@ export default function CableActuals({ session }) {
       <div className="cs-body">
         <div className="page-header">
           <div className="cm-header-left">
-            <h2>Work Log</h2>
-            <div className="cm-subtitle">Field Records · 실적 입력</div>
+            <h2>{t('Work Log')}</h2>
+            <div className="cm-subtitle">{t('Field Records')}</div>
           </div>
           <div className="cs-header-stats">
-            <span className="cs-meters">{Math.round(totalPulled).toLocaleString()}<span className="cs-meters-unit"> m pulled</span></span>
-            <span className="cs-total">{records.length} lines</span>
+            <span className="cs-meters">{Math.round(totalPulled).toLocaleString()}<span className="cs-meters-unit"> m {t('pulled')}</span></span>
+            <span className="cs-total">{t('{n} lines', { n: records.length })}</span>
           </div>
         </div>
 
         {/* ---- Entry form ---- */}
         {viewer && (
-          <div className="ca-viewer-notice">👁 View Only — you can browse and export records, but not add or edit them.</div>
+          <div className="ca-viewer-notice">👁 {t('View Only — you can browse and export records, but not add or edit them.')}</div>
         )}
         {!viewer && (
         <div className="ca-form">
           <div className="ca-top-row">
             <div className="ca-field ca-field-tag">
-              <label>Cable Tag <span className="ca-req">*</span></label>
+              <label>{t('Cable Tag')} <span className="ca-req">*</span></label>
               <CableTagInput value={tag} onChange={onTagChange} onPick={pickCable} master={master} invalid={missing.has('tag')} />
               {tagState === 'in' && context && (
                 <div className="ca-ctx ca-ctx-in">
@@ -492,20 +493,20 @@ export default function CableActuals({ session }) {
                   <span className="ca-ctx-item">{context.f || '—'} → {context.t || '—'}</span>
                   <span className="ca-ctx-sep">·</span>
                   <span className="ca-ctx-item">{context.sys || '—'}</span>
-                  {context.l != null && <><span className="ca-ctx-sep">·</span><span className="ca-ctx-item">{context.l.toLocaleString()} m design</span></>}
+                  {context.l != null && <><span className="ca-ctx-sep">·</span><span className="ca-ctx-item">{context.l.toLocaleString()} m {t('design')}</span></>}
                 </div>
               )}
               {tagState === 'free' && (
                 <div className="ca-ctx ca-tag-unknown">
                   <div className="ca-tag-unknown-top">
-                    ⚠ Not in the cable master — 마스터에 없는 케이블 번호입니다.
+                    ⚠ {t('Not in the cable master.')}
                   </div>
                   <div className="ca-tag-unknown-why">
-                    저장은 되지만 <strong>대시보드 진도율에 집계되지 않습니다.</strong> 번호를 다시 확인해 주세요.
+                    {t('It will be saved, but not counted in Dashboard progress.')} {t('Please check the number again.')}
                   </div>
                   {tagSuggest.length > 0 && (
                     <div className="ca-drum-warn-fix">
-                      혹시 이 번호인가요?
+                      {t('Did you mean:')}
                       {tagSuggest.map(n => (
                         <button type="button" key={n} className="ca-drum-warn-pick"
                           onClick={() => { setTag(n); setForm(pickForm(fieldData[n])); clearErr() }}>{n}</button>
@@ -516,8 +517,8 @@ export default function CableActuals({ session }) {
               )}
             </div>
             <div className="ca-field ca-field-vendor">
-              <label>Vendor (업체명)</label>
-              <input className="ca-input" type="text" list="ca-vendors" placeholder="Subcontractor / 업체명"
+              <label>{t('Vendor')}</label>
+              <input className="ca-input" type="text" list="ca-vendors" placeholder={t('Subcontractor')}
                 value={form.vendor} onChange={e => setField('vendor', e.target.value)} />
               <datalist id="ca-vendors">
                 {loadVendors().filter(v => v.active).map(v => <option key={v.id} value={v.name} />)}
@@ -527,89 +528,87 @@ export default function CableActuals({ session }) {
 
           <div className="ca-grid">
             <div className="ca-block ca-block-pull">
-              <div className="ca-block-head ca-head-pull">PULLING STATUS</div>
+              <div className="ca-block-head ca-head-pull">{t('PULLING STATUS')}</div>
               <div className="ca-block-fields">
                 <div className="ca-field">
-                  <label>Pulled Length (m) <span className="ca-req">*</span></label>
-                  <input className={ic('pulledLength')} type="text" inputMode="decimal" placeholder="e.g. 478"
+                  <label>{t('Pulled Length (m)')} <span className="ca-req">*</span></label>
+                  <input className={ic('pulledLength')} type="text" inputMode="decimal" placeholder={t('e.g. 478')}
                     value={form.pulledLength} onChange={e => setField('pulledLength', e.target.value)} />
                 </div>
                 <div className="ca-field">
-                  <label>Packing No. <span className="ca-opt">(드럼에 적힌 번호)</span></label>
+                  <label>{t('Packing No.')} <span className="ca-opt">({t('number written on the drum')})</span></label>
                   <input className="ca-input ca-mono-input" type="text" list="ca-pkgs"
-                    placeholder="예: PGU-DE-439-PCC-046"
+                    placeholder={t('e.g. PGU-DE-439-PCC-046')}
                     value={pkgNo} onChange={e => setPkgNo(e.target.value)} autoComplete="off" />
                   <datalist id="ca-pkgs">
                     {Object.keys(pkgDrum).slice(0, 1000).map(p => <option key={p} value={p} />)}
                   </datalist>
                   {pkgLookup && (pkgLookup.drum ? (
                     <div className="ca-ctx ca-pkg-hit">
-                      → 드럼 <strong>{pkgLookup.drum}</strong>
+                      → {t('Drum')} <strong>{pkgLookup.drum}</strong>
                       {form.usedDrum === pkgLookup.drum ? (
-                        <span className="ca-pkg-ok">Used Drum에 반영됨</span>
+                        <span className="ca-pkg-ok">{t('Filled into Used Drum')}</span>
                       ) : (
                         <button type="button" className="ca-drum-warn-pick"
                           onClick={() => setField('usedDrum', pkgLookup.drum)}>
-                          Used Drum에 넣기
+                          {t('Put into Used Drum')}
                         </button>
                       )}
                     </div>
                   ) : (
                     <div className="ca-ctx ca-pkg-miss">
-                      해당 패킹번호를 찾지 못했습니다. 번호를 확인하시거나 드럼번호를 직접 입력해 주세요.
+                      {t('Packing number not found. Check the number, or enter the drum number directly.')}
                     </div>
                   ))}
                 </div>
                 <div className="ca-field">
-                  <label>Used Drum <span className="ca-req">*</span></label>
+                  <label>{t('Used Drum')} <span className="ca-req">*</span></label>
                   <DrumInput value={form.usedDrum} onChange={v => setField('usedDrum', v)}
                     master={drumMaster} cat={context?.g} invalid={missing.has('usedDrum')}
                     designDrum={designDrum} />
                   {designDrum && !form.usedDrum && (
                     <div className="ca-ctx ca-ctx-design">
-                      Designed drum: <strong>{designDrum}</strong>
+                      {t('Designed drum:')} <strong>{designDrum}</strong>
                     </div>
                   )}
                   {drumBudget && drumBudget.cap != null && (
                     drumBudget.after < 0 ? (
                       <div className="ca-ctx ca-drum-over">
-                        &#9888; Exceeds the drum — 드럼 잔여 <strong>{Math.round(drumBudget.remaining).toLocaleString()} m</strong>
-                        인데 <strong>{Math.round(drumBudget.entered).toLocaleString()} m</strong>를 입력했습니다
-                        ({Math.round(-drumBudget.after).toLocaleString()} m 초과).
+                        &#9888; {t('Exceeds the drum — {rem} m left on the drum but {ent} m entered ({over} m over).', { rem: Math.round(drumBudget.remaining).toLocaleString(), ent: Math.round(drumBudget.entered).toLocaleString(), over: Math.round(-drumBudget.after).toLocaleString() })}
                         <div className="ca-drum-over-sub">
-                          드럼 번호나 포설 길이를 확인해 주세요. 실제로 초과했다면 그대로 저장하셔도 됩니다.
+                          {t('Check the drum number or pulled length. If it really was exceeded, you can save as is.')}
                         </div>
                       </div>
                     ) : (
                       <div className={`ca-ctx ca-drum-budget${drumBudget.after < drumBudget.cap * 0.05 ? ' low' : ''}`}>
-                        Drum {drumBudget.drum} · 정격 {Math.round(drumBudget.cap).toLocaleString()} m ·
-                        기사용 {Math.round(drumBudget.used).toLocaleString()} m ·
-                        <strong> 잔여 {Math.round(drumBudget.after).toLocaleString()} m</strong>
-                        {drumBudget.entered > 0 && ' (이번 입력 반영)'}
+                        {t('Drum')} {drumBudget.drum} · {t('capacity')} {Math.round(drumBudget.cap).toLocaleString()} m ·
+                        {t('used')} {Math.round(drumBudget.used).toLocaleString()} m ·
+                        <strong> {t('remaining')} {Math.round(drumBudget.after).toLocaleString()} m</strong>
+                        {drumBudget.entered > 0 && ` (${t('including this entry')})`}
                       </div>
                     )
                   )}
                   {drumMismatch && (
                     <div className="ca-ctx ca-drum-diff">
-                      ⚠ Differs from the designed drum <strong>{designDrum}</strong>.
-                      설계 드럼과 다릅니다 — 실제 사용한 드럼이 맞는지 확인해 주세요.
+                      ⚠ {t('Differs from the designed drum')} <strong>{designDrum}</strong>.
+                      {t('Check that this is the drum actually used.')}
                       <div className="ca-drum-warn-fix">
                         <button type="button" className="ca-drum-warn-pick"
                           onClick={() => setField('usedDrum', designDrum)}>
-                          Use designed drum ({designDrum})
+                          {t('Use designed drum')} ({designDrum})
                         </button>
                         <span className="ca-drum-diff-keep">
-                          다른 드럼을 실제로 사용했다면 그대로 저장하셔도 됩니다.
+                          {t('If a different drum was really used, you can save as is.')}
                         </span>
                       </div>
                     </div>
                   )}
                   {drumWarn && (
                     <div className="ca-ctx ca-ctx-free ca-drum-warn">
-                      ⚠ Packing no. missing — this will be counted as <strong>{drumWarn.assumed}</strong>.
-                      PoCable drum {drumWarn.no} exists in both packings. 패킹번호 누락.
+                      ⚠ {t('Packing no. missing — this will be counted as')} <strong>{drumWarn.assumed}</strong>.
+                      {t('PoCable drum {n} exists in both packings.', { n: drumWarn.no })}
                       <div className="ca-drum-warn-fix">
-                        Select the drum you actually used:
+                        {t('Select the drum you actually used:')}
                         {drumWarn.candidates.map(c => (
                           <button type="button" key={c} className="ca-drum-warn-pick"
                             onClick={() => setField('usedDrum', c)}>{c}</button>
@@ -619,12 +618,12 @@ export default function CableActuals({ session }) {
                   )}
                 </div>
                 <div className="ca-field">
-                  <label>Pulled By <span className="ca-req">*</span></label>
-                  <input className={ic('pulledBy')} type="text" placeholder="Name / Crew"
+                  <label>{t('Pulled By')} <span className="ca-req">*</span></label>
+                  <input className={ic('pulledBy')} type="text" placeholder={t('Name / Crew')}
                     value={form.pulledBy} onChange={e => setField('pulledBy', e.target.value)} />
                 </div>
                 <div className="ca-field">
-                  <label>Pulling Date <span className="ca-req">*</span></label>
+                  <label>{t('Pulling Date')} <span className="ca-req">*</span></label>
                   <input className={ic('pullingDate')} type="date" min={DATE_MIN} max={DATE_MAX}
                     value={form.pullingDate} onChange={e => setField('pullingDate', e.target.value)} />
                 </div>
@@ -632,43 +631,43 @@ export default function CableActuals({ session }) {
             </div>
 
             <div className="ca-block ca-block-term">
-              <div className="ca-block-head ca-head-term">TERMINATION STATUS</div>
+              <div className="ca-block-head ca-head-term">{t('TERMINATION STATUS')}</div>
               <div className="ca-block-fields">
                 <div className="ca-field">
-                  <label>Termination Date (From)</label>
+                  <label>{t('Termination Date (From)')}</label>
                   <input className={ic('termDateFrom')} type="date" min={DATE_MIN} max={DATE_MAX}
                     value={form.termDateFrom} onChange={e => setField('termDateFrom', e.target.value)} />
                 </div>
                 <div className="ca-field">
-                  <label>Terminated By (From)</label>
-                  <input className={ic('termByFrom')} type="text" placeholder="Name / Crew"
+                  <label>{t('Terminated By (From)')}</label>
+                  <input className={ic('termByFrom')} type="text" placeholder={t('Name / Crew')}
                     value={form.termByFrom} onChange={e => setField('termByFrom', e.target.value)} />
                 </div>
                 <div className="ca-field">
-                  <label>Termination Date (To)</label>
+                  <label>{t('Termination Date (To)')}</label>
                   <input className={ic('termDateTo')} type="date" min={DATE_MIN} max={DATE_MAX}
                     value={form.termDateTo} onChange={e => setField('termDateTo', e.target.value)} />
                 </div>
                 <div className="ca-field">
-                  <label>Terminated By (To)</label>
-                  <input className={ic('termByTo')} type="text" placeholder="Name / Crew"
+                  <label>{t('Terminated By (To)')}</label>
+                  <input className={ic('termByTo')} type="text" placeholder={t('Name / Crew')}
                     value={form.termByTo} onChange={e => setField('termByTo', e.target.value)} />
                 </div>
               </div>
             </div>
 
             <div className="ca-block ca-block-check">
-              <div className="ca-block-head ca-head-check">LINE CHECK / INSPECTION</div>
+              <div className="ca-block-head ca-head-check">{t('LINE CHECK / INSPECTION')}</div>
               <div className="ca-block-fields">
                 <div className="ca-field">
-                  <label>Line Check</label>
+                  <label>{t('Line Check')}</label>
                   <select className="ca-input ca-select" value={form.lc} onChange={e => setField('lc', e.target.value)}>
-                    {LC_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    {LC_OPTIONS.map(o => <option key={o} value={o}>{t(o)}</option>)}
                   </select>
                 </div>
                 <div className="ca-field">
-                  <label>ACT No.</label>
-                  <input className="ca-input" type="text" placeholder="e.g. ACT-2026-001"
+                  <label>{t('ACT No.')}</label>
+                  <input className="ca-input" type="text" placeholder={t('e.g. ACT-2026-001')}
                     value={form.act} onChange={e => setField('act', e.target.value)} />
                 </div>
               </div>
@@ -676,8 +675,8 @@ export default function CableActuals({ session }) {
           </div>
 
           <div className="ca-actions">
-            <button className="ca-btn ca-btn-save" onClick={save}>Save Record</button>
-            <button className="ca-btn ca-btn-clear" onClick={clear}>Clear</button>
+            <button className="ca-btn ca-btn-save" onClick={save}>{t('Save Record')}</button>
+            <button className="ca-btn ca-btn-clear" onClick={clear}>{t('Clear')}</button>
             {flash && <span className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</span>}
           </div>
         </div>
@@ -689,51 +688,51 @@ export default function CableActuals({ session }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" placeholder="Search recorded Cable Tag" value={search} onChange={e => { setSearch(e.target.value); setVisibleCount(50) }} />
+            <input type="text" placeholder={t('Search recorded Cable Tag')} value={search} onChange={e => { setSearch(e.target.value); setVisibleCount(50) }} />
             {search && <button className="cs-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
           <div className="ca-date-range">
-            <span className="ca-dr-label">Date</span>
-            <input type="date" className={`ca-dr-input${dateFrom ? ' active' : ''}`} title="시작일" min={DATE_MIN} max={dateTo || DATE_MAX} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <span className="ca-dr-label">{t('Date')}</span>
+            <input type="date" className={`ca-dr-input${dateFrom ? ' active' : ''}`} title={t('Start date')} min={DATE_MIN} max={dateTo || DATE_MAX} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
             <span className="ca-dr-sep">–</span>
-            <input type="date" className={`ca-dr-input${dateTo ? ' active' : ''}`} title="종료일" min={dateFrom || DATE_MIN} max={DATE_MAX} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            <input type="date" className={`ca-dr-input${dateTo ? ' active' : ''}`} title={t('End date')} min={dateFrom || DATE_MIN} max={DATE_MAX} value={dateTo} onChange={e => setDateTo(e.target.value)} />
             {(dateFrom || dateTo) && (
-              <button className="ca-dr-clear" title="Clear date filter" onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
+              <button className="ca-dr-clear" title={t('Clear date filter')} onClick={() => { setDateFrom(''); setDateTo('') }}>✕</button>
             )}
           </div>
           {vendorList.length > 0 && (
             <div className="ca-date-range" style={{ gap: 4 }}>
-              <span className="ca-dr-label">Vendor</span>
+              <span className="ca-dr-label">{t('Vendor')}</span>
               <select
                 className={`ca-dr-input${vendorFilter ? ' active' : ''}`}
                 style={{ minWidth: 120, cursor: 'pointer' }}
                 value={vendorFilter}
                 onChange={e => { setVendorFilter(e.target.value); setVisibleCount(50) }}
               >
-                <option value="">All</option>
+                <option value="">{t('All')}</option>
                 {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
               {vendorFilter && (
-                <button className="ca-dr-clear" title="Clear vendor filter" onClick={() => setVendorFilter('')}>✕</button>
+                <button className="ca-dr-clear" title={t('Clear vendor filter')} onClick={() => setVendorFilter('')}>✕</button>
               )}
             </div>
           )}
           <button
             type="button"
             className={`ca-diff-toggle ca-orphan-toggle${orphanOnly ? ' on' : ''}`}
-            title="케이블 마스터에 없는 번호로 입력된 실적만 보기 — 대시보드 집계에서 누락됩니다"
+            title={t('Show only records whose number is not in the cable master — they are left out of the Dashboard')}
             onClick={() => { setOrphanOnly(v => !v); setVisibleCount(50) }}
           >
-            ⛔ Not in master
+            ⛔ {t('Not in master')}
             <span className="ca-diff-count">{orphanCount}</span>
           </button>
           <button
             type="button"
             className={`ca-diff-toggle${diffOnly ? ' on' : ''}`}
-            title="설계 드럼과 다른 드럼으로 입력된 실적만 보기"
+            title={t('Show only records whose drum differs from the design')}
             onClick={() => { setDiffOnly(v => !v); setVisibleCount(50) }}
           >
-            ⚠ Drum mismatch
+            ⚠ {t('Drum mismatch')}
             <span className="ca-diff-count">{diffCount}</span>
           </button>
           <div className="cm-export-inline">
@@ -746,8 +745,8 @@ export default function CableActuals({ session }) {
             {admin && (
               <>
                 <input ref={importRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={handleImport} />
-                <button className="cm-export-btn" style={{ background: '#0d9488', borderColor: '#0d9488' }} onClick={() => importRef.current?.click()} title="업체 실적 JSON 일괄 반영 (기존 기록 보존)">
-                  실적 Import
+                <button className="cm-export-btn" style={{ background: '#0d9488', borderColor: '#0d9488' }} onClick={() => importRef.current?.click()} title={t('Bulk import vendor records from JSON (existing records kept)')}>
+                  {t('Import records')}
                 </button>
               </>
             )}
@@ -759,19 +758,19 @@ export default function CableActuals({ session }) {
           <table className="cs-table ca-table">
             <thead>
               <tr>
-                <th>Cable Tag</th>
-                <th>Cat.</th>
-                <th>Vendor</th>
-                <th className="ca-th-pull">Pulled Len(m)</th>
-                <th className="ca-th-pull">Used Drum</th>
-                <th className="ca-th-pull">Pulled By</th>
-                <th className="ca-th-pull">Pulling Date</th>
-                <th className="ca-th-term">Term Date (From)</th>
-                <th className="ca-th-term">By (From)</th>
-                <th className="ca-th-term">Term Date (To)</th>
-                <th className="ca-th-term">By (To)</th>
-                <th className="ca-th-check">Line Check</th>
-                <th className="ca-th-check">ACT No.</th>
+                <th>{t('Cable Tag')}</th>
+                <th>{t('Cat.')}</th>
+                <th>{t('Vendor')}</th>
+                <th className="ca-th-pull">{t('Pulled Len (m)')}</th>
+                <th className="ca-th-pull">{t('Used Drum')}</th>
+                <th className="ca-th-pull">{t('Pulled By')}</th>
+                <th className="ca-th-pull">{t('Pulling Date')}</th>
+                <th className="ca-th-term">{t('Term Date (From)')}</th>
+                <th className="ca-th-term">{t('By (From)')}</th>
+                <th className="ca-th-term">{t('Term Date (To)')}</th>
+                <th className="ca-th-term">{t('By (To)')}</th>
+                <th className="ca-th-check">{t('Line Check')}</th>
+                <th className="ca-th-check">{t('ACT No.')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -784,15 +783,15 @@ export default function CableActuals({ session }) {
                   <tr key={r.cno}>
                     <td className="cs-cable-no">
                       {r.cno}
-                      {r.orphan && <span className="ca-orphan-flag" title="케이블 마스터에 없음 — 대시보드 집계 제외">not in master</span>}
+                      {r.orphan && <span className="ca-orphan-flag" title={t('Not in the cable master — left out of the Dashboard')}>{t('not in master')}</span>}
                     </td>
-                    <td>{r.cat ? <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{r.cat}</span> : <span className="cm-muted">—</span>}</td>
+                    <td>{r.cat ? <span className="cs-badge" style={{ background: cc.bg, color: cc.text }}>{t(r.cat)}</span> : <span className="cm-muted">—</span>}</td>
                     <td>{r.vendor || '—'}</td>
                     <td className="num">{r.pulledLength || '—'}</td>
                     <td className="ca-mono">
                       {r.usedDrum || '—'}
                       {r.drumDiff && (
-                        <span className="ca-drum-flag" title={`설계 드럼: ${r.designDrum}`}>
+                        <span className="ca-drum-flag" title={`${t('Designed drum:')} ${r.designDrum}`}>
                           ≠ {r.designDrum}
                         </span>
                       )}
@@ -803,29 +802,28 @@ export default function CableActuals({ session }) {
                     <td>{r.termByFrom || '—'}</td>
                     <td className="ca-mono">{r.termDateTo || '—'}</td>
                     <td>{r.termByTo || '—'}</td>
-                    <td><span className="cs-badge" style={{ background: lcC.bg, color: lcC.text }}>{lc}</span></td>
+                    <td><span className="cs-badge" style={{ background: lcC.bg, color: lcC.text }}>{t(lc)}</span></td>
                     <td className="ca-mono">{r.act || '—'}</td>
                     <td className="ca-row-actions">
-                      {!viewer && <button className="ca-act ca-act-edit" title="Edit" onClick={() => editRecord(r.cno)}>Edit</button>}
-                      {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRecord(r.cno)}>✕</button>}
+                      {!viewer && <button className="ca-act ca-act-edit" title={t('Edit')} onClick={() => editRecord(r.cno)}>{t('Edit')}</button>}
+                      {admin && <button className="ca-act ca-act-del" title={t('Delete (admin)')} onClick={() => removeRecord(r.cno)}>✕</button>}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          {records.length === 0 && <div className="cs-empty">No records yet. Enter a Cable Tag above and save.</div>}
+          {records.length === 0 && <div className="cs-empty">{t('No records yet. Enter a Cable Tag above and save.')}</div>}
           {records.length > visibleCount && (
             <button className="ca-btn ca-btn-more" onClick={() => setVisibleCount(v => v + 50)}
               style={{ display: 'block', margin: '12px auto', padding: '6px 24px', cursor: 'pointer', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--ink-secondary)', fontSize: 13 }}>
-              Show more ({visibleCount} / {records.length})
+              {t('Show more')} ({visibleCount} / {records.length})
             </button>
           )}
         </div>
 
         <p className="cm-note">
-          <strong>*</strong> 표시는 필수 입력입니다. 실적은 이 브라우저에 저장되며 <strong>Cable Schedule</strong>과 <strong>Dashboard</strong> 진행률에 반영됩니다 —
-          Pulling Date 입력 시 Pulling <strong>Done</strong>, Termination Date(To) 입력 시 Termination <strong>Done</strong> (From만 = In Progress). 날짜는 2026-07 ~ 2028-12.
+          {t('WORKLOG_NOTE')}
         </p>
       </div>
     </div>

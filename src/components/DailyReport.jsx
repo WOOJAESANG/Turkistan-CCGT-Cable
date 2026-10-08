@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { loadFieldData, loadDaily, saveDailyEntry, deleteDailyEntry, loadVendors } from '../lib/dataStore'
 import { stamp, num } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -62,9 +63,9 @@ export default function DailyReport({ session }) {
   const save = () => {
     if (viewer) return
     const date = form.date.trim(); const vendor = form.vendor.trim()
-    if (!date || !vendor) { setFlash({ type: 'err', msg: '필수 항목을 입력하세요 — Date, Vendor' }); return }
+    if (!date || !vendor) { setFlash({ type: 'err', msg: t('Fill in the required fields — Date, Vendor') }); return }
     saveDailyEntry(date, vendor, { pullManpower: form.pullManpower.trim(), termManpower: form.termManpower.trim() })
-    setFlash({ type: 'ok', msg: `저장 완료 · ${date} · ${vendor}` })
+    setFlash({ type: 'ok', msg: `${t('Saved')} · ${date} · ${vendor}` })
     setTimeout(() => setFlash(null), 2600)
   }
   const clear = () => { setForm(EMPTY); setFlash(null) }
@@ -73,7 +74,7 @@ export default function DailyReport({ session }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const removeRow = r => {
-    if (!window.confirm(`${r.date} · ${r.vendor} 인원 기록을 삭제할까요? (케이블 실적은 유지됩니다)`)) return
+    if (!window.confirm(t('Delete the manpower record for {d} · {v}? (Cable records are kept)', { d: r.date, v: r.vendor }))) return
     deleteDailyEntry(r.key)
   }
 
@@ -100,44 +101,44 @@ export default function DailyReport({ session }) {
       <div className="cs-body">
         <div className="page-header">
           <div className="cm-header-left">
-            <h2>Daily Report</h2>
-            <div className="cm-subtitle">작업조 · 생산성</div>
+            <h2>{t('Daily Report')}</h2>
+            <div className="cm-subtitle">{t('Crews · Productivity')}</div>
           </div>
-          <span className="cs-total">{summary.length} day-vendor rows</span>
+          <span className="cs-total">{t('{n} day-vendor rows', { n: summary.length })}</span>
         </div>
 
         {/* ---- Daily manpower entry (once per day per vendor) ---- */}
         {viewer && (
-          <div className="ca-viewer-notice">👁 View Only — you can browse and export records, but not add or edit them.</div>
+          <div className="ca-viewer-notice">👁 {t('View Only — you can browse and export records, but not add or edit them.')}</div>
         )}
         {!viewer && (
         <div className="ca-form dr-form">
           <div className="dr-entry-grid">
             <div className="ca-field">
-              <label>Date <span className="ca-req">*</span></label>
+              <label>{t('Date')} <span className="ca-req">*</span></label>
               <input className="ca-input" type="date" min={DATE_MIN} max={DATE_MAX}
                 value={form.date} onChange={e => setField('date', e.target.value)} />
             </div>
             <div className="ca-field">
-              <label>Vendor (업체명) <span className="ca-req">*</span></label>
-              <input className="ca-input" type="text" list="dr-vendors" placeholder="업체명"
+              <label>{t('Vendor')} <span className="ca-req">*</span></label>
+              <input className="ca-input" type="text" list="dr-vendors" placeholder={t('Vendor name')}
                 value={form.vendor} onChange={e => setField('vendor', e.target.value)} />
               <datalist id="dr-vendors">{vendors.map(v => <option key={v} value={v} />)}</datalist>
             </div>
             <div className="ca-field">
-              <label>Pulling Manpower (인원)</label>
-              <input className="ca-input" type="text" inputMode="numeric" placeholder="명"
+              <label>{t('Pulling Manpower')}</label>
+              <input className="ca-input" type="text" inputMode="numeric" placeholder={t('persons')}
                 value={form.pullManpower} onChange={e => setField('pullManpower', e.target.value)} />
             </div>
             <div className="ca-field">
-              <label>Termination Manpower (인원)</label>
-              <input className="ca-input" type="text" inputMode="numeric" placeholder="명"
+              <label>{t('Termination Manpower')}</label>
+              <input className="ca-input" type="text" inputMode="numeric" placeholder={t('persons')}
                 value={form.termManpower} onChange={e => setField('termManpower', e.target.value)} />
             </div>
           </div>
           <div className="ca-actions">
-            <button className="ca-btn ca-btn-save" onClick={save}>Save Manpower</button>
-            <button className="ca-btn ca-btn-clear" onClick={clear}>Clear</button>
+            <button className="ca-btn ca-btn-save" onClick={save}>{t('Save Manpower')}</button>
+            <button className="ca-btn ca-btn-clear" onClick={clear}>{t('Clear')}</button>
             {flash && <span className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</span>}
           </div>
         </div>
@@ -145,7 +146,7 @@ export default function DailyReport({ session }) {
 
         {/* ---- Daily summary (auto) ---- */}
         <div className="cs-toolbar ca-records-bar">
-          <span className="dr-hint">풀링 길이·포인트는 케이블 실적에서 자동 합산, 인원은 위에서 입력 → 인당 생산성 자동 계산</span>
+          <span className="dr-hint">{t('Pulled length and points are summed from cable records; enter manpower above → productivity per person is calculated')}</span>
           <div className="cm-export-inline">
             <button className="cm-export-btn" onClick={exportExcel} disabled={summary.length === 0}>
               <span className="cm-export-ico xls">XLS</span> Excel
@@ -157,15 +158,15 @@ export default function DailyReport({ session }) {
           <table className="cs-table ca-table dr-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Vendor</th>
-                <th className="ca-th-pull">Pull Cables</th>
-                <th className="ca-th-pull">Pull Length(m)</th>
-                <th className="ca-th-pull">Pull 인원</th>
-                <th className="ca-th-pull">m / 인</th>
-                <th className="ca-th-term">Term Points</th>
-                <th className="ca-th-term">Term 인원</th>
-                <th className="ca-th-term">P / 인</th>
+                <th>{t('Date')}</th>
+                <th>{t('Vendor')}</th>
+                <th className="ca-th-pull">{t('Pull Cables')}</th>
+                <th className="ca-th-pull">{t('Pull Length (m)')}</th>
+                <th className="ca-th-pull">{t('Pull Manpower')}</th>
+                <th className="ca-th-pull">{t('m / person')}</th>
+                <th className="ca-th-term">{t('Term Points')}</th>
+                <th className="ca-th-term">{t('Term Manpower')}</th>
+                <th className="ca-th-term">{t('pts / person')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -176,29 +177,28 @@ export default function DailyReport({ session }) {
                 return (
                   <tr key={r.key}>
                     <td className="ca-mono">{r.date}</td>
-                    <td className="dr-vendor">{r.vendor}</td>
+                    <td className="dr-vendor">{t(r.vendor)}</td>
                     <td className="num">{r.pullCables || '—'}</td>
                     <td className="num">{r.pullLength ? fmt(r.pullLength) : '—'}</td>
-                    <td className="num">{r.pullMan || <span className="dr-need">입력</span>}</td>
+                    <td className="num">{r.pullMan || <span className="dr-need">{t('Enter')}</span>}</td>
                     <td className="num dr-prod">{pp != null ? fmt(pp) : '—'}</td>
                     <td className="num">{r.termPoints || '—'}</td>
-                    <td className="num">{r.termMan || <span className="dr-need">입력</span>}</td>
+                    <td className="num">{r.termMan || <span className="dr-need">{t('Enter')}</span>}</td>
                     <td className="num dr-prod">{tp != null ? (Math.round(tp * 10) / 10) : '—'}</td>
                     <td className="ca-row-actions">
-                      {!viewer && <button className="ca-act ca-act-edit" onClick={() => editRow(r)}>Edit</button>}
-                      {admin && <button className="ca-act ca-act-del" title="Delete (admin)" onClick={() => removeRow(r)}>✕</button>}
+                      {!viewer && <button className="ca-act ca-act-edit" onClick={() => editRow(r)}>{t('Edit')}</button>}
+                      {admin && <button className="ca-act ca-act-del" title={t('Delete (admin)')} onClick={() => removeRow(r)}>✕</button>}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          {summary.length === 0 && <div className="cs-empty">아직 데이터가 없습니다. 케이블 실적을 입력하거나 위에서 일자별 인원을 등록하세요.</div>}
+          {summary.length === 0 && <div className="cs-empty">{t('No data yet. Enter cable records, or register daily manpower above.')}</div>}
         </div>
 
         <p className="cm-note">
-          인원은 <strong>하루 한 번, 업체별로</strong> 등록합니다 (케이블마다 입력하지 않음). 같은 Date·Vendor를 다시 저장하면 갱신됩니다.
-          풀링 길이/터미네이션 포인트는 Cable Actuals에 입력된 날짜·업체 기준으로 자동 집계되어 <strong>인당 생산성(m/인, P/인)</strong>으로 표시됩니다.
+          {t('Manpower is registered once a day per vendor (not per cable). Saving the same Date and Vendor again updates it. Pulled length and termination points are summed automatically from Work Log by date and vendor and shown as productivity per person (m/person, pts/person).')}
         </p>
       </div>
     </div>

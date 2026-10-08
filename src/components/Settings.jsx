@@ -7,6 +7,7 @@ import {
 } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
+import { t, locale } from '../lib/i18n'
 
 const TABS = [
   { id: 'password', label: 'Change Password' },
@@ -25,15 +26,15 @@ function PasswordTab({ session }) {
 
   const submit = async e => {
     e.preventDefault()
-    if (pw.length < 6) { setFlash({ type: 'err', msg: '비밀번호는 6자 이상이어야 합니다.' }); return }
-    if (pw !== pw2)  { setFlash({ type: 'err', msg: '비밀번호가 일치하지 않습니다.' }); return }
+    if (pw.length < 6) { setFlash({ type: 'err', msg: t('Password must be at least 6 characters.') }); return }
+    if (pw !== pw2)  { setFlash({ type: 'err', msg: t('Passwords do not match.') }); return }
     setBusy(true); setFlash(null)
     const { error } = await supabase.auth.updateUser({ password: pw })
     setBusy(false)
-    if (error) setFlash({ type: 'err', msg: error.message || '변경 실패' })
+    if (error) setFlash({ type: 'err', msg: error.message || t('Change failed') })
     else {
       setPw(''); setPw2('')
-      setFlash({ type: 'ok', msg: '비밀번호가 변경되었습니다.' })
+      setFlash({ type: 'ok', msg: t('Password changed.') })
       setTimeout(() => setFlash(null), 3000)
     }
   }
@@ -41,23 +42,23 @@ function PasswordTab({ session }) {
   return (
     <div className="st-panel">
       <div className="st-panel-head">
-        <h3>Change Password</h3>
-        <p className="st-panel-sub">현재 로그인한 계정 ({session?.user?.email})의 비밀번호를 변경합니다.</p>
+        <h3>{t('Change Password')}</h3>
+        <p className="st-panel-sub">{t('Changes the password of the signed-in account ({email}).', { email: session?.user?.email })}</p>
       </div>
       <form className="st-form" onSubmit={submit}>
         <div className="ca-field">
-          <label>New Password</label>
+          <label>{t('New Password')}</label>
           <input className="ca-input" type="password" value={pw} onChange={e => setPw(e.target.value)}
-            placeholder="6자 이상" autoComplete="new-password" />
+            placeholder={t('At least 6 characters')} autoComplete="new-password" />
         </div>
         <div className="ca-field">
-          <label>Confirm New Password</label>
+          <label>{t('Confirm New Password')}</label>
           <input className="ca-input" type="password" value={pw2} onChange={e => setPw2(e.target.value)}
             autoComplete="new-password" />
         </div>
         <div className="ca-actions">
           <button className="ca-btn ca-btn-save" type="submit" disabled={busy}>
-            {busy ? 'Updating…' : 'Update Password'}
+            {busy ? t('Updating…') : t('Update Password')}
           </button>
           {flash && <span className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</span>}
         </div>
@@ -86,38 +87,38 @@ function VendorsTab() {
     if (!name.trim()) return
     setBusy(true); setFlash(null)
     try { await addVendor(name); setName('') }
-    catch (err) { setFlash({ type: 'err', msg: err.message?.includes('duplicate') ? '이미 등록된 업체입니다.' : (err.message || '추가 실패') }) }
+    catch (err) { setFlash({ type: 'err', msg: err.message?.includes('duplicate') ? t('This vendor is already registered.') : (err.message || t('Add failed')) }) }
     finally { setBusy(false) }
   }
 
   const toggle = async v => {
     try { await updateVendor(v.id, { active: !v.active }) }
-    catch (err) { setFlash({ type: 'err', msg: err.message || '변경 실패' }) }
+    catch (err) { setFlash({ type: 'err', msg: err.message || t('Change failed') }) }
   }
   const remove = async v => {
-    if (!window.confirm(`업체 "${v.name}" 을 삭제할까요? (기존 실적 데이터의 Vendor 필드에는 영향 없음)`)) return
+    if (!window.confirm(t('Delete vendor "{v}"? (Vendor names on existing records are not affected)', { v: v.name }))) return
     try { await deleteVendor(v.id) }
-    catch (err) { setFlash({ type: 'err', msg: err.message || '삭제 실패' }) }
+    catch (err) { setFlash({ type: 'err', msg: err.message || t('Delete failed') }) }
   }
 
   return (
     <div className="st-panel">
       <div className="st-panel-head">
-        <h3>Vendors 관리</h3>
-        <p className="st-panel-sub">업체명 마스터 리스트입니다. Work Log·Daily Report의 Vendor 입력 시 이 목록이 자동완성으로 제공됩니다.</p>
+        <h3>{t('Vendors')}</h3>
+        <p className="st-panel-sub">{t('Master list of vendor names. Work Log and Daily Report offer it as suggestions when entering a vendor.')}</p>
       </div>
       <form className="st-inline-form" onSubmit={add}>
-        <input className="ca-input" type="text" placeholder="새 업체명 입력" value={name} onChange={e => setName(e.target.value)} />
-        <button className="ca-btn ca-btn-save" type="submit" disabled={busy || !name.trim()}>Add</button>
+        <input className="ca-input" type="text" placeholder={t('New vendor name')} value={name} onChange={e => setName(e.target.value)} />
+        <button className="ca-btn ca-btn-save" type="submit" disabled={busy || !name.trim()}>{t('Add')}</button>
       </form>
       {flash && <div className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'} st-inline-flash`}>{flash.msg}</div>}
       <div className="cs-table-wrap">
         <table className="cs-table st-table">
           <thead>
             <tr>
-              <th>Vendor</th>
-              <th style={{ width: 100 }}>Active</th>
-              <th style={{ width: 140 }}>Added</th>
+              <th>{t('Vendor')}</th>
+              <th style={{ width: 100 }}>{t('Active')}</th>
+              <th style={{ width: 140 }}>{t('Added')}</th>
               <th style={{ width: 60 }}></th>
             </tr>
           </thead>
@@ -128,7 +129,7 @@ function VendorsTab() {
                 <td>
                   <label className="st-switch">
                     <input type="checkbox" checked={v.active} onChange={() => toggle(v)} />
-                    <span>{v.active ? 'Active' : 'Inactive'}</span>
+                    <span>{v.active ? t('Active') : t('Inactive')}</span>
                   </label>
                 </td>
                 <td className="ca-mono">{v.created_at ? new Date(v.created_at).toISOString().slice(0, 10) : '—'}</td>
@@ -139,7 +140,7 @@ function VendorsTab() {
             ))}
           </tbody>
         </table>
-        {vendors.length === 0 && <div className="cs-empty">등록된 업체가 없습니다. 위에서 첫 업체를 추가하세요.</div>}
+        {vendors.length === 0 && <div className="cs-empty">{t('No vendors registered. Add the first one above.')}</div>}
       </div>
     </div>
   )
@@ -194,9 +195,9 @@ function ExportTab() {
       XLSX.utils.book_append_sheet(wb, wsV, 'Vendors')
 
       XLSX.writeFile(wb, `Turkistan_CCGT_Full_Export_${stamp()}.xlsx`)
-      setFlash({ type: 'ok', msg: `내보내기 완료 — Work Log ${caRows.length} / Daily ${dmRows.length} / Vendors ${vRows.length}` })
+      setFlash({ type: 'ok', msg: `${t('Export complete')} — Work Log ${caRows.length} / Daily ${dmRows.length} / Vendors ${vRows.length}` })
     } catch (err) {
-      setFlash({ type: 'err', msg: err.message || 'Export 실패' })
+      setFlash({ type: 'err', msg: err.message || t('Export failed') })
     } finally {
       setBusy(false)
     }
@@ -205,17 +206,17 @@ function ExportTab() {
   return (
     <div className="st-panel">
       <div className="st-panel-head">
-        <h3>Data Export</h3>
-        <p className="st-panel-sub">DB의 모든 실적·인원·업체 마스터를 하나의 Excel 파일(3 시트)로 백업합니다.</p>
+        <h3>{t('Data Export')}</h3>
+        <p className="st-panel-sub">{t('Backs up every field record, manpower entry and vendor in the database to one Excel file (3 sheets).')}</p>
       </div>
       <div className="st-export-card">
         <div className="st-export-sheets">
-          <div><strong>Sheet 1 · Work Log</strong> — cable_actuals + 마스터 조인 (Category/Spec/System 포함)</div>
-          <div><strong>Sheet 2 · Daily Manpower</strong> — 날짜·업체별 인원</div>
-          <div><strong>Sheet 3 · Vendors</strong> — 등록된 업체 마스터</div>
+          <div><strong>Sheet 1 · Work Log</strong> — {t('cable records joined with the master (with Category/Spec/System)')}</div>
+          <div><strong>Sheet 2 · Daily Manpower</strong> — {t('manpower by date and vendor')}</div>
+          <div><strong>Sheet 3 · Vendors</strong> — {t('registered vendors')}</div>
         </div>
         <button className="ca-btn ca-btn-save st-big-btn" onClick={run} disabled={busy}>
-          {busy ? 'Exporting…' : 'Download Full Backup (.xlsx)'}
+          {busy ? t('Exporting…') : t('Download Full Backup (.xlsx)')}
         </button>
         {flash && <div className={`ca-flash ${flash.type === 'ok' ? 'ok' : 'err'}`}>{flash.msg}</div>}
       </div>
@@ -245,41 +246,41 @@ function ActivityTab() {
     }
   }, [])
 
-  const fmt = t => t ? new Date(t).toLocaleString('ko-KR') : '—'
+  const fmt = ts => ts ? new Date(ts).toLocaleString(locale()) : '—'
 
   return (
     <div className="st-panel">
       <div className="st-panel-head">
-        <h3>Activity Log</h3>
-        <p className="st-panel-sub">최근 30건의 변경 이력입니다. 새로고침 없이 자동 업데이트됩니다.</p>
+        <h3>{t('Activity Log')}</h3>
+        <p className="st-panel-sub">{t('The last 30 changes. Updates automatically without reloading.')}</p>
       </div>
       <div className="cs-table-wrap">
         <table className="cs-table st-table">
           <thead>
             <tr>
-              <th style={{ width: 90 }}>Kind</th>
-              <th>Reference</th>
-              <th>Vendor</th>
-              <th style={{ width: 180 }}>Updated At</th>
-              <th>Updated By</th>
+              <th style={{ width: 90 }}>{t('Kind')}</th>
+              <th>{t('Reference')}</th>
+              <th>{t('Vendor')}</th>
+              <th style={{ width: 180 }}>{t('Updated At')}</th>
+              <th>{t('Updated By')}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>
                 <td>
-                  <span className={`st-kind-badge ${r.kind}`}>{r.kind === 'cable' ? 'Work Log' : 'Daily'}</span>
+                  <span className={`st-kind-badge ${r.kind}`}>{r.kind === 'cable' ? t('Work Log') : t('Daily')}</span>
                 </td>
                 <td className="ca-mono">{r.ref}</td>
                 <td>{r.vendor || '—'}</td>
                 <td className="ca-mono">{fmt(r.at)}</td>
-                <td>{r.by || <span className="cm-muted">unknown</span>}</td>
+                <td>{r.by || <span className="cm-muted">{t('unknown')}</span>}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!busy && rows.length === 0 && <div className="cs-empty">아직 변경 이력이 없습니다.</div>}
-        {busy && <div className="cs-loading">Loading…</div>}
+        {!busy && rows.length === 0 && <div className="cs-empty">{t('No changes yet.')}</div>}
+        {busy && <div className="cs-loading">{t('Loading…')}</div>}
       </div>
     </div>
   )
@@ -294,11 +295,11 @@ export default function Settings({ session }) {
     return (
       <div className="cs-page">
         <div className="cs-body">
-          <div className="page-header"><h2>Settings</h2></div>
+          <div className="page-header"><h2>{t('Settings')}</h2></div>
           <div className="st-denied">
             <div className="st-denied-icon">🔒</div>
-            <div className="st-denied-title">Admin Only</div>
-            <div className="st-denied-sub">이 페이지는 관리자만 접근할 수 있습니다.<br/>비밀번호 변경이 필요하면 관리자에게 요청하세요.</div>
+            <div className="st-denied-title">{t('Admin Only')}</div>
+            <div className="st-denied-sub">{t('Only administrators can open this page.')}<br/>{t('Ask an administrator if you need your password changed.')}</div>
           </div>
         </div>
       </div>
@@ -310,15 +311,15 @@ export default function Settings({ session }) {
       <div className="cs-body">
         <div className="page-header">
           <div className="cm-header-left">
-            <h2>Settings</h2>
-            <div className="cm-subtitle">Account · Master Data · Export</div>
+            <h2>{t('Settings')}</h2>
+            <div className="cm-subtitle">{t('Account · Master Data · Export')}</div>
           </div>
         </div>
 
         <div className="st-tabs">
-          {TABS.map(t => (
-            <button key={t.id} className={`st-tab${tab === t.id ? ' active' : ''}`} onClick={() => setTab(t.id)}>
-              {t.label}
+          {TABS.map(tb => (
+            <button key={tb.id} className={`st-tab${tab === tb.id ? ' active' : ''}`} onClick={() => setTab(tb.id)}>
+              {t(tb.label)}
             </button>
           ))}
         </div>

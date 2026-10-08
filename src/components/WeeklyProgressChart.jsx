@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts'
 import { CHART_START as START, CHART_END as END } from '../data/constants'
+import { t } from '../lib/i18n'
 
 const TOTAL_WEEKS = 78
 
@@ -43,16 +44,16 @@ function CustomTooltip({ active, payload, label }) {
       padding: '10px 14px', boxShadow: '0 8px 24px rgba(0,55,112,0.08)',
       fontSize: 12, fontFeatureSettings: '"tnum"', minWidth: 160,
     }}>
-      <div style={{ fontWeight: 600, marginBottom: 6, color: '#0d253d' }}>Week of {label}</div>
+      <div style={{ fontWeight: 600, marginBottom: 6, color: '#0d253d' }}>{t('Week of {d}', { d: label })}</div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
         <span style={{ width: 8, height: 8, borderRadius: 2, background: '#533afd', flexShrink: 0 }} />
-        <span style={{ color: '#64748d' }}>Pulling</span>
+        <span style={{ color: '#64748d' }}>{t('Pulling')}</span>
         <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d' }}>{Math.round(pull).toLocaleString()} m</span>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <span style={{ width: 8, height: 8, borderRadius: 2, background: '#06b6d4', flexShrink: 0 }} />
-        <span style={{ color: '#64748d' }}>Termination</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d' }}>{Math.round(term).toLocaleString()} P</span>
+        <span style={{ color: '#64748d' }}>{t('Termination')}</span>
+        <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d' }}>{Math.round(term).toLocaleString()} {t('pts')}</span>
       </div>
     </div>
   )
@@ -91,13 +92,13 @@ export default function WeeklyProgressChart({ fieldData, master, totalDesignedLe
   return (
     <div className="chart-card wpc-card">
       <div className="chart-card-header">
-        <span className="chart-title">Weekly Construction Progress</span>
-        <span className="chart-subtitle">Target: {weeklyTarget.toLocaleString()} m/wk ({TOTAL_WEEKS}wk)</span>
+        <span className="chart-title">{t('Weekly Construction Progress')}</span>
+        <span className="chart-subtitle">{t('Target: {n} m/wk ({w} wk)', { n: weeklyTarget.toLocaleString(), w: TOTAL_WEEKS })}</span>
       </div>
       <div className="wpc-legend-row">
-        <span className="wpc-legend-item"><span className="wpc-dot" style={{ background: '#533afd' }} />Pulling (m)</span>
-        <span className="wpc-legend-item"><span className="wpc-dot" style={{ background: '#06b6d4' }} />Termination (P)</span>
-        <span className="wpc-legend-item"><span className="wpc-line" />Weekly Target</span>
+        <span className="wpc-legend-item"><span className="wpc-dot" style={{ background: '#533afd' }} />{t('Pulling (m)')}</span>
+        <span className="wpc-legend-item"><span className="wpc-dot" style={{ background: '#06b6d4' }} />{t('Termination (pts)')}</span>
+        <span className="wpc-legend-item"><span className="wpc-line" />{t('Weekly Target')}</span>
       </div>
       <div style={{ position: 'relative' }}>
         {allZero && (
@@ -109,7 +110,7 @@ export default function WeeklyProgressChart({ fieldData, master, totalDesignedLe
               fontSize: 13, color: '#64748d', background: 'rgba(246,249,252,0.92)',
               padding: '8px 20px', borderRadius: 9999, border: '1px solid #e3e8ee',
             }}>
-              실적 데이터가 입력되면 차트가 표시됩니다
+              {t('The chart appears once field records are entered')}
             </span>
           </div>
         )}
@@ -140,15 +141,15 @@ export default function WeeklyProgressChart({ fieldData, master, totalDesignedLe
               strokeDasharray="6 4"
               strokeWidth={1.5}
               label={{
-                value: `Target ${weeklyTarget.toLocaleString()}`,
+                value: t('Target {n}', { n: weeklyTarget.toLocaleString() }),
                 position: 'right',
                 fill: '#16a34a',
                 fontSize: 10,
                 fontWeight: 600,
               }}
             />
-            <Bar dataKey="pull" name="Pulling" fill="#533afd" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="term" name="Termination" fill="#06b6d4" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="pull" name={t('Pulling')} fill="#533afd" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="term" name={t('Termination')} fill="#06b6d4" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

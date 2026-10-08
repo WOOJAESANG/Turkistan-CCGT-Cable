@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { UNITS, unitOf, unitLabel } from '../lib/unit'
+import { t } from '../lib/i18n'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Unit', 'Priority',
@@ -82,7 +83,7 @@ function ScheduleExportMenu({ rows, fieldData, drumMap, pkgMap }) {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        <span>Export</span>
+        <span>{t('Export')}</span>
         <svg className="cm-export-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -545,7 +546,7 @@ export default function CableSchedule() {
   const anyColF = Object.keys(EMPTY_COLF).some(k => colF[k] !== EMPTY_COLF[k])
   const resetColF = () => { setColF(EMPTY_COLF); setCurrentPage(1) }
 
-  const cfText = (key, ph = 'Filter') => (
+  const cfText = (key, ph = t('Filter')) => (
     <input
       type="text"
       className={`cs-cf${colF[key] ? ' active' : ''}`}
@@ -557,7 +558,7 @@ export default function CableSchedule() {
   // 244 systems is too many to scroll, and the names are long enough that a plain select
   // truncates them. A datalist gives the same pick-from-the-real-values behaviour while
   // narrowing as you type, and still shows the full name in the popup.
-  const cfCombo = (key, options, ph = 'All') => (
+  const cfCombo = (key, options, ph = t('All')) => (
     <>
       <input
         type="text"
@@ -578,7 +579,7 @@ export default function CableSchedule() {
       value={colF[key]}
       onChange={e => setCF(key, e.target.value)}
     >
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {options.map(o => <option key={o} value={o}>{t(o)}</option>)}
     </select>
   )
 
@@ -587,9 +588,9 @@ export default function CableSchedule() {
       <div className="cs-page">
         <div className="cs-body">
           <div className="page-header">
-            <h2>Cable Schedule</h2>
+            <h2>{t('Cable Schedule')}</h2>
           </div>
-          <div className="cs-loading">Loading data…</div>
+          <div className="cs-loading">{t('Loading data…')}</div>
         </div>
       </div>
     )
@@ -599,30 +600,30 @@ export default function CableSchedule() {
     <div className="cs-page">
       <div className="cs-body">
         <div className="page-header">
-          <h2>Cable Schedule</h2>
+          <h2>{t('Cable Schedule')}</h2>
           <div className="cs-header-stats">
             <span className="cs-meters">
               {Math.round(totalMeters).toLocaleString()}<span className="cs-meters-unit"> m</span>
             </span>
-            <span className="cs-total">{filtered.length.toLocaleString()} cables</span>
+            <span className="cs-total">{t('{n} cables', { n: filtered.length.toLocaleString() })}</span>
           </div>
         </div>
 
         <div className="cs-toolbar">
           <div className="cs-loc-bar">
-            <span className="cs-loc-label">Location</span>
+            <span className="cs-loc-label">{t('Location')}</span>
             <div className="cs-loc-selects">
               <select
                 className={`cs-loc-select${colF.fromArea ? ' active' : ''}`}
                 value={colF.fromArea}
                 onChange={e => setCF('fromArea', e.target.value)}
               >
-                <option value="">FROM — Any</option>
+                <option value="">{t('FROM — Any')}</option>
                 {FROM_AREAS.filter(a => {
                   if (!areaPairs.fromSet.has(a.code)) return false
                   if (colF.toArea && areaPairs.pairTo[colF.toArea] && !areaPairs.pairTo[colF.toArea].has(a.code)) return false
                   return true
-                }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+                }).map(a => <option key={a.code} value={a.code}>{t(a.label)}</option>)}
               </select>
               <span className="cs-loc-arrow">→</span>
               <select
@@ -630,27 +631,27 @@ export default function CableSchedule() {
                 value={colF.toArea}
                 onChange={e => setCF('toArea', e.target.value)}
               >
-                <option value="">TO — Any</option>
+                <option value="">{t('TO — Any')}</option>
                 {TO_AREAS.filter(a => {
                   if (a.hidden) return false
                   if (!areaPairs.toSet.has(a.code)) return false
                   if (colF.fromArea && areaPairs.pairFrom[colF.fromArea] && !areaPairs.pairFrom[colF.fromArea].has(a.code)) return false
                   return true
-                }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+                }).map(a => <option key={a.code} value={a.code}>{t(a.label)}</option>)}
               </select>
             </div>
           </div>
           <div className="cs-loc-bar">
-            <span className="cs-loc-label">Unit</span>
+            <span className="cs-loc-label">{t('Unit')}</span>
             <div className="cs-loc-selects">
               <select
                 className={`cs-loc-select${colF.unit ? ' active' : ''}`}
                 value={colF.unit}
                 onChange={e => setCF('unit', e.target.value)}
-                title="GT unit or block the cable belongs to (from system name, KKS prefix or B0/B1/B2 tag)"
+                title={t('GT unit or block the cable belongs to (from system name, KKS prefix or B0/B1/B2 tag)')}
               >
-                <option value="">Unit — Any</option>
-                {UNITS.map(u => <option key={u.code} value={u.code}>{u.label}</option>)}
+                <option value="">{t('Unit — Any')}</option>
+                {UNITS.map(u => <option key={u.code} value={u.code}>{t(u.label)}</option>)}
               </select>
             </div>
           </div>
@@ -661,7 +662,7 @@ export default function CableSchedule() {
             </svg>
             <input
               type="text"
-              placeholder="Search Cable No / Spec / System / From / To / Drum No / Used Drum"
+              placeholder={t('Search Cable No / Spec / System / From / To / Drum No / Used Drum')}
               value={search}
               onChange={e => handleSearch(e.target.value)}
             />
@@ -669,7 +670,7 @@ export default function CableSchedule() {
           </div>
           {anyColF && (
             <button type="button" className="cs-reset-filters" onClick={resetColF}>
-              ✕ Reset Filters
+              ✕ {t('Reset Filters')}
             </button>
           )}
           <ScheduleExportMenu rows={filtered} fieldData={fieldData} drumMap={drumMap} pkgMap={pkgMap} />
@@ -679,21 +680,21 @@ export default function CableSchedule() {
           <table className="cs-table">
             <thead>
               <tr>
-                <th>CATEGORY</th>
-                <th>CABLE NO.</th>
-                <th>SPEC</th>
-                <th className="num">LENGTH (M)</th>
-                <th>SYSTEM</th>
-                <th>PRIORITY</th>
-                <th>FROM</th>
-                <th>TO</th>
-                <th>DRUM NO.</th>
-                <th>PKG LIST</th>
-                <th>PULLING</th>
-                <th>USED DRUM</th>
-                <th>TERMINATION</th>
-                <th>LINE CHECK</th>
-                <th>ACT NO.</th>
+                <th>{t('CATEGORY')}</th>
+                <th>{t('CABLE NO.')}</th>
+                <th>{t('SPEC')}</th>
+                <th className="num">{t('LENGTH (M)')}</th>
+                <th>{t('SYSTEM')}</th>
+                <th>{t('PRIORITY')}</th>
+                <th>{t('FROM')}</th>
+                <th>{t('TO')}</th>
+                <th>{t('DRUM NO.')}</th>
+                <th>{t('PKG LIST')}</th>
+                <th>{t('PULLING')}</th>
+                <th>{t('USED DRUM')}</th>
+                <th>{t('TERMINATION')}</th>
+                <th>{t('LINE CHECK')}</th>
+                <th>{t('ACT NO.')}</th>
               </tr>
               <tr className="cs-filter-row">
                 <th>{cfSelect('cat', CATEGORIES)}</th>
@@ -712,7 +713,7 @@ export default function CableSchedule() {
                 <th>{cfText('from')}</th>
                 <th>{cfText('to')}</th>
                 <th>{cfText('drum')}</th>
-                <th>{cfText('pkg', 'e.g. 590')}</th>
+                <th>{cfText('pkg', t('e.g. 590'))}</th>
                 <th>{cfSelect('pull', STATUSES)}</th>
                 <th>{cfText('used')}</th>
                 <th>{cfSelect('term', STATUSES)}</th>
@@ -739,7 +740,7 @@ export default function CableSchedule() {
                 return (
                   <tr key={i} className={isAdj ? 'cs-adj-row' : ''}>
                     <td>
-                      <span className="cs-badge" style={{ background: catC.bg, color: catC.text }}>{c.g}</span>
+                      <span className="cs-badge" style={{ background: catC.bg, color: catC.text }}>{t(c.g)}</span>
                       {isAdj && <span className="cs-agg-badge">AGG</span>}
                     </td>
                     <td className="cs-cable-no">{c.n}</td>
@@ -747,21 +748,21 @@ export default function CableSchedule() {
                     <td className="num">{c.l != null ? c.l.toLocaleString() : '—'}</td>
                     <td className="cs-sys">{c.sys || '—'}</td>
                     <td>
-                      <span className="cs-badge" style={{ background: priC.bg, color: priC.text }}>{c.pri}</span>
+                      <span className="cs-badge" style={{ background: priC.bg, color: priC.text }}>{t(c.pri)}</span>
                     </td>
                     <td className="cs-kks">{c.f || '—'}</td>
                     <td className="cs-kks">{c.t || '—'}</td>
                     <td className="cs-kks">{drumFor(c, drumMap) || '—'}</td>
                     <td className="cs-pkg-cell">{pkgFor(c, drumMap, pkgMap) || '—'}</td>
                     <td>
-                      <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{pullStatus}</span>
+                      <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{t(pullStatus)}</span>
                     </td>
                     <td className="cs-kks">{fd.usedDrum || '—'}</td>
                     <td>
-                      <span className="cs-badge" style={{ background: termC.bg, color: termC.text }}>{termStatus}</span>
+                      <span className="cs-badge" style={{ background: termC.bg, color: termC.text }}>{t(termStatus)}</span>
                     </td>
                     <td>
-                      <span className="cs-badge" style={{ background: lcColor.bg, color: lcColor.text }}>{lcStatus}</span>
+                      <span className="cs-badge" style={{ background: lcColor.bg, color: lcColor.text }}>{t(lcStatus)}</span>
                     </td>
                     <td className="cs-act-cell">{fd.act || '—'}</td>
                   </tr>
@@ -770,7 +771,7 @@ export default function CableSchedule() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <div className="cs-empty">No results found.</div>
+            <div className="cs-empty">{t('No results found.')}</div>
           )}
         </div>
 
@@ -790,21 +791,12 @@ export default function CableSchedule() {
               )
             })}
             <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>›</button>
-            <span className="cs-page-info">Page {currentPage} / {totalPages}</span>
+            <span className="cs-page-info">{t('Page {a} / {b}', { a: currentPage, b: totalPages })}</span>
           </div>
         )}
 
         <p className="cm-note">
-          <strong>Drum No.</strong> is the assigned drum from the master schedule — paste it into <strong>Cable Material</strong>'s
-          search to find which packing list it ships in. AIS cables use their real interconnection-diagram numbers (e.g. D01_119)
-          with drums from the 2026.08.05 revision. For PKG cables with no individual drum (FGSS, HRSG, STG), this shows the
-          <strong> Packing List</strong> number instead. I&amp;C F.O cables get no design-time drum and name PGU-DE-0311 directly.
-          FMS reels are allocated by spec from PGU-DE-0581; the 42 cables with no drum are either not yet delivered (MM 16C, CAT.6)
-          or short of stock (MM 8C), so they show no packing list. The 48 AT1 cables reading <strong>Asia Trafo</strong> arrive with
-          the auto-transformer rather than from one of our packings — they still count in the design quantity and still have to be
-          pulled. FFC is not yet covered (multiple packing lists, no per-cable key).
-          <strong> Used Drum</strong> is the actual drum entered in Work Log after pulling — compare the two to catch cases where a
-          different drum was used than planned.
+          {t('SCHEDULE_NOTE')}
         </p>
       </div>
     </div>

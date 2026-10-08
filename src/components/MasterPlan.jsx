@@ -4,6 +4,7 @@ import {
   ComposedChart, Bar, Area, LabelList,
 } from 'recharts'
 import { loadMilestoneTargets, saveMilestoneTarget, resetMilestoneTarget, loadFieldData } from '../lib/dataStore'
+import { t } from '../lib/i18n'
 
 const UNIT1 = [
   { name: 'Power Receiving',         cust: '2026-10-30', custCable: '2026-08-01', l3: '2027-02-05', l3Cable: '2026-11-07', gap: '~3.2 mo' },
@@ -94,20 +95,20 @@ function MonthlyTooltip({ active, payload, label: lb }) {
       {plan != null && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C_OWNER, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>{planLabel}</span>
+          <span style={{ color: '#64748d' }}>{t(planLabel)}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d', paddingLeft: 12 }}>{Math.round(plan).toLocaleString()} m</span>
         </div>
       )}
       {actual != null && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C_ACTUAL, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>Actual</span>
+          <span style={{ color: '#64748d' }}>{t('Actual')}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 600, color: C_ACTUAL, paddingLeft: 12 }}>{Math.round(actual).toLocaleString()} m</span>
         </div>
       )}
       {plan != null && actual != null && (
         <div style={{ borderTop: '1px solid #eef0f6', marginTop: 6, paddingTop: 6, display: 'flex', gap: 8 }}>
-          <span style={{ color: '#64748d' }}>Gap</span>
+          <span style={{ color: '#64748d' }}>{t('Gap')}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 700, color: actual < plan ? '#ef4444' : '#22c55e' }}>
             {actual < plan ? '▼' : '▲'} {Math.abs(Math.round(plan - actual)).toLocaleString()} m
           </span>
@@ -131,25 +132,25 @@ function SCurveTooltip({ active, payload, label: lb }) {
       {plan != null && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C_OWNER, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>Customer Required</span>
+          <span style={{ color: '#64748d' }}>{t('Customer Required')}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d', paddingLeft: 12 }}>{plan}%</span>
         </div>
       )}
       {actual != null && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C_ACTUAL, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>Actual</span>
+          <span style={{ color: '#64748d' }}>{t('Actual')}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 600, color: C_ACTUAL, paddingLeft: 12 }}>{actual.toFixed(1)}%</span>
         </div>
       )}
       {gap != null && gap > 0 && (
         <div style={{ borderTop: '1px solid #eef0f6', marginTop: 6, paddingTop: 6 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#64748d' }}>Delay</span>
+            <span style={{ color: '#64748d' }}>{t('Delay')}</span>
             <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#ef4444' }}>▼ {gap.toFixed(1)}%p</span>
           </div>
           <div style={{ color: '#94a3b8', fontSize: 11.5, marginTop: 3 }}>
-            ≈ {Math.round(gap / 100 * TOTAL_M).toLocaleString()} m behind
+            ≈ {Math.round(gap / 100 * TOTAL_M).toLocaleString()} m {t('behind')}
           </div>
         </div>
       )}
@@ -199,12 +200,12 @@ function ProjectionPanel({ actualMonthly, hasActual, gapM, gapPct }) {
     }}>
       <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
-        Customer Required: <b style={{ color: '#b45309' }}>{custDate}</b>
+        {t('Customer Required')}: <b style={{ color: '#b45309' }}>{custDate}</b>
       </div>
       {hasActual && proj ? (
         <>
           <div style={{ fontSize: 13, fontWeight: 700, color: delay > 0 ? '#dc2626' : '#16a34a' }}>
-            Projected: {fmt(proj)}
+            {t('Projected')}: {fmt(proj)}
           </div>
           {delay > 0 && (
             <div style={{
@@ -212,12 +213,12 @@ function ProjectionPanel({ actualMonthly, hasActual, gapM, gapPct }) {
               background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 5,
               padding: '3px 8px', fontSize: 11, fontWeight: 700, color: '#dc2626',
             }}>
-              ▲ {delay} month{delay > 1 ? 's' : ''} overrun
+              ▲ {t('{n} month(s) overrun', { n: delay })}
             </div>
           )}
         </>
       ) : (
-        <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>No actual data yet</div>
+        <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>{t('No actual data yet')}</div>
       )}
     </div>
   )
@@ -229,15 +230,15 @@ function ProjectionPanel({ actualMonthly, hasActual, gapM, gapPct }) {
       padding: '14px 16px', marginTop: 20,
     }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
-        Projected at Current Pace
+        {t('Projected at Current Pace')}
       </div>
-      {row('Power Receiving (PR)', '2026-10-30', prProj, prDelay)}
-      {row('GTG #11 Sync', '2026-12-22', gtg11Proj, gtg11Delay)}
+      {row(t('Power Receiving (PR)'), '2026-10-30', prProj, prDelay)}
+      {row(t('GTG #11 Sync'), '2026-12-22', gtg11Proj, gtg11Delay)}
       {hasActual && gapM != null && gapM > 0 && (
         <div style={{ marginTop: 10, padding: '8px 10px', background: '#fef2f2', borderRadius: 6, border: '1px solid #fca5a5' }}>
-          <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 3 }}>Current Delay</div>
+          <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 3 }}>{t('Current Delay')}</div>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#dc2626' }}>{gapM?.toLocaleString()} m</div>
-          <div style={{ fontSize: 11, color: '#ef4444' }}>{gapPct?.toFixed(1)}%p behind plan</div>
+          <div style={{ fontSize: 11, color: '#ef4444' }}>{t('{p}%p behind plan', { p: gapPct?.toFixed(1) })}</div>
         </div>
       )}
     </div>
@@ -250,7 +251,7 @@ function MilestoneRows({ rows, targets, onTarget, admin }) {
     const isDefault = !override
     return (
       <tr key={r.name} className={r.finish ? 'mpl-finish-row' : ''}>
-        <td className="mpl-metric">{r.name}</td>
+        <td className="mpl-metric">{t(r.name)}</td>
         <td className="mpl-owner">{r.cust}</td>
         <td className="mpl-cable-owner">{r.custCable}</td>
         <td className="mpl-l3">{r.l3}</td>
@@ -262,13 +263,13 @@ function MilestoneRows({ rows, targets, onTarget, admin }) {
             className={`mpl-target-input${isDefault ? ' is-default' : ''}`}
             value={override || r.l3Cable}
             onChange={e => e.target.value && onTarget(r.name, e.target.value)}
-            title={isDefault ? 'Default: L3 cable due (L3 event − 90 days)' : 'Edited target date'}
+            title={isDefault ? t('Default: L3 cable due (L3 event − 90 days)') : t('Edited target date')}
           />
           {!isDefault && admin && (
             <button
               type="button"
               className="mpl-target-reset"
-              title="Reset to default (L3 cable due) — admin only"
+              title={t('Reset to default (L3 cable due) — admin only')}
               onClick={() => onTarget(r.name, null)}
             >↺</button>
           )}
@@ -382,45 +383,45 @@ export default function MasterPlan({ session }) {
   return (
     <div className="content-body">
       <div className="page-header">
-        <h2>Cable Master Plan</h2>
-        <span className="cs-total">Customer Required Schedule</span>
+        <h2>{t('Cable Master Plan')}</h2>
+        <span className="cs-total">{t('Customer Required Schedule')}</span>
       </div>
 
       <div className="mpl-callout">
         ⚠️ <div>
-          <b>Power Receiving cable due 2026-08-01</b> — Customer Required basis. GTG #11 Synchronization cable
-          due <b>2026-09-23</b>, event date <b>2026-12-22</b>.
+          <b>{t('Power Receiving cable due 2026-08-01')}</b> — {t('Customer Required basis.')} {t('GTG #11 Synchronization cable due')}{' '}
+          <b>2026-09-23</b>, {t('event date')} <b>2026-12-22</b>.
           {hasActual && gapM != null && gapM > 0 && (
-            <> Current actuals are <b style={{ color: '#ef4444' }}>{gapM.toLocaleString()} m ({gapPct?.toFixed(1)}%p) behind plan</b>.</>
+            <> {t('Current actuals are')} <b style={{ color: '#ef4444' }}>{gapM.toLocaleString()} m ({t('{p}%p behind plan', { p: gapPct?.toFixed(1) })})</b>.</>
           )}
         </div>
       </div>
 
       <div className="mpl-kpi-row">
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">⚡ Power Receiving Cable Due</div>
+          <div className="mpl-kpi-label">⚡ {t('Power Receiving Cable Due')}</div>
           <div className="mpl-kpi-value" style={{ color: '#b45309' }}>2026-08-01</div>
-          <div className="mpl-kpi-sub">Customer Required — PR Event 2026-10-30</div>
+          <div className="mpl-kpi-sub">{t('Customer Required')} — {t('PR Event')} 2026-10-30</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">GTG #11 Sync Cable Due</div>
+          <div className="mpl-kpi-label">{t('GTG #11 Sync Cable Due')}</div>
           <div className="mpl-kpi-value" style={{ color: '#7c3aed' }}>2026-09-23</div>
-          <div className="mpl-kpi-sub">Customer Required — Event 2026-12-22</div>
+          <div className="mpl-kpi-sub">{t('Customer Required')} — {t('Event')} 2026-12-22</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">Plan Cumulative (This Month)</div>
+          <div className="mpl-kpi-label">{t('Plan Cumulative (This Month)')}</div>
           <div className="mpl-kpi-value" style={{ color: C_OWNER }}>
             {planAtToday != null ? `${planAtToday}%` : '—'}
           </div>
-          <div className="mpl-kpi-sub">Customer Required basis</div>
+          <div className="mpl-kpi-sub">{t('Customer Required basis')}</div>
         </div>
         <div className="mpl-kpi">
-          <div className="mpl-kpi-label">Schedule Delay</div>
+          <div className="mpl-kpi-label">{t('Schedule Delay')}</div>
           <div className="mpl-kpi-value" style={{ color: gapM != null && gapM > 0 ? '#ef4444' : '#22c55e' }}>
-            {gapM != null ? (gapM > 0 ? `▼ ${gapM.toLocaleString()} m` : 'On Track') : '—'}
+            {gapM != null ? (gapM > 0 ? `▼ ${gapM.toLocaleString()} m` : t('On Track')) : '—'}
           </div>
           <div className="mpl-kpi-sub">
-            {gapPct != null ? `${gapPct.toFixed(1)}%p behind plan` : 'Awaiting actual data'}
+            {gapPct != null ? t('{p}%p behind plan', { p: gapPct.toFixed(1) }) : t('Awaiting actual data')}
           </div>
         </div>
       </div>
@@ -428,45 +429,45 @@ export default function MasterPlan({ session }) {
       {/* Milestone Table */}
       <div className="chart-card">
         <div className="chart-card-header">
-          <span className="chart-title">Milestone Schedule — with Cable Completion Deadlines</span>
-          <span className="chart-subtitle">Cable Due ≈ 3 months lead before each event</span>
+          <span className="chart-title">{t('Milestone Schedule — with Cable Completion Deadlines')}</span>
+          <span className="chart-subtitle">{t('Cable Due ≈ 3 months lead before each event')}</span>
         </div>
         <div className="mpl-table-wrap">
           <table className="mpl-table">
             <thead>
               <tr>
-                <th>Milestone</th>
-                <th>Customer Required</th>
-                <th>Cable Due <span className="mpl-th-owner">(Cust. Req)</span></th>
-                <th>L3 Schedule</th>
-                <th>Cable Due <span className="mpl-th-l3">(L3)</span></th>
-                <th>Target Date <span className="mpl-th-target">(editable)</span></th>
-                <th>Gap (Cust→L3)</th>
+                <th>{t('Milestone')}</th>
+                <th>{t('Customer Required')}</th>
+                <th>{t('Cable Due')} <span className="mpl-th-owner">({t('Cust. Req')})</span></th>
+                <th>{t('L3 Schedule')}</th>
+                <th>{t('Cable Due')} <span className="mpl-th-l3">(L3)</span></th>
+                <th>{t('Target Date')} <span className="mpl-th-target">({admin ? t('editable') : t('admin only')})</span></th>
+                <th>{t('Gap (Cust→L3)')}</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 1 (GT#11 / GT#12 / ST#10)</td></tr>
+              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 1')} (GT#11 / GT#12 / ST#10)</td></tr>
               <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} admin={admin} />
-              <tr className="mpl-section"><td colSpan={7}>Simple Cycle — Unit 2 (GT#21 / GT#22 / ST#20)</td></tr>
+              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 2')} (GT#21 / GT#22 / ST#20)</td></tr>
               <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} admin={admin} />
             </tbody>
           </table>
         </div>
         <p className="mpl-note">
-          <b>Cable Due</b> = cable completion deadline for each milestone (90 days before event). Source: completion schedule file · 2026-07-04.
+          <b>{t('Cable Due')}</b> = {t('cable completion deadline for each milestone (90 days before event). Source: completion schedule file · 2026-07-04.')}
         </p>
       </div>
 
       {/* Weekly Construction Progress */}
       <div className="chart-card">
         <div className="chart-card-header">
-          <span className="chart-title">Weekly Construction Progress</span>
-          <span className="chart-subtitle">Cable pulling actuals by week (m) · last 14 weeks</span>
+          <span className="chart-title">{t('Weekly Construction Progress')}</span>
+          <span className="chart-subtitle">{t('Cable pulling actuals by week (m) · last 14 weeks')}</span>
         </div>
         {WEEKLY_DATA.length === 0 ? (
           <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 13, color: '#94a3b8', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 24px' }}>
-              No weekly actuals yet — enter pulling data in Field Actuals
+              {t('No weekly actuals yet — enter pulling data in Work Log')}
             </span>
           </div>
         ) : (
@@ -488,11 +489,11 @@ export default function MasterPlan({ session }) {
                     if (!active || !payload?.length) return null
                     return (
                       <div style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 8, padding: '10px 14px', fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
-                        <div style={{ fontWeight: 700, marginBottom: 6, color: '#0d253d' }}>Week of {label}</div>
+                        <div style={{ fontWeight: 700, marginBottom: 6, color: '#0d253d' }}>{t('Week of {d}', { d: label })}</div>
                         {payload.map(p => (
                           <div key={p.name} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 3 }}>
                             <span style={{ width: 8, height: 8, borderRadius: p.name === 'Actual' ? 2 : '50%', background: p.color, flexShrink: 0 }} />
-                            <span style={{ color: '#64748b' }}>{p.name}</span>
+                            <span style={{ color: '#64748b' }}>{t(p.name)}</span>
                             <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#0d253d', fontVariantNumeric: 'tabular-nums' }}>
                               {Math.round(p.value).toLocaleString()} m
                             </span>
@@ -516,9 +517,9 @@ export default function MasterPlan({ session }) {
               </ComposedChart>
             </ResponsiveContainer>
             <div className="mpl-legend">
-              <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Weekly Actual</span>
-              <span><i className="mpl-sw" style={{ background: C_OWNER }} />Weekly Target (plan÷4.33)</span>
-              <span><i className="mpl-sw" style={{ background: '#f59e0b' }} />4-Week Rolling Avg</span>
+              <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />{t('Weekly Actual')}</span>
+              <span><i className="mpl-sw" style={{ background: C_OWNER }} />{t('Weekly Target (plan÷4.33)')}</span>
+              <span><i className="mpl-sw" style={{ background: '#f59e0b' }} />{t('4-Week Rolling Avg')}</span>
             </div>
           </>
         )}
@@ -528,8 +529,8 @@ export default function MasterPlan({ session }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 12, marginBottom: 12 }}>
         <div className="chart-card" style={{ margin: 0 }}>
           <div className="chart-card-header">
-            <span className="chart-title">Monthly Pulling Plan</span>
-            <span className="chart-subtitle">m / month · trend line</span>
+            <span className="chart-title">{t('Monthly Pulling Plan')}</span>
+            <span className="chart-subtitle">{t('m / month · trend line')}</span>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -546,7 +547,7 @@ export default function MasterPlan({ session }) {
                   <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
                     label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
                   <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
-                    label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
+                    label={{ value: t('TODAY'), fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
                   <Line type="monotone" dataKey="Customer Required" stroke={C_OWNER} strokeWidth={2.2}
                     strokeDasharray="6 4" dot={false} />
                   {hasActual && (
@@ -558,10 +559,10 @@ export default function MasterPlan({ session }) {
                 </LineChart>
               </ResponsiveContainer>
               <div className="mpl-legend">
-                <span><i className="mpl-sw" style={{ background: C_OWNER }} />Plan</span>
-                {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
+                <span><i className="mpl-sw" style={{ background: C_OWNER }} />{t('Plan')}</span>
+                {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />{t('Actual')}</span>}
                 <span><i className="mpl-sw" style={{ background: '#b45309' }} />PR</span>
-                <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />GTG#11 Sync</span>
+                <span><i className="mpl-sw" style={{ background: '#7c3aed' }} />{t('GTG #11 Sync')}</span>
               </div>
             </div>
             {/* Right stats panel */}
@@ -571,9 +572,9 @@ export default function MasterPlan({ session }) {
               fontSize: 11, fontVariantNumeric: 'tabular-nums', overflow: 'hidden',
             }}>
               <div style={{ padding: '7px 10px', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 4 }}>
-                <span style={{ color: '#64748b', fontWeight: 700 }}>Month</span>
-                <span style={{ color: C_OWNER, fontWeight: 700, textAlign: 'right' }}>Plan</span>
-                <span style={{ color: C_ACTUAL, fontWeight: 700, textAlign: 'right' }}>Actual</span>
+                <span style={{ color: '#64748b', fontWeight: 700 }}>{t('Month')}</span>
+                <span style={{ color: C_OWNER, fontWeight: 700, textAlign: 'right' }}>{t('Plan')}</span>
+                <span style={{ color: C_ACTUAL, fontWeight: 700, textAlign: 'right' }}>{t('Actual')}</span>
               </div>
               {MONTHLY_DATA.filter((_, i) => i <= Math.max(todayIdx + 1, 5)).map((d, i) => {
                 const plan = d['Customer Required'] || 0
@@ -601,7 +602,7 @@ export default function MasterPlan({ session }) {
               })}
               {hasActual && gapM != null && (
                 <div style={{ padding: '7px 10px', background: '#fef2f2', borderTop: '1px solid #fca5a5' }}>
-                  <div style={{ color: '#64748b', marginBottom: 2 }}>Gap (this month)</div>
+                  <div style={{ color: '#64748b', marginBottom: 2 }}>{t('Gap (this month)')}</div>
                   <div style={{ color: '#dc2626', fontWeight: 800, fontSize: 13 }}>
                     ▼ {(OWNER_MONTHLY[todayIdx] - (actualMonthly[todayIdx] || 0)).toLocaleString()} m
                   </div>
@@ -613,8 +614,8 @@ export default function MasterPlan({ session }) {
 
         <div className="chart-card" style={{ margin: 0 }}>
           <div className="chart-card-header">
-            <span className="chart-title">Plan vs Actual — Monthly Bar</span>
-            <span className="chart-subtitle">m / month</span>
+            <span className="chart-title">{t('Plan vs Actual — Monthly Bar')}</span>
+            <span className="chart-subtitle">{t('m / month')}</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <ComposedChart data={MONTHLY_DATA} margin={{ top: 20, right: 16, left: 0, bottom: 8 }} barGap={2} barCategoryGap="30%">
@@ -629,7 +630,7 @@ export default function MasterPlan({ session }) {
               <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
                 label={{ value: 'GTG#11', fill: '#7c3aed', fontSize: 10, fontWeight: 700, position: 'top' }} />
               <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={1.5}
-                label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
+                label={{ value: t('TODAY'), fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }} />
               <Bar dataKey="Monthly Target" fill={C_OWNER} radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false}>
                 <LabelList dataKey="Monthly Target" position="top" fontSize={9} fill="#64748b"
                   formatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
@@ -643,8 +644,8 @@ export default function MasterPlan({ session }) {
             </ComposedChart>
           </ResponsiveContainer>
           <div className="mpl-legend">
-            <span><i className="mpl-sw" style={{ background: C_OWNER }} />Monthly Target (balanced to Dec 2027)</span>
-            {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />Actual</span>}
+            <span><i className="mpl-sw" style={{ background: C_OWNER }} />{t('Monthly Target (balanced to Dec 2027)')}</span>
+            {hasActual && <span><i className="mpl-sw" style={{ background: C_ACTUAL }} />{t('Actual')}</span>}
           </div>
         </div>
       </div>
@@ -652,8 +653,8 @@ export default function MasterPlan({ session }) {
       {/* Cumulative S-Curve + Projection panel */}
       <div className="chart-card">
         <div className="chart-card-header">
-          <span className="chart-title">Cumulative S-Curve — Plan vs Actual</span>
-          <span className="chart-subtitle">% of {TOTAL_M.toLocaleString()} m total · red area = delay gap</span>
+          <span className="chart-title">{t('Cumulative S-Curve — Plan vs Actual')}</span>
+          <span className="chart-subtitle">{t('% of {n} m total · red area = delay gap', { n: TOTAL_M.toLocaleString() })}</span>
         </div>
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
           {/* Chart */}
@@ -683,7 +684,7 @@ export default function MasterPlan({ session }) {
                   fill="url(#grad-gap-cum)" stroke="none" connectNulls={false} isAnimationActive={false} />
                 {/* Reference lines */}
                 <ReferenceLine x={TODAY_LABEL} stroke="#dc2626" strokeWidth={2}
-                  label={{ value: 'TODAY', fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideBottomLeft' }} />
+                  label={{ value: t('TODAY'), fill: '#dc2626', fontSize: 9, fontWeight: 700, position: 'insideBottomLeft' }} />
                 <ReferenceLine x="'26.10" stroke="#b45309" strokeDasharray="4 3" strokeWidth={1.5}
                   label={{ value: 'PR', fill: '#b45309', fontSize: 10, fontWeight: 700, position: 'top' }} />
                 <ReferenceLine x="'26.12" stroke="#7c3aed" strokeDasharray="4 3" strokeWidth={1.5}
@@ -700,9 +701,9 @@ export default function MasterPlan({ session }) {
               </ComposedChart>
             </ResponsiveContainer>
             <div className="mpl-legend">
-              <span><i className="mpl-sw" style={{ background: C_OWNER }} />Customer Required (Plan)</span>
-              {hasActual && <span><i className="mpl-sw" style={{ background: '#3b82f6' }} />Actual</span>}
-              <span><i className="mpl-sw" style={{ background: '#ef4444', opacity: .55 }} />Gap (delay)</span>
+              <span><i className="mpl-sw" style={{ background: C_OWNER }} />{t('Customer Required (Plan)')}</span>
+              {hasActual && <span><i className="mpl-sw" style={{ background: '#3b82f6' }} />{t('Actual')}</span>}
+              <span><i className="mpl-sw" style={{ background: '#ef4444', opacity: .55 }} />{t('Gap (delay)')}</span>
             </div>
           </div>
 

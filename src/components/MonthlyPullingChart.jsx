@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area,
 } from 'recharts'
 import { CAT_ID_BY_LABEL, CHART_START as START, CHART_END as END } from '../data/constants'
+import { t } from '../lib/i18n'
 
 const CATS = [
   { key: 'power',   label: 'Power',   color: '#8b7dff' },
@@ -40,12 +41,12 @@ function CustomTooltip({ active, payload, label }) {
       {payload.map(p => (
         <div key={p.dataKey} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 3 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-          <span style={{ color: '#64748d' }}>{p.dataKey}</span>
+          <span style={{ color: '#64748d' }}>{t(p.dataKey)}</span>
           <span style={{ marginLeft: 'auto', fontWeight: 500, color: '#0d253d' }}>{Math.round(p.value).toLocaleString()} m</span>
         </div>
       ))}
       <div style={{ borderTop: '1px solid #eef0f6', marginTop: 7, paddingTop: 6, display: 'flex', gap: 8 }}>
-        <span style={{ color: '#64748d', fontWeight: 500 }}>Total</span>
+        <span style={{ color: '#64748d', fontWeight: 500 }}>{t('Total')}</span>
         <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#533afd' }}>{Math.round(total).toLocaleString()} m</span>
       </div>
     </div>
@@ -80,8 +81,8 @@ export default function MonthlyPullingChart({ fieldData, master }) {
   return (
     <div className="chart-card">
       <div className="chart-card-header">
-        <span className="chart-title">Monthly Pulling Trend</span>
-        <span className="chart-subtitle">2026.07 – 2027.12 · by Category (m)</span>
+        <span className="chart-title">{t('Monthly Pulling Trend')}</span>
+        <span className="chart-subtitle">2026.07 – 2027.12 · {t('by Category (m)')}</span>
       </div>
       <div style={{ position: 'relative' }}>
         {allZero && (
@@ -93,7 +94,7 @@ export default function MonthlyPullingChart({ fieldData, master }) {
               fontSize: 14, color: '#64748d', background: 'rgba(246,249,252,0.9)',
               padding: '8px 20px', borderRadius: 9999, border: '1px solid #e3e8ee',
             }}>
-              실적 데이터가 입력되면 그래프가 표시됩니다
+              {t('The chart appears once field records are entered')}
             </span>
           </div>
         )}
@@ -132,6 +133,7 @@ export default function MonthlyPullingChart({ fieldData, master }) {
                 key={c.key}
                 type="monotone"
                 dataKey={c.label}
+                name={t(c.label)}
                 stroke={c.color}
                 strokeWidth={2.2}
                 dot={{ r: 3, fill: c.color, strokeWidth: 0 }}
