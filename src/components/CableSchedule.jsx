@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
+import { UNITS, unitOf, unitLabel } from '../lib/unit'
 
 const EXPORT_COLS = [
-  'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Priority',
+  'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Unit', 'Priority',
   'From', 'To', 'Drum No.', 'Pkg List', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
 ]
 
@@ -27,7 +28,7 @@ function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
     const fd = fieldData[c.n] || {}
     const drum = drumFor(c, drumMap)
     return [
-      c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', c.pri || '',
+      c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', unitLabel(unitOf(c)), c.pri || '',
       c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), derivePullStatus(c, fd), fd.usedDrum || '', deriveTermStatus(c, fd), fd.lc || 'Pending', fd.act || '',
     ]
   })
@@ -38,7 +39,7 @@ function exportScheduleExcel(rows, fieldData, drumMap, pkgMap) {
   const aoa = [EXPORT_COLS, ...buildScheduleRows(rows, fieldData, drumMap, pkgMap)]
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = [
-    { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 13 },
+    { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 13 },
     { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
   ]
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: EXPORT_COLS.length - 1, r: aoa.length - 1 } }) }
@@ -345,7 +346,7 @@ const matchesSystem = (c, f) => {
 const EMPTY_COLF = {
   cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: 'All', pri: 'All',
   from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
-  fromArea: '', toArea: '',
+  fromArea: '', toArea: '', unit: '',
 }
 
 export default function CableSchedule() {
@@ -412,6 +413,7 @@ export default function CableSchedule() {
         if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap, elecAreaMap) !== colF.fromArea) return false
         if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap) !== colF.toArea) return false
       }
+      if (colF.unit && unitOf(c) !== colF.unit) return false
       if (colF.cat !== 'All' && c.g !== colF.cat) return false
       if (colF.pri !== 'All' && c.pri !== colF.pri) return false
       if (!inc(c.n, colF.cn)) return false
@@ -462,6 +464,7 @@ export default function CableSchedule() {
       const fd = fieldData[c.n] || {}
       if (colF.fromArea && getFromArea(c.f, elecFromAreaMap, c.t, c.sys, c.n, nAreaMap, elecAreaMap) !== colF.fromArea) continue
       if (colF.toArea && getToArea(c.sys, c.t, elecAreaMap, cableNumAreaMap, c.n, c.f, nAreaMap) !== colF.toArea) continue
+      if (colF.unit && unitOf(c) !== colF.unit) continue
       if (colF.cat !== 'All' && c.g !== colF.cat) continue
       if (colF.pri !== 'All' && c.pri !== colF.pri) continue
       if (!inc(c.n, colF.cn)) continue
@@ -634,6 +637,20 @@ export default function CableSchedule() {
                   if (colF.fromArea && areaPairs.pairFrom[colF.fromArea] && !areaPairs.pairFrom[colF.fromArea].has(a.code)) return false
                   return true
                 }).map(a => <option key={a.code} value={a.code}>{a.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="cs-loc-bar">
+            <span className="cs-loc-label">Unit</span>
+            <div className="cs-loc-selects">
+              <select
+                className={`cs-loc-select${colF.unit ? ' active' : ''}`}
+                value={colF.unit}
+                onChange={e => setCF('unit', e.target.value)}
+                title="GT unit or block the cable belongs to (from system name, KKS prefix or B0/B1/B2 tag)"
+              >
+                <option value="">Unit — Any</option>
+                {UNITS.map(u => <option key={u.code} value={u.code}>{u.label}</option>)}
               </select>
             </div>
           </div>
