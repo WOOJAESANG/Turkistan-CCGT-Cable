@@ -152,6 +152,7 @@ const FROM_AREAS = [
   { code: '4',   label: '4 — STG Generator Step-Up (GSU) Transformer' },
   { code: '5',   label: '5 — GTG Generator Step-Up (GSU) Transformer' },
   { code: '6',   label: '6 — Unit Auxiliary Transformer' },
+  { code: '7.1', label: '7.1 — CCW Fan Block 1' },
   { code: '9',   label: '9 — BSDG (Black Start Diesel Generator)' },
   { code: '10',  label: '10-11 — Water Treatment Plant' },
   { code: '16',  label: '16 — CEPB (Condensate Extraction Pump Bldg)' },
@@ -197,6 +198,7 @@ const TO_AREAS = [
   { code: '25',  label: '25 — Admin Building (CCR/CR/Server Room)',  kw: ['DC UPS_ADM'] },
   { code: '32',  label: '32 — Hot Water Supply Building', kw: [] },
   { code: '33',  label: '33 — Oil Storage Dyke',         kw: [] },
+  { code: '33.1', label: '33.1 — Oil Storage Dyke Field Area', kw: [] },
   { code: '34',  label: '34 — Back-Up Transformer',      kw: [] },
   { code: '35',  label: '35 — Turbine Lube Oil (LO) Pump Station', kw: [] },
   { code: '35.1', label: '35.1 — Turbine Oil Drainage Reservoir', kw: [] },
@@ -204,6 +206,7 @@ const TO_AREAS = [
   { code: '38',  label: '38 — Operational Control Point (OCP)', kw: ['AIS-OCP'] },
   { code: '43',  label: '43 — Air Insulated Switchgear 220kV', kw: [] },
   { code: '44',  label: '44 — Air Insulated Switchgear 500kV', kw: [] },
+  { code: '53.2', label: '53.2 — Ignition Gas Container', kw: [] },
 ]
 
 // FROM tags whose schedule LOCATION cell is a document reference (e.g.
@@ -389,9 +392,10 @@ export default function CableSchedule() {
       .then(r => r.json())
       .then(setElecFromAreaMap)
       .catch(() => setElecFromAreaMap({}))
-    // Both files key cable number → {from, to}: AIS from the interconnection diagrams,
-    // FMS from the Location columns of the FMS PKG schedule. Same lookup, one map.
-    Promise.all(['/cable-ais-n-area-map.json', '/cable-fms-area-map.json']
+    // These files key cable number → {from, to}: AIS from the interconnection diagrams,
+    // FMS from the Location columns of the FMS PKG schedule, Control from the SWGR/LOAD
+    // LOCATION columns of the Control Cable Schedule. Same lookup, one map.
+    Promise.all(['/cable-ais-n-area-map.json', '/cable-fms-area-map.json', '/cable-ctl-area-map.json']
       .map(u => fetch(dataUrl(u)).then(r => r.json()).catch(() => ({}))))
       .then(maps => setNAreaMap(Object.assign({}, ...maps)))
       .catch(() => setNAreaMap({}))

@@ -305,6 +305,7 @@ export const RU = {
   '25 — Admin Building (CCR/CR/Server Room)': '25 — Административное здание (ЦЩУ/ЩУ/серверная)',
   '32 — Hot Water Supply Building': '32 — Здание горячего водоснабжения',
   '33 — Oil Storage Dyke': '33 — Обвалование склада масла',
+  '33.1 — Oil Storage Dyke Field Area': '33.1 — Площадка у обвалования склада масла',
   '34 — Back-Up Transformer': '34 — Резервный трансформатор',
   '35 — Turbine Lube Oil (LO) Pump Station': '35 — Насосная турбинного масла',
   '35.1 — Turbine Oil Drainage Reservoir': '35.1 — Дренажная ёмкость турбинного масла',
@@ -312,6 +313,7 @@ export const RU = {
   '39 — 500 MVA Auto Transformer': '39 — Автотрансформатор 500 МВА',
   '43 — Air Insulated Switchgear 220kV': '43 — ОРУ 220 кВ',
   '44 — Air Insulated Switchgear 500kV': '44 — ОРУ 500 кВ',
+  '53.2 — Ignition Gas Container': '53.2 — Контейнер запального газа',
 
   // ---- unit labels (Unit filter) ----
   'GT #11 (Block 1)': 'ГТ №11 (блок 1)',
