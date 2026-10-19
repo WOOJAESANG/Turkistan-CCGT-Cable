@@ -500,7 +500,7 @@
     "drumNo": "PE-C-12C2.5-09 ~ 11, PE-C-8C2.5-11 ~ 20, PE-C-4C2.5-15 ~ 28, PE-C-4C4-11 ~ 20, PE-C-4C6-1",
     "status": "On-Site",
     "eta": "",
-    "remark": "Power & Control Cable",
+    "remark": "",
     "drumList": [
       "PE-C-12C2.5-09",
       "PE-C-12C2.5-10",
@@ -834,7 +834,7 @@
     "drumNo": "DCS-INS-001 ~ 037",
     "status": "On-Site",
     "eta": "",
-    "remark": "Fiber Optic (F.O 4C x 62.5)",
+    "remark": "",
     "drumList": [
       "DCS-INS-001",
       "DCS-INS-002",
@@ -1489,7 +1489,7 @@
     "drumNo": "PE-M1-1C300-42, PE-M3-1C240-03, PE-M3-1C240-05",
     "status": "On-Site",
     "eta": "",
-    "remark": "TCR",
+    "remark": "",
     "drumList": [
       "PE-M1-1C300-42",
       "PE-M3-1C240-03",
@@ -1513,7 +1513,7 @@
     "drumNo": "PE-L1-1C240-12, PE-L1-1C500-29 ~ 32, PE-L1-2C4-07 ~ 10, PE-L1-2C6-02, PE-L1-2C25-01, PE-L1-3C4-22 ~ 28, PE-L1-3C6-07, PE-L1-3C16-03, PE-L1-3C25/16-02, PE-L1-3C35/25-01, PE-L1-3C50/25-03, PE-L1-4C4-23 ~ 26, PE-L1-4C6-02, PE-L1-4C16-02, PE-L1-4C25/16-04, PE-L1-4C35/25-01 ~ 02, PE-L1-5C6-02, PE-L1-5C10-02, PE-L1-5C25/16-04, PE-L1-5C95/50-05",
     "status": "On-Site",
     "eta": "",
-    "remark": "TCR",
+    "remark": "",
     "drumList": [
       "PE-L1-1C240-12",
       "PE-L1-1C500-29",
@@ -1570,7 +1570,7 @@
     "drumNo": "PE-M1-1C300-34 ~ 41, PE-M3-1C240-01 ~ 02, PE-M3-1C240-04",
     "status": "On-Site",
     "eta": "",
-    "remark": "Truck",
+    "remark": "",
     "drumList": [
       "PE-M1-1C300-34",
       "PE-M1-1C300-35",
@@ -1602,7 +1602,7 @@
     "drumNo": "PE-L1-1C240-02 ~ 11, PE-L1-1C400-01 ~ 02, PE-L1-1C500-33 ~ 36, PE-L1-3C50/25-02, PE-L1-3C120/70-01, PE-L1-3C150/95-01 ~ 03, PE-L1-4C50/25-03 ~ 06, PE-L1-4C70/35-01 ~ 06, PE-L1-4C95/50-32 ~ 33, PE-L1-4C120/70-01 ~ 02, PE-L1-4C150/95-01 ~ 04, PE-L1-5C70/35-05, PE-L1-5C95/50-02 ~ 04, PE-L1-5C120/70-05 ~ 07, PE-L1-5C150/95-01 ~ 03",
     "status": "On-Site",
     "eta": "",
-    "remark": "Truck",
+    "remark": "",
     "drumList": [
       "PE-L1-1C240-02",
       "PE-L1-1C240-03",
