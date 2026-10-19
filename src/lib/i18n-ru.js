@@ -21,8 +21,7 @@ export const EN = {
     "Drum No. is the assigned drum from the master schedule — paste it into Cable Material's search to find which packing list it " +
     'ships in. AIS cables use their real interconnection-diagram numbers (e.g. D01_119). For PKG cables with no individual drum ' +
     '(FGSS, HRSG, STG), this shows the Packing List number instead. I&C F.O cables get no design-time drum and name PGU-DE-0311 ' +
-    'directly. FMS reels are allocated by spec from PGU-DE-0581; the 42 cables with no drum are either not yet delivered (MM 16C, ' +
-    'CAT.6) or short of stock (MM 8C), so they show no packing list. The AT1 cables reading Asia Trafo arrive with the ' +
+    'directly. FMS reels are allocated by spec from PGU-DE-0581. The AT1 cables reading Asia Trafo arrive with the ' +
     'auto-transformer rather than from one of our packings — they still count in the design quantity and still have to be pulled. ' +
     'FFC is not yet covered (multiple packing lists, no per-cable key). Used Drum is the actual drum entered in Work Log after ' +
     'pulling — compare the two to catch cases where a different drum was used than planned.',
@@ -265,8 +264,7 @@ export const RU = {
     '№ барабана — барабан, назначенный в мастер-журнале; вставьте его в поиск раздела «Кабельная продукция», чтобы найти упаковочный ' +
     'лист. Кабели ОРУ указаны под номерами схем соединений (напр. D01_119). Для кабелей PKG без отдельного барабана (FGSS, HRSG, STG) ' +
     'показан номер упаковочного листа. Оптические кабели КИПиА не имеют проектного барабана и сразу указывают PGU-DE-0311. Катушки FMS ' +
-    'распределяются по марке из PGU-DE-0581; 42 кабеля без барабана либо ещё не поставлены (MM 16C, CAT.6), либо их не хватает (MM 8C), ' +
-    'поэтому упаковочный лист не указан. Кабели AT1 с пометкой Asia Trafo поставляются вместе с автотрансформатором, а не по нашим ' +
+    'распределяются по марке из PGU-DE-0581. Кабели AT1 с пометкой Asia Trafo поставляются вместе с автотрансформатором, а не по нашим ' +
     'упаковкам — они входят в проектный объём и тоже должны быть проложены. FFC пока не охвачен (несколько упаковочных листов, нет ключа ' +
     'по кабелю). Факт. барабан — барабан, фактически введённый в журнале работ после прокладки; сравнение двух значений показывает, ' +
     'где использован не тот барабан, что был запланирован.',
