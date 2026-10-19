@@ -355,6 +355,7 @@ export const RU = {
   Remark: 'Примечание',
   'No file available': 'Файл недоступен',
   'Download {f}': 'Скачать {f}',
+  'Could not download {f}. Check the connection and try again. ({e})': 'Не удалось скачать {f}. Проверьте подключение и повторите попытку. ({e})',
   drum: 'барабан',
   drums: 'барабанов',
   'Find drum no.': 'Найти № барабана',

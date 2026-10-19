@@ -46,8 +46,10 @@ function exportCSV(rows) {
   const a = document.createElement('a')
   a.href = url
   a.download = `Cable Material Information_${stamp()}.csv`
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
 const CATEGORY_COLORS = {
@@ -87,11 +89,41 @@ function DownloadIcon() {
   )
 }
 
+// Fetch the file and save it from a blob so it always lands under its original
+// file name, and a failed fetch shows an error instead of silently doing nothing.
+async function saveFile(url, name) {
+  const res = await fetch(dataUrl(url))
+  const type = res.headers.get('content-type') || ''
+  if (!res.ok || type.includes('text/html')) throw new Error(`HTTP ${res.status}`)
+  const href = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = href
+  a.download = name || url.split('/').pop()
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(href), 10000)
+}
+
 function DownloadLink({ url, label, name }) {
+  const [busy, setBusy] = useState(false)
   if (!label) return <span className="cm-muted">—</span>
   if (!url) return <span className="cm-code cm-muted" title={t('No file available')}>{label}</span>
+  const onClick = async e => {
+    e.preventDefault()
+    if (busy) return
+    setBusy(true)
+    try {
+      await saveFile(url, name)
+    } catch (err) {
+      alert(t('Could not download {f}. Check the connection and try again. ({e})', { f: name, e: err.message }))
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
-    <a className="cm-dl" href={dataUrl(url)} download={name} title={t('Download {f}', { f: name })}>
+    <a className="cm-dl" href={dataUrl(url)} download={name} onClick={onClick} aria-busy={busy}
+      title={t('Download {f}', { f: name })} style={busy ? { opacity: 0.55, cursor: 'progress' } : undefined}>
       <DownloadIcon />
       <span>{label}</span>
     </a>
