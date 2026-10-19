@@ -323,7 +323,7 @@
     "packingDetail": "PGU-DE-590-PCC-001 ~ 032",
     "drumNo": "PE-M1-3C120-18 ~ 30, PE-M1-1C240-01 ~ 13, PE-M1-1C185-02 ~ 07",
     "status": "On-Site",
-    "eta": "2026-08-30",
+    "eta": "",
     "remark": "",
     "drumList": [
       "PE-M1-3C120-18",
@@ -376,7 +376,7 @@
     "packingDetail": "PGU-DE-590-PCC-033 ~ 071",
     "drumNo": "PE-L1-1C300-01 ~ 08, PE-L1-2C10-02, PE-L1-3C4-19 ~ 21, PE-L1-3C6-03 ~ 06, PE-L1-3C16-01 ~ 02, PE-L1-4C4-16 ~ 22, PE-L1-4C95/50-19 ~ 31, PE-L1-5C25/16-03",
     "status": "On-Site",
-    "eta": "2026-08-30",
+    "eta": "",
     "remark": "",
     "drumList": [
       "PE-L1-1C300-01",
@@ -499,7 +499,7 @@
     "packingDetail": "PGU-DE-590-PCC-072 ~ 109",
     "drumNo": "PE-C-12C2.5-09 ~ 11, PE-C-8C2.5-11 ~ 20, PE-C-4C2.5-15 ~ 28, PE-C-4C4-11 ~ 20, PE-C-4C6-1",
     "status": "On-Site",
-    "eta": "2026-08-30",
+    "eta": "",
     "remark": "Power & Control Cable",
     "drumList": [
       "PE-C-12C2.5-09",
@@ -1488,7 +1488,7 @@
     "packingDetail": "PGU-DE-0595-CAB-009 ~ 014",
     "drumNo": "PE-M1-1C300-42, PE-M3-1C240-03, PE-M3-1C240-05",
     "status": "On-Site",
-    "eta": "2026-09-30",
+    "eta": "",
     "remark": "TCR",
     "drumList": [
       "PE-M1-1C300-42",
@@ -1512,7 +1512,7 @@
     "packingDetail": "PGU-DE-0595-CAB-025 ~ 093",
     "drumNo": "PE-L1-1C240-12, PE-L1-1C500-29 ~ 32, PE-L1-2C4-07 ~ 10, PE-L1-2C6-02, PE-L1-2C25-01, PE-L1-3C4-22 ~ 28, PE-L1-3C6-07, PE-L1-3C16-03, PE-L1-3C25/16-02, PE-L1-3C35/25-01, PE-L1-3C50/25-03, PE-L1-4C4-23 ~ 26, PE-L1-4C6-02, PE-L1-4C16-02, PE-L1-4C25/16-04, PE-L1-4C35/25-01 ~ 02, PE-L1-5C6-02, PE-L1-5C10-02, PE-L1-5C25/16-04, PE-L1-5C95/50-05",
     "status": "On-Site",
-    "eta": "2026-09-30",
+    "eta": "",
     "remark": "TCR",
     "drumList": [
       "PE-L1-1C240-12",
@@ -1569,7 +1569,7 @@
     "packingDetail": "PGU-DE-0595-CAB-001 ~ 013",
     "drumNo": "PE-M1-1C300-34 ~ 41, PE-M3-1C240-01 ~ 02, PE-M3-1C240-04",
     "status": "On-Site",
-    "eta": "2026-09-30",
+    "eta": "",
     "remark": "Truck",
     "drumList": [
       "PE-M1-1C300-34",
@@ -1601,7 +1601,7 @@
     "packingDetail": "PGU-DE-0595-CAB-015 ~ 099",
     "drumNo": "PE-L1-1C240-02 ~ 11, PE-L1-1C400-01 ~ 02, PE-L1-1C500-33 ~ 36, PE-L1-3C50/25-02, PE-L1-3C120/70-01, PE-L1-3C150/95-01 ~ 03, PE-L1-4C50/25-03 ~ 06, PE-L1-4C70/35-01 ~ 06, PE-L1-4C95/50-32 ~ 33, PE-L1-4C120/70-01 ~ 02, PE-L1-4C150/95-01 ~ 04, PE-L1-5C70/35-05, PE-L1-5C95/50-02 ~ 04, PE-L1-5C120/70-05 ~ 07, PE-L1-5C150/95-01 ~ 03",
     "status": "On-Site",
-    "eta": "2026-09-30",
+    "eta": "",
     "remark": "Truck",
     "drumList": [
       "PE-L1-1C240-02",
