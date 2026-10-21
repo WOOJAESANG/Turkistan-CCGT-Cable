@@ -229,6 +229,10 @@ const FGSS_ELEC_ROOM = /^B\d-(MCC|UPSP|PP)-/i
 const FUEL_GAS_KEYWORDS = ['FGSS', ...(TO_AREAS.find(a => a.code === '3')?.kw || [])]
 const isFuelGasSys = sys => FUEL_GAS_KEYWORDS.some(k => sys.includes(k))
 
+// xxCRY panels stand in the Admin Building server room / CCR (both schedules say so),
+// but their 11/12/21/22 KKS prefix would otherwise place them in the Main Building.
+const ADMIN_CRY = /^\d{2}CRY\d/
+
 function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum = '', nAreaMap = {}, elecAreaMap = {}) {
   // AIS 220kV/500kV interconnection diagram lookup (cable-number keyed; M/J column classification)
   if (cableNum && nAreaMap[cableNum]) return nAreaMap[cableNum].from
@@ -262,6 +266,7 @@ function getFromArea(tag, elecFromAreaMap = {}, toTag = '', sys = '', cableNum =
     if (elecAreaMap[tag]) return elecAreaMap[tag]
     if (!FGSS_ELEC_ROOM.test(tag)) return '3'
   }
+  if (ADMIN_CRY.test(tag)) return '25'
   if (/^(11|12)[A-Z0-9]/.test(tag)) return '1.1.1'
   if (/^(21|22)[A-Z0-9]/.test(tag)) return '1.1.2'
   if (/^B1J/.test(tag)) return '1.1.1'
@@ -297,6 +302,7 @@ function getToArea(sys, toTag, elecAreaMap = {}, cableNumAreaMap = {}, cableNum 
   if (sys === 'GTG' && fromTag === 'HOLD' && toTag === 'HOLD') return '1.2'
   // Power Cable Schedule Load Location lookup (tag → area code from xlsx)
   if (toTag && elecAreaMap[toTag]) return elecAreaMap[toTag]
+  if (toTag && ADMIN_CRY.test(toTag)) return '25'
   // Heat Tracing Panels: each HTP tag has a specific physical Load Location
   if (toTag && toTag in HTP_TAG_AREA) return HTP_TAG_AREA[toTag]
   // Fuel Gas (FGSS): must check before generic 'EPB FOR' keyword hits 1.1 (e.g. "EPB FOR FGSS")
