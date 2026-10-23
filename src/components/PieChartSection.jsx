@@ -1,55 +1,52 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell } from 'recharts'
 import { t, locale } from '../lib/i18n'
 
 function formatNumber(n) {
   return Math.round(n).toLocaleString(locale())
 }
 
-function CustomTooltip({ active, payload, pulled }) {
-  if (!active || !payload?.length) return null
-  const d = payload[0]
-  const done = pulled?.[d.name] || 0
-  const pct = d.value > 0 ? (done / d.value * 100) : 0
-  return (
-    <div style={{
-      background: '#fff', border: '1px solid #e3e8ee', borderRadius: 8,
-      padding: '12px 14px', boxShadow: '0 8px 24px rgba(0,55,112,0.08)',
-      fontSize: 13, fontFeatureSettings: '"tnum"', minWidth: 190,
-    }}>
-      <div style={{ fontWeight: 600, color: '#0d253d', marginBottom: 6 }}>{t(d.name)}</div>
-      <div style={{ display: 'flex', gap: 8, color: '#64748d', fontSize: 12 }}>
-        <span>{t('Pulled')}</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 600, color: d.payload.color }}>
-          {formatNumber(done)}m
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: 8, color: '#64748d', fontSize: 12, marginTop: 3 }}>
-        <span>{t('Designed')}</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 500, color: '#0d253d' }}>
-          {formatNumber(d.value)}m
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid #eef0f6' }}>
-        <span style={{ color: '#64748d', fontSize: 12 }}>{t('Progress')}</span>
-        <span style={{ marginLeft: 'auto', fontWeight: 700, color: d.payload.color }}>
-          {pct.toFixed(1)}%
-        </span>
-      </div>
-    </div>
-  )
-}
+const TRACK = '#eef0f6'
+const DONUT = 112 // px, sized so three rings fit the existing card
 
-function CustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
-  if (percent < 0.05) return null
-  const RADIAN = Math.PI / 180
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
-  const x = cx + radius * Math.cos(-midAngle * RADIAN)
-  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+// One donut per priority: the ring is that priority's own pulled vs designed length,
+// so the number in the middle is the same progress % the numbers underneath describe.
+function PriorityDonut({ d, done, total }) {
+  const pct = d.value > 0 ? Math.min(100, (done / d.value * 100)) : 0
+  const share = total > 0 ? (d.value / total * 100) : 0
+  const ring = [
+    { name: 'pulled', value: Math.min(done, d.value) },
+    { name: 'remaining', value: Math.max(d.value - done, 0) },
+  ]
   return (
-    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central"
-      fontSize={13} fontWeight={500} style={{ fontFeatureSettings: '"tnum"' }}>
-      {(percent * 100).toFixed(1)}%
-    </text>
+    <div className="pri-donut">
+      <div className="pie-shell pri-donut-ring">
+        <PieChart width={DONUT} height={DONUT}>
+          <Pie
+            data={ring} cx="50%" cy="50%"
+            innerRadius={38} outerRadius={52} startAngle={90} endAngle={-270}
+            dataKey="value" stroke="none" isAnimationActive={false}
+          >
+            <Cell fill={d.color} />
+            <Cell fill={TRACK} />
+          </Pie>
+        </PieChart>
+        <div className="pie-center">
+          <div className="pie-center-pct pri-donut-pct" style={{ color: d.color }}>{pct.toFixed(1)}<span>%</span></div>
+          <div className="pie-center-label">{t('Pulled')}</div>
+        </div>
+      </div>
+      <div className="pri-donut-name">
+        <span className="pie-legend-dot" style={{ background: d.color }} />
+        {t(d.name)}
+      </div>
+      <div className="pri-donut-nums">
+        <span className="pri-done">{formatNumber(done)}m</span>
+        <span className="pri-slash"> / </span>
+        <span className="pri-total">{formatNumber(d.value)}m</span>
+      </div>
+      <div className="pri-donut-meta">{formatNumber(d.lineCount)} {t('lines')}</div>
+      <div className="pri-donut-meta">{t('Share of total')} {share.toFixed(1)}%</div>
+    </div>
   )
 }
 
@@ -64,50 +61,13 @@ export default function PieChartSection({ data, pulled = {} }) {
         <span className="chart-title">{t('Priority Distribution')}</span>
         <span className="chart-subtitle">{t('Progress by Priority')}</span>
       </div>
-      <div className="pie-shell">
-        <ResponsiveContainer width="100%" height={220}>
-          <PieChart>
-            <Pie
-              data={data} cx="50%" cy="50%"
-              innerRadius={58} outerRadius={92} paddingAngle={2}
-              dataKey="value" labelLine={false} label={CustomLabel} stroke="none"
-            >
-              {data.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip pulled={pulled} />} />
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="pie-center">
-          <div className="pie-center-pct">{overallPct.toFixed(1)}<span>%</span></div>
-          <div className="pie-center-label">{t('Pulled')}</div>
-        </div>
+      <div className="pri-donuts">
+        {data.map((d) => (
+          <PriorityDonut key={d.name} d={d} done={pulled[d.name] || 0} total={total} />
+        ))}
       </div>
 
       <div className="pie-legend">
-        {data.map((d) => {
-          const done = pulled[d.name] || 0
-          const pct = d.value > 0 ? Math.min(100, (done / d.value * 100)) : 0
-          return (
-            <div className="pie-legend-item pri-row" key={d.name}>
-              <div className="pri-row-head">
-                <span className="pie-legend-dot" style={{ background: d.color }} />
-                <span className="pie-legend-name">{t(d.name)}</span>
-                <span className="pri-pct" style={{ color: d.color }}>{pct.toFixed(1)}%</span>
-              </div>
-              <div className="pri-bar-track">
-                <div className="pri-bar-fill" style={{ width: `${Math.max(pct, 0.4)}%`, background: d.color }} />
-              </div>
-              <div className="pri-nums">
-                <span className="pri-done">{formatNumber(done)}m</span>
-                <span className="pri-slash"> / </span>
-                <span className="pri-total">{formatNumber(d.value)}m</span>
-                <span className="pri-lines">· {formatNumber(d.lineCount)} {t('lines')}</span>
-              </div>
-            </div>
-          )
-        })}
         <div className="pie-legend-item pri-row pri-total-row">
           <div className="pri-row-head">
             <span className="pie-legend-dot" style={{ background: 'transparent' }} />

@@ -1563,6 +1563,23 @@
 .pri-total { color: var(--ink-secondary, #5b5f77); }
 .pri-lines { margin-left: 6px; opacity: 0.7; }
 .pri-total-row { border-top: 1px solid var(--hairline, #eef0f6); margin-top: 4px; padding-top: 8px; }
+.pri-donuts {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  margin: 4px 0 12px;
+}
+.pri-donut { display: flex; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
+.pri-donut-ring { width: 112px; height: 112px; }
+.pri-donut-pct { font-size: 18px; }
+.pri-donut .pie-center-label { font-size: 9px; margin-top: 2px; }
+.pri-donut-name {
+  display: flex; align-items: center; gap: 6px; margin-top: 2px;
+  font-size: 13px; font-weight: 600; color: var(--ink, #1c1e54);
+}
+.pri-donut-nums { margin-top: 3px; font-size: 11px; color: var(--ink-mute, #9498ad); font-feature-settings: "tnum"; white-space: nowrap; }
+.pri-donut-meta { margin-top: 1px; font-size: 10.5px; color: var(--ink-mute, #9498ad); font-feature-settings: "tnum"; white-space: nowrap; }
+@media (max-width: 480px) {
+  .pri-donuts { grid-template-columns: 1fr; }
+}
 
 /* ---- Termination Gauges (semi-circle) ---- */
 .tg-grid {

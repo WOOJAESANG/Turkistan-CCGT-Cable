@@ -130,6 +130,7 @@ export const RU = {
   Total: 'Итого',
   'Priority Distribution': 'Распределение по приоритетам',
   'Progress by Priority': 'Прогресс по приоритетам',
+  'Share of total': 'Доля от общего',
   Pulled: 'Проложено',
   Designed: 'По проекту',
   Progress: 'Прогресс',
