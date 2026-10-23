@@ -196,9 +196,11 @@ export function getPriorityChartData(lengths) {
 
 // Roll up pulled length by priority (PR / Simple Cycle / ETC).
 // Uses each cable's own priority field from master (single source of truth).
+// EP-DCS (client-agreed Early Power DCS scope) is a part of Simple Cycle.
 // Returns: { 'PR (수전)': pulledMeters, 'Simple Cycle': pulledMeters, '잔여 (ETC)': pulledMeters }
 const PRIORITY_MAP = {
   PR: 'PR (수전)',
+  'EP-DCS': 'Simple Cycle',
   'Simple Cycle': 'Simple Cycle',
   ETC: '잔여 (ETC)',
 };
