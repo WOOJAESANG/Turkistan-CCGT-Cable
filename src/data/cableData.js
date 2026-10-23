@@ -57,7 +57,7 @@ export const cableCategories = [
 // masterLengths().byPri / .linesByPri.
 export const priorityData = [
   {
-    name: 'PR (수전)',
+    name: 'PR (Power Receiving)',
     value: 450127,
     lineCount: 3648,
     terminationCount: 7296,
@@ -71,7 +71,7 @@ export const priorityData = [
     color: '#533afd',
   },
   {
-    name: '잔여 (ETC)',
+    name: 'Remaining (ETC)',
     value: 696602, // 260629: 693,826 → 696,602 (PKG +2,776, 가닥수 불변)
     lineCount: 5474,
     terminationCount: 10948, // line 5,474 × 2
@@ -115,9 +115,9 @@ export function rollupActuals(fieldData, master) {
 export function masterLengths(master) {
   if (!master || !master.length) return null;
   const byCat = { power: 0, control: 0, iac: 0, pkg: 0 };
-  const byPri = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  const byPri = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
   const linesByCat = { power: 0, control: 0, iac: 0, pkg: 0 };
-  const linesByPri = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  const linesByPri = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
   for (const c of master) {
     const id = CAT_ID_BY_LABEL[c.g];
     if (id) { byCat[id] += c.l || 0; linesByCat[id] += 1; }
@@ -197,12 +197,12 @@ export function getPriorityChartData(lengths) {
 // Roll up pulled length by priority (PR / Simple Cycle / ETC).
 // Uses each cable's own priority field from master (single source of truth).
 // EP-DCS (client-agreed Early Power DCS scope) is a part of Simple Cycle.
-// Returns: { 'PR (수전)': pulledMeters, 'Simple Cycle': pulledMeters, '잔여 (ETC)': pulledMeters }
+// Returns: { 'PR (Power Receiving)': pulledMeters, 'Simple Cycle': pulledMeters, 'Remaining (ETC)': pulledMeters }
 const PRIORITY_MAP = {
-  PR: 'PR (수전)',
+  PR: 'PR (Power Receiving)',
   'EP-DCS': 'Simple Cycle',
   'Simple Cycle': 'Simple Cycle',
-  ETC: '잔여 (ETC)',
+  ETC: 'Remaining (ETC)',
 };
 
 // Roll up "Line Check Done" counts per category → gauge shows inspection progress.
@@ -220,7 +220,7 @@ export function rollupInspection(fieldData, master) {
   return out;
 }
 export function rollupPriorityActuals(fieldData, master) {
-  const out = { 'PR (수전)': 0, 'Simple Cycle': 0, '잔여 (ETC)': 0 };
+  const out = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
   if (!fieldData || !master) return out;
   const mmap = new Map(master.map((c) => [c.n, c]));
   for (const [cno, e] of Object.entries(fieldData)) {

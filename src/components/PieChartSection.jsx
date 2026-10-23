@@ -6,7 +6,7 @@ function formatNumber(n) {
 }
 
 const TRACK = '#eef0f6'
-const DONUT = 112 // px, sized so three rings fit the existing card
+const DONUT = 132 // px, sized so three rings fit the existing card
 
 // One donut per priority: the ring is that priority's own pulled vs designed length,
 // so the number in the middle is the same progress % the numbers underneath describe.
@@ -23,7 +23,7 @@ function PriorityDonut({ d, done, total }) {
         <PieChart width={DONUT} height={DONUT}>
           <Pie
             data={ring} cx="50%" cy="50%"
-            innerRadius={38} outerRadius={52} startAngle={90} endAngle={-270}
+            innerRadius={46} outerRadius={62} startAngle={90} endAngle={-270}
             dataKey="value" stroke="none" isAnimationActive={false}
           >
             <Cell fill={d.color} />
@@ -56,7 +56,7 @@ export default function PieChartSection({ data, pulled = {} }) {
   const overallPct = total > 0 ? (totalPulled / total * 100) : 0
 
   return (
-    <div className="chart-card">
+    <div className="chart-card pri-card">
       <div className="chart-card-header">
         <span className="chart-title">{t('Priority Distribution')}</span>
         <span className="chart-subtitle">{t('Progress by Priority')}</span>
