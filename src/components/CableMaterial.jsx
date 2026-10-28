@@ -554,7 +554,8 @@ export default function CableMaterial() {
                           </div>
                         </div>
                       ) : (
-                        <DownloadLink url={r.docUrl} label={r.docNo} name={r.docName} />
+                        // A schedule without a document number (e.g. FMS) still needs its download link.
+                        <DownloadLink url={r.docUrl} label={r.docNo || (r.docUrl ? t('Download') : '')} name={r.docName} />
                       )}
                     </td>
                     <td><DownloadLink url={r.packingUrl} label={r.packingList} name={r.packingName} /></td>
