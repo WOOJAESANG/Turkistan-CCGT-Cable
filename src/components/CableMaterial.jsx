@@ -105,7 +105,7 @@ async function saveFile(url, name) {
   setTimeout(() => URL.revokeObjectURL(href), 10000)
 }
 
-function DownloadLink({ url, label, name }) {
+function DownloadLink({ url, label, name, wrap }) {
   const [busy, setBusy] = useState(false)
   if (!label) return <span className="cm-muted">—</span>
   if (!url) return <span className="cm-code cm-muted" title={t('No file available')}>{label}</span>
@@ -122,7 +122,7 @@ function DownloadLink({ url, label, name }) {
     }
   }
   return (
-    <a className="cm-dl" href={dataUrl(url)} download={name} onClick={onClick} aria-busy={busy}
+    <a className={`cm-dl${wrap ? ' cm-dl-wrap' : ''}`} href={dataUrl(url)} download={name} onClick={onClick} aria-busy={busy}
       title={t('Download {f}', { f: name })} style={busy ? { opacity: 0.55, cursor: 'progress' } : undefined}>
       <DownloadIcon />
       <span>{label}</span>
@@ -554,8 +554,8 @@ export default function CableMaterial() {
                           </div>
                         </div>
                       ) : (
-                        // A schedule without a document number (e.g. FMS) still needs its download link.
-                        <DownloadLink url={r.docUrl} label={r.docNo || (r.docUrl ? t('Download') : '')} name={r.docName} />
+                        // A schedule without a document number (e.g. FMS) is labelled by its file name.
+                        <DownloadLink url={r.docUrl} label={r.docNo || (r.docUrl ? (r.docName || '').replace(/\.xlsx?$/i, '') : '')} name={r.docName} wrap={!r.docNo} />
                       )}
                     </td>
                     <td><DownloadLink url={r.packingUrl} label={r.packingList} name={r.packingName} /></td>

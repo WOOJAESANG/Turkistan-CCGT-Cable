@@ -1683,6 +1683,8 @@
   font-size: 12px;
 }
 
+/* A file-name label (no document number) is long: let it wrap inside the column. */
+.cm-dl.cm-dl-wrap { white-space: normal; overflow-wrap: anywhere; max-width: 230px; border-radius: 10px; line-height: 1.3; }
 /* Download link (Document No. / Packing List) */
 .cm-dl {
   display: inline-flex;
