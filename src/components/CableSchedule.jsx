@@ -126,7 +126,7 @@ const CATEGORY_COLORS = {
 const PRI_COLORS = {
   'PR':           { bg: '#fce7f3', text: '#9d174d' },
   'EP-DCS':       { bg: '#fef3c7', text: '#92400e' },
-  'Simple Cycle': { bg: '#dbeafe', text: '#1e40af' },
+  'Early Power':  { bg: '#dbeafe', text: '#1e40af' },
   'ETC':          { bg: '#f3f4f6', text: '#6b7280' },
 }
 
@@ -138,7 +138,7 @@ const STATUS_COLORS = {
 
 const PAGE_SIZE = 25
 const CATEGORIES = ['All', 'Power', 'Control', 'I&C', 'PKG']
-const PRIORITIES = ['All', 'PR', 'EP-DCS', 'Simple Cycle', 'ETC']
+const PRIORITIES = ['All', 'PR', 'EP-DCS', 'Early Power', 'ETC']
 const STATUSES = ['All', 'Pending', 'In Progress', 'Done']
 
 // FROM area options: physical location of the FROM (feeding) equipment,

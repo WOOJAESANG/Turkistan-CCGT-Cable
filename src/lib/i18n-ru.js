@@ -75,6 +75,7 @@ export const RU = {
   Done: 'Выполнено',
   PR: 'PR',
   'Simple Cycle': 'Простой цикл',
+  'Early Power': 'Ранняя мощность',
   ETC: 'Прочее',
   'On-Site': 'На площадке',
   'Cargo Ready': 'Груз готов',

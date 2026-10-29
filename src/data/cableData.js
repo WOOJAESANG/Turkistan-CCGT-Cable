@@ -64,7 +64,7 @@ export const priorityData = [
     color: '#ea2261',
   },
   {
-    name: 'Simple Cycle',
+    name: 'Early Power',
     value: 258499,
     lineCount: 1608,
     terminationCount: 3216, // line 1,608 × 2
@@ -115,9 +115,9 @@ export function rollupActuals(fieldData, master) {
 export function masterLengths(master) {
   if (!master || !master.length) return null;
   const byCat = { power: 0, control: 0, iac: 0, pkg: 0 };
-  const byPri = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
+  const byPri = { 'PR (Power Receiving)': 0, 'Early Power': 0, 'Remaining (ETC)': 0 };
   const linesByCat = { power: 0, control: 0, iac: 0, pkg: 0 };
-  const linesByPri = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
+  const linesByPri = { 'PR (Power Receiving)': 0, 'Early Power': 0, 'Remaining (ETC)': 0 };
   for (const c of master) {
     const id = CAT_ID_BY_LABEL[c.g];
     if (id) { byCat[id] += c.l || 0; linesByCat[id] += 1; }
@@ -194,14 +194,14 @@ export function getPriorityChartData(lengths) {
   }));
 }
 
-// Roll up pulled length by priority (PR / Simple Cycle / ETC).
+// Roll up pulled length by priority (PR / Early Power / ETC).
 // Uses each cable's own priority field from master (single source of truth).
-// EP-DCS (client-agreed Early Power DCS scope) is a part of Simple Cycle.
-// Returns: { 'PR (Power Receiving)': pulledMeters, 'Simple Cycle': pulledMeters, 'Remaining (ETC)': pulledMeters }
+// EP-DCS (client-agreed Early Power DCS scope) is a part of Early Power.
+// Returns: { 'PR (Power Receiving)': pulledMeters, 'Early Power': pulledMeters, 'Remaining (ETC)': pulledMeters }
 const PRIORITY_MAP = {
   PR: 'PR (Power Receiving)',
-  'EP-DCS': 'Simple Cycle',
-  'Simple Cycle': 'Simple Cycle',
+  'EP-DCS': 'Early Power',
+  'Early Power': 'Early Power',
   ETC: 'Remaining (ETC)',
 };
 
@@ -220,7 +220,7 @@ export function rollupInspection(fieldData, master) {
   return out;
 }
 export function rollupPriorityActuals(fieldData, master) {
-  const out = { 'PR (Power Receiving)': 0, 'Simple Cycle': 0, 'Remaining (ETC)': 0 };
+  const out = { 'PR (Power Receiving)': 0, 'Early Power': 0, 'Remaining (ETC)': 0 };
   if (!fieldData || !master) return out;
   const mmap = new Map(master.map((c) => [c.n, c]));
   for (const [cno, e] of Object.entries(fieldData)) {
