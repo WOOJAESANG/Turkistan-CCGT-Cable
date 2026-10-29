@@ -35,6 +35,8 @@ const TODAY_LABEL = label(TODAY_KEY)
 
 const T0 = new Date('2026-07-01')
 const day = s => Math.round((new Date(s) - T0) / 86400000)
+// The steam turbine is the combined-cycle step, not part of the simple-cycle (GT) scope.
+const isST = r => r.name.startsWith('STG')
 const ALL_MILESTONES = [...UNIT1, ...UNIT2]
 const TIMELINE_DATA = ALL_MILESTONES.map(r => ({
   name: r.name.replace(' Synchronization', ' Sync').replace(' Initial Firing', ' IF'),
@@ -446,10 +448,12 @@ export default function MasterPlan({ session }) {
               </tr>
             </thead>
             <tbody>
-              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 1')} (GT#11 / GT#12 / ST#10)</td></tr>
-              <MilestoneRows rows={UNIT1} targets={targets} onTarget={handleTarget} admin={admin} />
-              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 2')} (GT#21 / GT#22 / ST#20)</td></tr>
-              <MilestoneRows rows={UNIT2} targets={targets} onTarget={handleTarget} admin={admin} />
+              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 1')} (GT#11 / GT#12)</td></tr>
+              <MilestoneRows rows={UNIT1.filter(r => !isST(r))} targets={targets} onTarget={handleTarget} admin={admin} />
+              <tr className="mpl-section"><td colSpan={7}>{t('Simple Cycle')} — {t('Unit 2')} (GT#21 / GT#22)</td></tr>
+              <MilestoneRows rows={UNIT2.filter(r => !isST(r))} targets={targets} onTarget={handleTarget} admin={admin} />
+              <tr className="mpl-section"><td colSpan={7}>{t('Combined Cycle')} (ST#10 / ST#20)</td></tr>
+              <MilestoneRows rows={[...UNIT1, ...UNIT2].filter(isST)} targets={targets} onTarget={handleTarget} admin={admin} />
             </tbody>
           </table>
         </div>
