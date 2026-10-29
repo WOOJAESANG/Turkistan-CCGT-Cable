@@ -131,6 +131,7 @@ export const RU = {
   'Priority Distribution': 'Распределение по приоритетам',
   'Progress by Priority': 'Прогресс по приоритетам',
   'Share of total': 'Доля от общего',
+  'Drum corrected to {d}': 'Барабан исправлен на {d}',
   'PR (Power Receiving)': 'PR (Приём напряжения)',
   'Remaining (ETC)': 'Прочее (ETC)',
   Pulled: 'Проложено',

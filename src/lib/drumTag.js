@@ -43,6 +43,17 @@ export function sameDrum(a, b) {
   return norm(a) === norm(b)
 }
 
+// I/1 and O/0 look the same in most fonts, so a tag typed as PE-LI-5C4-02 reads as the
+// designed PE-L1-5C4-02 to everyone but the computer. When the typed tag differs from
+// the designed drum only by those look-alikes, the designed tag is what was meant.
+// A genuinely different drum (another number) is returned unchanged.
+export function fixDrumTypo(value, design) {
+  if (!value || !design || sameDrum(value, design)) return value
+  const look = t => String(t || '').replace(/[‐‑‒–—―−－]/g, '-').replace(/\s+/g, '')
+    .toUpperCase().replace(/[I|]/g, '1').replace(/O/g, '0')
+  return look(canonDrum(value)) === look(canonDrum(design)) ? design : value
+}
+
 // Returns null when the tag resolves to exactly one drum, or details of the
 // ambiguity when the packing number is missing and more than one packing is on
 // site. pullingDate is optional — without it we cannot rule the ambiguity out.

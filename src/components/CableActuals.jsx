@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
-import { ambiguousDrumTag, canonDrum, sameDrum } from '../lib/drumTag'
+import { ambiguousDrumTag, canonDrum, fixDrumTypo, sameDrum } from '../lib/drumTag'
 import { t } from '../lib/i18n'
 
 const DATE_MIN = '2026-07-01'
@@ -200,7 +200,10 @@ export default function CableActuals({ session }) {
     if (!file) return
     try {
       const parsed = JSON.parse(await file.text())
-      const entries = parsed.entries || parsed
+      const raw = parsed.entries || parsed
+      // Same look-alike correction as a hand entry (I/1, O/0 against the designed drum).
+      const entries = Object.fromEntries(Object.entries(raw).map(([cno, p]) =>
+        [cno, p && p.usedDrum ? { ...p, usedDrum: fixDrumTypo(p.usedDrum, drumMap[cno.trim()] || '') } : p]))
       const keys = Object.keys(entries)
       if (!keys.length) { setImportMsg(t('Empty file')); return }
 
@@ -294,9 +297,12 @@ export default function CableActuals({ session }) {
        t('It will be saved, but not counted in Dashboard progress.'),
        t('Please check the number again.'), '',
        t('Save anyway?')].join('\n'))) return
-    updateFieldEntry(cno, { ...form })
+    const usedDrum = fixDrumTypo(form.usedDrum, designDrum)
+    updateFieldEntry(cno, { ...form, usedDrum })
+    if (usedDrum !== form.usedDrum) setField('usedDrum', usedDrum)
     setMissing(new Set())
-    setFlash({ type: 'ok', msg: `${t('Saved')} · ${cno}` })
+    setFlash({ type: 'ok', msg: `${t('Saved')} · ${cno}` +
+      (usedDrum !== form.usedDrum ? ` · ${t('Drum corrected to {d}', { d: usedDrum })}` : '') })
     setTimeout(() => setFlash(null), 2800)
   }
   const clear = () => { setTag(''); setForm(EMPTY_FORM); setPkgNo(''); setMissing(new Set()); setFlash(null) }
