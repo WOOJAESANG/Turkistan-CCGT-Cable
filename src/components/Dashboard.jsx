@@ -10,7 +10,7 @@ import BarChartSection from './BarChartSection'
 import PieChartSection from './PieChartSection'
 import MonthlyPullingChart from './MonthlyPullingChart'
 import TerminationGauges from './TerminationGauges'
-import AisScopeSection from './AisScopeSection'
+import SystemProgressSection from './SystemProgressSection'
 import { t, locale } from '../lib/i18n'
 
 export default function Dashboard({ onNavigate }) {
@@ -162,7 +162,7 @@ export default function Dashboard({ onNavigate }) {
         <TerminationGauges categories={categoryProgress} inspection={inspection} />
       </div>
 
-      <AisScopeSection master={master} fieldData={fieldData} drumMap={drumMap} />
+      <SystemProgressSection master={master} fieldData={fieldData} />
     </div>
   )
 }
