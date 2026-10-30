@@ -109,6 +109,12 @@ export function rollupActuals(fieldData, master) {
   return out;
 }
 
+// Package quantities known only as a total (DCS from its packing lists, the HRSG / STG
+// remainder of the report total). They carry no cable number, so nothing can ever be
+// pulled against them: they count in the total cable length but stay out of progress,
+// and the Cable Schedule does not list them.
+export const isLumpSum = (c) => String(c?.n || '').includes('AGGREGATE');
+
 // Derive designed length AND line count, per category and per priority, from the
 // per-cable master (cable-data.json) so the Dashboard always matches Cable Schedule
 // sums. Termination points follow the 1 line = 2 points rule.
@@ -118,7 +124,15 @@ export function masterLengths(master) {
   const byPri = { 'PR (Power Receiving)': 0, 'Early Power': 0, 'Remaining (ETC)': 0 };
   const linesByCat = { power: 0, control: 0, iac: 0, pkg: 0 };
   const linesByPri = { 'PR (Power Receiving)': 0, 'Early Power': 0, 'Remaining (ETC)': 0 };
+  const lump = { total: 0, byPri: {}, rows: [] };
   for (const c of master) {
+    if (isLumpSum(c)) {
+      const bucket = PRIORITY_MAP[c.pri];
+      lump.total += c.l || 0;
+      if (bucket) lump.byPri[bucket] = (lump.byPri[bucket] || 0) + (c.l || 0);
+      lump.rows.push({ sys: c.sys, l: c.l || 0 });
+      continue;
+    }
     const id = CAT_ID_BY_LABEL[c.g];
     if (id) { byCat[id] += c.l || 0; linesByCat[id] += 1; }
     const bucket = PRIORITY_MAP[c.pri];
@@ -126,7 +140,7 @@ export function masterLengths(master) {
   }
   for (const k in byCat) byCat[k] = Math.round(byCat[k]);
   for (const k in byPri) byPri[k] = Math.round(byPri[k]);
-  return { byCat, byPri, linesByCat, linesByPri };
+  return { byCat, byPri, linesByCat, linesByPri, lump };
 }
 
 const TERM_POINTS_PER_LINE = 2; // one cable = two ends = two termination points
@@ -164,6 +178,8 @@ export function getTotals(actuals, lengths) {
 
   return {
     totalDesignedLength,
+    lumpLength: Math.round(lengths?.lump?.total || 0),
+    lumpRows: lengths?.lump?.rows || [],
     totalPulledLength,
     totalDesignedTermination,
     totalTerminatedCount,
@@ -190,6 +206,7 @@ export function getPriorityChartData(lengths) {
     name: p.name,
     value: lengths?.byPri?.[p.name] ?? p.value,
     lineCount: lengths?.linesByPri?.[p.name] ?? p.lineCount,
+    lump: Math.round(lengths?.lump?.byPri?.[p.name] || 0),
     color: p.color,
   }));
 }

@@ -27,7 +27,13 @@ export const EN = {
     'pulling — compare the two to catch cases where a different drum was used than planned.',
   WORKLOG_NOTE:
     '* marks a required field. Records feed Cable Schedule and Dashboard progress — a Pulling Date makes Pulling Done, a ' +
-    'Termination Date (To) makes Termination Done (From only = In Progress). Dates run from 2026-07 to 2028-12.',
+    'Termination Date (From) / (To) mark each end Done separately, and a cable counts as terminated once both ends are in. ' +
+    'Dates run from 2026-07 to 2028-12.',
+  PACKAGE_LUMP_NOTE:
+    'Package lump sum = package cable quantity known only as a total, with no individual cable numbers or lengths: DCS ' +
+    '76,528 m (packing-list estimate, DCS Cable List H03-0001), HRSG 40,682 m and STG 17,120 m. It is included in Total ' +
+    'Cable Length but not in progress, and is not listed in Cable Schedule. It will be registered cable by cable once the ' +
+    'vendors issue individual lengths.',
 }
 
 export const RU = {
@@ -483,7 +489,15 @@ export const RU = {
   'Show more': 'Показать ещё',
   WORKLOG_NOTE:
     '* — обязательное поле. Данные отражаются в кабельном журнале и в прогрессе на панели: дата прокладки означает «Прокладка — ' +
-    'выполнено», дата подключения (куда) — «Подключение — выполнено» (только «откуда» = в работе). Даты — с 2026-07 по 2028-12.',
+    'выполнено», даты подключения «откуда» и «куда» отмечают каждый конец отдельно; кабель считается подключённым, когда ' +
+    'введены оба конца. Даты — с 2026-07 по 2028-12.',
+  PACKAGE_LUMP_NOTE:
+    'Пакетный общий объём — кабели пакетов, известные только общим итогом, без номеров и длин отдельных кабелей: DCS ' +
+    '76 528 м (оценка по упаковочным листам, DCS Cable List H03-0001), HRSG 40 682 м и STG 17 120 м. Входит в общую длину ' +
+    'кабеля, но не в прогресс, и не показывается в кабельном журнале. Будет внесён по кабелям, когда поставщики выдадут длины.',
+  'incl. package lump sum {m} m — not in progress': 'вкл. пакетный общий объём {m} м — не в прогрессе',
+  'package lump sum': 'пакетный общий объём',
+  'Package quantity known only as a total — not in progress': 'Объём пакета известен только общим итогом — не в прогрессе',
   'Pulled Length': 'Проложенная длина',
   'Used Drum (Drum No.)': 'Факт. барабан (№ барабана)',
   'at least one Pulling or Termination entry': 'хотя бы одна запись о прокладке или подключении',

@@ -2139,3 +2139,7 @@ select.cs-cf { padding: 4px 2px; }
 .sidebar-lang { margin-bottom: 12px; }
 .login-card { position: relative; }
 .login-lang { position: absolute; top: 14px; right: 14px; }
+
+/* Package lump sum (total only, outside progress) */
+.kpi-lump { margin-top: 4px; color: #b45309; }
+.pri-donut-lump { color: #b45309; }

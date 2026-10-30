@@ -12,12 +12,20 @@ export default function KpiCards({ totals }) {
           {t('Total Cable Length')}
         </div>
         <div className="kpi-value">
-          {formatNumber(totals.totalDesignedLength)}
+          {formatNumber(totals.totalDesignedLength + (totals.lumpLength || 0))}
           <span className="unit">m</span>
         </div>
         <div className="kpi-sub">
           {t('Cable {n} lines · Termination {p} pts', { n: formatNumber(totals.totalLineCount), p: formatNumber(totals.totalDesignedTermination) })}
         </div>
+        {totals.lumpLength > 0 && (
+          <div
+            className="kpi-sub kpi-lump"
+            title={totals.lumpRows.map(r => `${r.sys}: ${formatNumber(r.l)} m`).join('\n')}
+          >
+            {t('incl. package lump sum {m} m — not in progress', { m: formatNumber(totals.lumpLength) })}
+          </div>
+        )}
       </div>
 
       <div className="kpi-card" data-kpi="pulling">

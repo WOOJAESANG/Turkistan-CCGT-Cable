@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { t, getLang } from '../lib/i18n'
+import { isLumpSum } from '../data/cableData'
 
 // Pulling, termination and line-check progress per system, for the cables that have a
 // deadline: PR, EP-DCS and Early Power. ETC is left out so a large unstarted scope does
@@ -32,7 +33,7 @@ export default function SystemProgressSection({ master, fieldData }) {
     if (!master) return []
     const by = new Map()
     for (const c of master) {
-      if (!SCOPE.includes(c.pri) || (pri !== 'All' && c.pri !== pri)) continue
+      if (isLumpSum(c) || !SCOPE.includes(c.pri) || (pri !== 'All' && c.pri !== pri)) continue
       const { en, ru } = splitName(c.sys)
       const key = en.toUpperCase()
       let r = by.get(key)

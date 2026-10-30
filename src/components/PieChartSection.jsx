@@ -46,6 +46,11 @@ function PriorityDonut({ d, done, total }) {
       </div>
       <div className="pri-donut-meta">{formatNumber(d.lineCount)} {t('lines')}</div>
       <div className="pri-donut-meta">{t('Share of total')} {share.toFixed(1)}%</div>
+      {d.lump > 0 && (
+        <div className="pri-donut-meta pri-donut-lump" title={t('Package quantity known only as a total — not in progress')}>
+          + {t('package lump sum')} {formatNumber(d.lump)}m
+        </div>
+      )}
     </div>
   )
 }

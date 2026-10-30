@@ -4,6 +4,7 @@ import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { UNITS, unitOf, unitLabel } from '../lib/unit'
 import { t } from '../lib/i18n'
+import { isLumpSum } from '../data/cableData'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Unit', 'Priority',
@@ -367,7 +368,8 @@ export default function CableSchedule() {
   useEffect(() => {
     fetch(dataUrl('/cable-data.json'))
       .then(r => r.json())
-      .then(data => { setAllData(data); setLoading(false) })
+      // package lump sums are not cables — they would only invite pulling reports against them
+      .then(data => { setAllData(data.filter(c => !isLumpSum(c))); setLoading(false) })
       .catch(() => setLoading(false))
     fetch(dataUrl('/cable-drum-map.json'))
       .then(r => r.json())
@@ -663,7 +665,6 @@ export default function CableSchedule() {
               {pageData.map((c, i) => {
                 const catC = CATEGORY_COLORS[c.g] || { bg: '#f3f4f6', text: '#374151' }
                 const priC = PRI_COLORS[c.pri] || PRI_COLORS['ETC']
-                const isAdj = c.n.includes('AGGREGATE-ADJ')
                 const fd = fieldData[c.n] || {}
                 const pullStatus = derivePullStatus(c, fd)
                 const termFrom = termEndStatus(fd.termDateFrom)
@@ -676,10 +677,9 @@ export default function CableSchedule() {
                   ? STATUS_COLORS['In Progress']
                   : STATUS_COLORS['Pending']
                 return (
-                  <tr key={i} className={isAdj ? 'cs-adj-row' : ''}>
+                  <tr key={i}>
                     <td>
                       <span className="cs-badge" style={{ background: catC.bg, color: catC.text }}>{t(c.g)}</span>
-                      {isAdj && <span className="cs-agg-badge">AGG</span>}
                     </td>
                     <td className="cs-cable-no">{c.n}</td>
                     <td className="cs-spec">{c.s || '—'}</td>

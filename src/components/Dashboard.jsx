@@ -163,6 +163,8 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       <SystemProgressSection master={master} fieldData={fieldData} />
+
+      <p className="cm-note">{t('PACKAGE_LUMP_NOTE')}</p>
     </div>
   )
 }

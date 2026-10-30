@@ -5,6 +5,7 @@ import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
 import { ambiguousDrumTag, canonDrum, fixDrumTypo, sameDrum } from '../lib/drumTag'
 import { t } from '../lib/i18n'
+import { isLumpSum } from '../data/cableData'
 
 const DATE_MIN = '2026-07-01'
 const DATE_MAX = '2028-12-31'
@@ -256,7 +257,8 @@ export default function CableActuals({ session }) {
       fetch(dataUrl('/cable-drum-map.json')).then(r => r.json()).catch(() => ({})),
       fetch(dataUrl('/drum-capacity.json')).then(r => r.json()).catch(() => ({})),
       fetch(dataUrl('/packing-drum-map.json')).then(r => r.json()).catch(() => ({})),
-    ]).then(([cables, materials, dmap, dcap, pmap]) => {
+    ]).then(([all, materials, dmap, dcap, pmap]) => {
+      const cables = all.filter(c => !isLumpSum(c))
       setPkgDrum(pmap || {})
       setDrumMap(dmap || {})
       setDrumCap(dcap || {})

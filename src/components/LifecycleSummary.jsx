@@ -4,6 +4,8 @@ function fmt(n) { return Math.round(n).toLocaleString(locale()) }
 
 export default function LifecycleSummary({ totals, supplyInfo }) {
   const designLen = totals.totalDesignedLength
+  // design quantity as reported, including the package lump sums that progress leaves out
+  const designAll = designLen + (totals.lumpLength || 0)
   const pulledLen = totals.totalPulledLength
   const remainPull = designLen - pulledLen
   const pullPct = totals.pullingPercent
@@ -14,8 +16,8 @@ export default function LifecycleSummary({ totals, supplyInfo }) {
 
   const totalCap = supplyInfo?.totalCapacity || 0
   const onSiteM = supplyInfo?.suppliedMeters || 0
-  const remainSupply = designLen - totalCap
-  const supplyPct = designLen > 0 ? (totalCap / designLen) * 100 : 0
+  const remainSupply = designAll - totalCap
+  const supplyPct = designAll > 0 ? (totalCap / designAll) * 100 : 0
   const onSite = supplyInfo?.byStatus?.['On-Site']?.drums || 0
   const sailing = supplyInfo?.byStatus?.['Sailing']?.drums || 0
   const cargoReady = supplyInfo?.byStatus?.['Cargo Ready']?.drums || 0
@@ -35,7 +37,7 @@ export default function LifecycleSummary({ totals, supplyInfo }) {
           <div className="lcs-stats">
             <div className="lcs-stat">
               <span className="lcs-stat-label">{t('Total Design')}</span>
-              <span className="lcs-stat-value">{fmt(designLen)} <span className="lcs-unit">m</span></span>
+              <span className="lcs-stat-value">{fmt(designAll)} <span className="lcs-unit">m</span></span>
             </div>
             <div className="lcs-stat">
               <span className="lcs-stat-label">{t('Total Cables')}</span>
