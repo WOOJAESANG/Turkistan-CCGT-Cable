@@ -7,7 +7,7 @@ import { t } from '../lib/i18n'
 
 const EXPORT_COLS = [
   'Category', 'Cable No.', 'Spec', 'Length (m)', 'System', 'Unit', 'Priority',
-  'From', 'To', 'Drum No.', 'Pkg List', 'Pulling', 'Used Drum', 'Termination', 'Line Check', 'Act No.',
+  'From', 'To', 'Drum No.', 'Pkg List', 'Pulling', 'Used Drum', 'Term (From)', 'Term (To)', 'Line Check', 'Act No.',
 ]
 
 // Fiber-optic cables ship on their own reels, not the copper pair drums. A copper
@@ -30,7 +30,7 @@ function buildScheduleRows(rows, fieldData, drumMap, pkgMap = {}) {
     const drum = drumFor(c, drumMap)
     return [
       c.g || '', c.n || '', c.s || '', (c.l != null ? c.l : ''), c.sys || '', unitLabel(unitOf(c)), c.pri || '',
-      c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), derivePullStatus(c, fd), fd.usedDrum || '', deriveTermStatus(c, fd), fd.lc || 'Pending', fd.act || '',
+      c.f || '', c.t || '', drum, pkgFor(c, drumMap, pkgMap), derivePullStatus(c, fd), fd.usedDrum || '', termEndStatus(fd.termDateFrom), termEndStatus(fd.termDateTo), fd.lc || 'Pending', fd.act || '',
     ]
   })
 }
@@ -41,7 +41,7 @@ function exportScheduleExcel(rows, fieldData, drumMap, pkgMap) {
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   ws['!cols'] = [
     { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 13 },
-    { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+    { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 15 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
   ]
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: EXPORT_COLS.length - 1, r: aoa.length - 1 } }) }
   ws['!freeze'] = { xSplit: 0, ySplit: 1 }
@@ -109,11 +109,10 @@ import { loadFieldData } from '../lib/dataStore'
 export function derivePullStatus(base, fd = {}) {
   return fd.pullingDate ? 'Done' : (base?.p || 'Pending')
 }
-export function deriveTermStatus(base, fd = {}) {
-  if (fd.termDateTo) return 'Done'
-  if (fd.termDateFrom) return 'In Progress'
-  return base?.e || 'Pending'
-}
+// Each end is terminated by its own crew on its own day, so the schedule shows the two
+// ends apart — one combined status hides which end is still open.
+const termEndStatus = date => (date ? 'Done' : 'Pending')
+const END_STATUSES = ['All', 'Pending', 'Done']
 
 
 const CATEGORY_COLORS = {
@@ -347,7 +346,7 @@ const inc = (val, f) => !f || String(val || '').toLowerCase().includes(f.toLower
 
 const EMPTY_COLF = {
   cat: 'All', cn: '', spec: '', lmin: '', lmax: '', sys: '', pri: 'All',
-  from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', term: 'All', lc: 'All', act: '',
+  from: '', to: '', drum: '', pkg: '', pull: 'All', used: '', termFrom: 'All', termTo: 'All', lc: 'All', act: '',
   fromArea: '', toArea: '', unit: '',
 }
 
@@ -431,7 +430,8 @@ export default function CableSchedule() {
       if (!inc(fd.usedDrum, colF.used)) return false
       if (!inc(fd.act, colF.act)) return false
       if (colF.pull !== 'All' && derivePullStatus(c, fd) !== colF.pull) return false
-      if (colF.term !== 'All' && deriveTermStatus(c, fd) !== colF.term) return false
+      if (colF.termFrom !== 'All' && termEndStatus(fd.termDateFrom) !== colF.termFrom) return false
+      if (colF.termTo !== 'All' && termEndStatus(fd.termDateTo) !== colF.termTo) return false
       if (colF.lc !== 'All' && (fd.lc || 'Pending') !== colF.lc) return false
       if (q) {
         const assignedDrum = drumFor(c, drumMap)
@@ -628,7 +628,8 @@ export default function CableSchedule() {
                 <th>{t('PKG LIST')}</th>
                 <th>{t('PULLING')}</th>
                 <th>{t('USED DRUM')}</th>
-                <th>{t('TERMINATION')}</th>
+                <th>{t('TERM. FROM')}</th>
+                <th>{t('TERM. TO')}</th>
                 <th>{t('LINE CHECK')}</th>
                 <th>{t('ACT NO.')}</th>
               </tr>
@@ -652,7 +653,8 @@ export default function CableSchedule() {
                 <th>{cfText('pkg', t('e.g. 590'))}</th>
                 <th>{cfSelect('pull', STATUSES)}</th>
                 <th>{cfText('used')}</th>
-                <th>{cfSelect('term', STATUSES)}</th>
+                <th>{cfSelect('termFrom', END_STATUSES)}</th>
+                <th>{cfSelect('termTo', END_STATUSES)}</th>
                 <th>{cfSelect('lc', STATUSES)}</th>
                 <th>{cfText('act')}</th>
               </tr>
@@ -664,9 +666,9 @@ export default function CableSchedule() {
                 const isAdj = c.n.includes('AGGREGATE-ADJ')
                 const fd = fieldData[c.n] || {}
                 const pullStatus = derivePullStatus(c, fd)
-                const termStatus = deriveTermStatus(c, fd)
+                const termFrom = termEndStatus(fd.termDateFrom)
+                const termTo = termEndStatus(fd.termDateTo)
                 const pullC = STATUS_COLORS[pullStatus] || STATUS_COLORS['Pending']
-                const termC = STATUS_COLORS[termStatus] || STATUS_COLORS['Pending']
                 const lcStatus = fd.lc || 'Pending'
                 const lcColor = lcStatus === 'Done'
                   ? STATUS_COLORS['Done']
@@ -694,9 +696,12 @@ export default function CableSchedule() {
                       <span className="cs-badge" style={{ background: pullC.bg, color: pullC.text }}>{t(pullStatus)}</span>
                     </td>
                     <td className="cs-kks">{fd.usedDrum || '—'}</td>
-                    <td>
-                      <span className="cs-badge" style={{ background: termC.bg, color: termC.text }}>{t(termStatus)}</span>
-                    </td>
+                    {[[termFrom, fd.termDateFrom, fd.termByFrom], [termTo, fd.termDateTo, fd.termByTo]].map(([st, date, by], k) => (
+                      <td key={k} title={date ? [date, by].filter(Boolean).join(' · ') : undefined}>
+                        <span className="cs-badge" style={{ background: STATUS_COLORS[st].bg, color: STATUS_COLORS[st].text }}>{t(st)}</span>
+                        {date && <span className="cs-term-date">{date.slice(5)}</span>}
+                      </td>
+                    ))}
                     <td>
                       <span className="cs-badge" style={{ background: lcColor.bg, color: lcColor.text }}>{t(lcStatus)}</span>
                     </td>

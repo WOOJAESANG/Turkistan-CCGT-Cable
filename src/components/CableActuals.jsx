@@ -31,6 +31,14 @@ const EMPTY_FORM = {
 // presence of any of these flags a real record (vendor / manpower are reference-only)
 const TEXT_FIELDS = ['pulledLength', 'usedDrum', 'pulledBy', 'pullingDate',
   'termDateFrom', 'termByFrom', 'termDateTo', 'termByTo', 'act']
+// Pulled cables whose ends are not both terminated, split by which end is still open.
+const TERM_FILTERS = {
+  fromPending: r => !!r.pullingDate && !r.termDateFrom,
+  toPending: r => !!r.pullingDate && !r.termDateTo,
+  oneEnd: r => !!r.termDateFrom !== !!r.termDateTo,
+  bothDone: r => !!(r.termDateFrom && r.termDateTo),
+}
+
 function hasActuals(e) {
   if (!e) return false
   if (TEXT_FIELDS.some(k => e[k] != null && String(e[k]).trim() !== '')) return true
@@ -181,6 +189,7 @@ export default function CableActuals({ session }) {
   const [vendorFilter, setVendorFilter] = useState('')
   const [diffOnly, setDiffOnly] = useState(false)
   const [orphanOnly, setOrphanOnly] = useState(false)
+  const [termFilter, setTermFilter] = useState('')
   const [visibleCount, setVisibleCount] = useState(50)
   const [flash, setFlash] = useState(null)
   const [importMsg, setImportMsg] = useState(null)
@@ -348,12 +357,13 @@ export default function CableActuals({ session }) {
   const records = useMemo(() => scoped
     .filter(r => !diffOnly || r.drumDiff)
     .filter(r => !orphanOnly || r.orphan)
+    .filter(r => !termFilter || TERM_FILTERS[termFilter](r))
     .sort((a, b) => {
       const da = a.pullingDate || ''
       const db = b.pullingDate || ''
       if (da || db) return db.localeCompare(da) || a.cno.localeCompare(b.cno)
       return a.cno.localeCompare(b.cno)
-    }), [scoped, diffOnly, orphanOnly])
+    }), [scoped, diffOnly, orphanOnly, termFilter])
 
   const diffCount = useMemo(() => scoped.filter(r => r.drumDiff).length, [scoped])
   const orphanCount = useMemo(() => scoped.filter(r => r.orphan).length, [scoped])
@@ -723,6 +733,24 @@ export default function CableActuals({ session }) {
               )}
             </div>
           )}
+          <div className="ca-date-range" style={{ gap: 4 }}>
+            <span className="ca-dr-label">{t('Termination')}</span>
+            <select
+              className={`ca-dr-input${termFilter ? ' active' : ''}`}
+              style={{ minWidth: 150, cursor: 'pointer' }}
+              value={termFilter}
+              onChange={e => { setTermFilter(e.target.value); setVisibleCount(50) }}
+            >
+              <option value="">{t('All')}</option>
+              <option value="fromPending">{t('Pulled · From pending')}</option>
+              <option value="toPending">{t('Pulled · To pending')}</option>
+              <option value="oneEnd">{t('One end only')}</option>
+              <option value="bothDone">{t('Both ends done')}</option>
+            </select>
+            {termFilter && (
+              <button className="ca-dr-clear" title={t('Clear termination filter')} onClick={() => setTermFilter('')}>✕</button>
+            )}
+          </div>
           <button
             type="button"
             className={`ca-diff-toggle ca-orphan-toggle${orphanOnly ? ' on' : ''}`}
@@ -804,9 +832,9 @@ export default function CableActuals({ session }) {
                     </td>
                     <td>{r.pulledBy || '—'}</td>
                     <td className="ca-mono">{r.pullingDate || '—'}</td>
-                    <td className="ca-mono">{r.termDateFrom || '—'}</td>
+                    <td className="ca-mono">{r.termDateFrom || (r.pullingDate ? <span className="ca-term-open">{t('Pending')}</span> : '—')}</td>
                     <td>{r.termByFrom || '—'}</td>
-                    <td className="ca-mono">{r.termDateTo || '—'}</td>
+                    <td className="ca-mono">{r.termDateTo || (r.pullingDate ? <span className="ca-term-open">{t('Pending')}</span> : '—')}</td>
                     <td>{r.termByTo || '—'}</td>
                     <td><span className="cs-badge" style={{ background: lcC.bg, color: lcC.text }}>{t(lc)}</span></td>
                     <td className="ca-mono">{r.act || '—'}</td>
