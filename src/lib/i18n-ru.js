@@ -153,6 +153,7 @@ export const RU = {
   'PR + EP-DCS + Early Power cables · completed = design length of cables with a pulling date':
     'Кабели PR + EP-DCS + Early Power · выполнено = проектная длина кабелей с датой прокладки',
   'Search system': 'Поиск системы',
+  'Show the {n} schedule system names': 'Показать {n} названий систем из журналов',
   Systems: 'Системы',
   '{n} fully pulled': '{n} проложено полностью',
   'Pulled (m)': 'Проложено (м)',

@@ -2090,6 +2090,17 @@ select.cs-cf { padding: 4px 2px; }
 .sys-name > span:first-child { display: block; font-weight: 600; color: #1f2937; }
 .sys-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 3px; }
 .sys-tags em { font-style: normal; font-size: 10.5px; color: #9aa1af; }
+.sys-toggle {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
+  font: inherit; font-weight: 600; color: #1f2937; cursor: pointer; text-align: left;
+}
+.sys-toggle:hover { color: #533afd; }
+.sys-toggle:focus-visible { outline: 2px solid #533afd; outline-offset: 2px; border-radius: 3px; }
+.sys-caret { width: 12px; color: #9aa1af; font-size: 11px; }
+.sys-subcount { margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #eef0f6; color: #6b7280; font-size: 10px; font-weight: 600; }
+.sys-sub td { background: #fafbfd; font-size: 11.5px; color: #6b7280; }
+.sys-sub .sys-name { padding-left: 32px; }
+.sys-sub .sys-name > span:first-child { font-weight: 500; color: #4b5563; }
 .sys-pri { font-style: normal; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
 .sys-pri-pr    { background: #fde7ee; color: #b0174a; }
 .sys-pri-epdcs { background: #fef3c7; color: #92400e; }

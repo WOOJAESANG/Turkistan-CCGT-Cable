@@ -15,6 +15,36 @@ const splitName = s => {
   return { en: en.trim() || '(blank)', ru: ru.join(' / ').trim() }
 }
 
+// Each discipline's schedule names the same plant system its own way (GT PKG #11, GTG #11,
+// GTG#11 FOR BLOCK#1, GTG#11 PACKAGE ...). The site asks "how much is left on GT #11", so
+// those names roll up into one plant system; the originals stay one click away.
+// First match wins: Hot Water, AIS and the switchgear come first because "HOT WATER #GT 11",
+// "MARSHALLING KIOSKS ... FOR GTG11" and "0.4KV SWGR FOR GT/HRSG#1A" would otherwise be
+// taken by GT #11 or HRSG.
+const GROUPS = [
+  [/^HOT WATER/, 'Hot Water'],
+  [/^AIS|MARSHALLING KIOSK/, 'AIS 500kV'],
+  [/^10KV|DP 10KV/, '10kV SWGR'],
+  [/^0\.4KV(?!.*WATER TREATMENT)|SWGR_LEB|TIE FEEDER|TR FEEDER/, '0.4kV SWGR / LEB Feeders'],
+  [/GT PKG #11|GTG ?#11|GT#11|BLK #1 GTG #1 SYSTEM/, 'GT #11'],
+  [/HRSG|HSRG|DIVERTER/, 'HRSG'],
+  [/^(COMMON |BLK #1 )?(DCS|SRS)\b/, 'DCS'],
+  [/FGSS|FUEL GAS|GAS METERING|^METERING SYSTEM/, 'Fuel Gas (FGSS)'],
+  [/CCW|CLOSED COOLING|FIN FAN|FFC/, 'CCW / Fin Fan Cooler'],
+  [/AUX(ILIARY)? BOILER/, 'Aux Boiler'],
+  [/BSDE?G|EMERGENCY DIESEL/, 'BSDG'],
+  [/WATER TREATMENT|WTP|DEMI|POTABLE|RWA|SERVICE WTR/, 'Water Treatment'],
+  [/DC UPS|DC & UPS/, 'DC / UPS'],
+  [/^PRP|METERING CABINET/, 'Protection Relay / Metering'],
+  [/^ELEC/, 'Electrical (I&C)'],
+  [/^FMS/, 'FMS'],
+]
+const groupOf = en => GROUPS.find(([re]) => re.test(en.toUpperCase()))?.[1] || null
+
+const CAT_ORDER = ['Power', 'Control', 'I&C', 'PKG']
+const blank = () => ({ n: 0, len: 0, pn: 0, pl: 0, tc: 0, lc: 0 })
+const finish = r => ({ ...r, left: r.len - r.pl, pct: r.len ? (r.pl / r.len) * 100 : 0 })
+
 const num = n => Math.round(n).toLocaleString()
 const pctOf = (a, b) => (b ? (a / b) * 100 : 0)
 
@@ -28,6 +58,7 @@ export default function SystemProgressSection({ master, fieldData }) {
   const [pri, setPri] = useState('All')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState({ key: 'len', desc: true })
+  const [open, setOpen] = useState(() => new Set())
 
   const rows = useMemo(() => {
     if (!master) return []
@@ -35,21 +66,32 @@ export default function SystemProgressSection({ master, fieldData }) {
     for (const c of master) {
       if (isLumpSum(c) || !SCOPE.includes(c.pri) || (pri !== 'All' && c.pri !== pri)) continue
       const { en, ru } = splitName(c.sys)
-      const key = en.toUpperCase()
+      const group = groupOf(en)
+      const key = group || en.toUpperCase()
       let r = by.get(key)
-      if (!r) by.set(key, r = { key, en, ru, pris: {}, cats: new Set(), n: 0, len: 0, pn: 0, pl: 0, tc: 0, lc: 0 })
-      if (!r.ru && ru) r.ru = ru
+      if (!r) by.set(key, r = { key, en: group || en, ru: group ? '' : ru, pris: {}, cats: {}, subs: new Map(), ...blank() })
+      if (!group && !r.ru && ru) r.ru = ru
+      const subKey = en.toUpperCase()
+      let sub = r.subs.get(subKey)
+      if (!sub) r.subs.set(subKey, sub = { key: subKey, en, ru, cats: new Set(), ...blank() })
+      if (!sub.ru && ru) sub.ru = ru
       const design = Number(c.l) || 0
       const e = fieldData?.[c.n]
       r.pris[c.pri] = (r.pris[c.pri] || 0) + 1
-      r.cats.add(c.g)
-      r.n++; r.len += design
-      // completed = DESIGN length, the same basis as the KPI cards above
-      if (e?.pullingDate) { r.pn++; r.pl += design }
-      if (e?.termDateFrom && e?.termDateTo) r.tc++
-      if (e?.lc === 'Done') r.lc++
+      r.cats[c.g] = (r.cats[c.g] || 0) + 1
+      sub.cats.add(c.g)
+      for (const x of [r, sub]) {
+        x.n++; x.len += design
+        // completed = DESIGN length, the same basis as the KPI cards above
+        if (e?.pullingDate) { x.pn++; x.pl += design }
+        if (e?.termDateFrom && e?.termDateTo) x.tc++
+        if (e?.lc === 'Done') x.lc++
+      }
     }
-    return [...by.values()].map(r => ({ ...r, left: r.len - r.pl, pct: pctOf(r.pl, r.len) }))
+    return [...by.values()].map(r => finish({
+      ...r,
+      subs: [...r.subs.values()].map(finish).sort((a, b) => b.len - a.len),
+    }))
   }, [master, fieldData, pri])
 
   const ru = getLang() === 'ru'
@@ -58,7 +100,7 @@ export default function SystemProgressSection({ master, fieldData }) {
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     const list = needle
-      ? rows.filter(r => `${r.en} ${r.ru}`.toLowerCase().includes(needle))
+      ? rows.filter(r => [r, ...r.subs].some(x => `${x.en} ${x.ru}`.toLowerCase().includes(needle)))
       : rows
     const { key, desc } = sort
     const val = r => (key === 'name' ? label(r).toLowerCase() : r[key])
@@ -76,6 +118,24 @@ export default function SystemProgressSection({ master, fieldData }) {
   const done = shown.filter(r => r.pn === r.n).length
 
   if (!master) return null
+
+  const toggle = key => setOpen(s => {
+    const next = new Set(s)
+    if (next.has(key)) next.delete(key); else next.add(key)
+    return next
+  })
+  const cells = r => (
+    <>
+      <td className="num">{num(r.n)}</td>
+      <td className="num">{num(r.len)}</td>
+      <td className="num">{num(r.pn)}</td>
+      <td className="num">{num(r.pl)}</td>
+      <td className="num">{num(r.left)}</td>
+      <td className="num"><div className="sys-pct"><Bar p={r.pct} /><span>{r.pct.toFixed(0)}%</span></div></td>
+      <td className="num">{num(r.tc)} <small>{pctOf(r.tc, r.n).toFixed(0)}%</small></td>
+      <td className="num">{num(r.lc)} <small>{pctOf(r.lc, r.n).toFixed(0)}%</small></td>
+    </>
+  )
 
   const onSort = key => setSort(s => ({ key, desc: s.key === key ? !s.desc : key !== 'name' }))
   const Bar = ({ p }) => (
@@ -122,27 +182,42 @@ export default function SystemProgressSection({ master, fieldData }) {
             </tr>
           </thead>
           <tbody>
-            {shown.map(r => (
-              <tr key={r.key}>
-                <td className="sys-name">
-                  <span title={r.ru ? `${r.en} / ${r.ru}` : r.en}>{label(r)}</span>
-                  <span className="sys-tags">
-                    {SCOPE.filter(p => r.pris[p]).map(p => (
-                      <i key={p} className={`sys-pri sys-pri-${PRI_TONE[p]}`}>{p}{Object.keys(r.pris).length > 1 ? ` ${r.pris[p]}` : ''}</i>
-                    ))}
-                    <em>{[...r.cats].join(' · ')}</em>
-                  </span>
-                </td>
-                <td className="num">{num(r.n)}</td>
-                <td className="num">{num(r.len)}</td>
-                <td className="num">{num(r.pn)}</td>
-                <td className="num">{num(r.pl)}</td>
-                <td className="num">{num(r.left)}</td>
-                <td className="num"><div className="sys-pct"><Bar p={r.pct} /><span>{r.pct.toFixed(0)}%</span></div></td>
-                <td className="num">{num(r.tc)} <small>{pctOf(r.tc, r.n).toFixed(0)}%</small></td>
-                <td className="num">{num(r.lc)} <small>{pctOf(r.lc, r.n).toFixed(0)}%</small></td>
-              </tr>
-            ))}
+            {shown.map(r => {
+              const many = r.subs.length > 1
+              const isOpen = open.has(r.key)
+              const cats = CAT_ORDER.filter(g => r.cats[g])
+              return [
+                <tr key={r.key}>
+                  <td className="sys-name">
+                    {many ? (
+                      <button type="button" className="sys-toggle" aria-expanded={isOpen} onClick={() => toggle(r.key)}
+                        title={t('Show the {n} schedule system names', { n: r.subs.length })}>
+                        <span className="sys-caret">{isOpen ? '▾' : '▸'}</span>{label(r)}
+                        <span className="sys-subcount">{r.subs.length}</span>
+                      </button>
+                    ) : (
+                      <span title={r.ru ? `${r.en} / ${r.ru}` : r.en}>{label(r)}</span>
+                    )}
+                    <span className="sys-tags">
+                      {SCOPE.filter(p => r.pris[p]).map(p => (
+                        <i key={p} className={`sys-pri sys-pri-${PRI_TONE[p]}`}>{p}{Object.keys(r.pris).length > 1 ? ` ${r.pris[p]}` : ''}</i>
+                      ))}
+                      <em>{cats.map(g => (cats.length > 1 ? `${t(g)} ${r.cats[g]}` : t(g))).join(' · ')}</em>
+                    </span>
+                  </td>
+                  {cells(r)}
+                </tr>,
+                ...(isOpen ? r.subs.map(s => (
+                  <tr key={`${r.key}|${s.key}`} className="sys-sub">
+                    <td className="sys-name">
+                      <span title={s.ru ? `${s.en} / ${s.ru}` : s.en}>{label(s)}</span>
+                      <span className="sys-tags"><em>{CAT_ORDER.filter(g => s.cats.has(g)).map(g => t(g)).join(' · ')}</em></span>
+                    </td>
+                    {cells(s)}
+                  </tr>
+                )) : []),
+              ]
+            })}
           </tbody>
           <tfoot>
             <tr>
