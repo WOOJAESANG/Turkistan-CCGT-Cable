@@ -20,12 +20,14 @@ const splitName = s => {
 // those names roll up into one plant system; the originals stay one click away.
 // First match wins: Hot Water, AIS and the switchgear come first because "HOT WATER #GT 11",
 // "MARSHALLING KIOSKS ... FOR GTG11" and "0.4KV SWGR FOR GT/HRSG#1A" would otherwise be
-// taken by GT #11 or HRSG.
+// taken by GT #11 or HRSG. GCB / IPB are tracked as their own equipment (null = keep the
+// schedule name as its own row), so they must also come before GT #11.
 const GROUPS = [
   [/^HOT WATER/, 'Hot Water'],
   [/^AIS|MARSHALLING KIOSK/, 'AIS 500kV'],
   [/^10KV|DP 10KV/, '10kV SWGR'],
   [/^0\.4KV(?!.*WATER TREATMENT)|SWGR_LEB|TIE FEEDER|TR FEEDER/, '0.4kV SWGR / LEB Feeders'],
+  [/^(GCB|IPB)\b/, null],
   [/GT PKG #11|GTG ?#11|GT#11|BLK #1 GTG #1 SYSTEM/, 'GT #11'],
   [/HRSG|HSRG|DIVERTER/, 'HRSG'],
   [/^(COMMON |BLK #1 )?(DCS|SRS)\b/, 'DCS'],
