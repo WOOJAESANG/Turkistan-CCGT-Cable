@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData, fetchAllFieldData, updateFieldEntry, bulkUpsertFieldEntries, deleteFieldEntry, loadVendors } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp } from '../lib/format'
-import { ambiguousDrumTag, canonDrum, fixDrumTypo, sameDrum } from '../lib/drumTag'
+import { ambiguousDrumTag, canonDrum, capacityFor, fixDrumTypo, isPlaceholderDrum, sameDrum } from '../lib/drumTag'
 import { t } from '../lib/i18n'
 import { isLumpSum } from '../data/cableData'
 
@@ -394,15 +394,17 @@ export default function CableActuals({ session }) {
   // double-counts it against the drum.
   const drumBudget = useMemo(() => {
     const drum = (form.usedDrum || '').trim()
-    if (!drum) return null
-    const key = canonDrum(drum).toUpperCase()
-    const cap = Object.entries(drumCap).find(([k]) => k.toUpperCase() === key)?.[1]?.m
+    if (!drum || isPlaceholderDrum(drum)) return null
+    const capUpper = new Map(Object.entries(drumCap).map(([k, v]) => [k.toUpperCase(), { tag: k, ...v }]))
+    const cap = capacityFor(capUpper, drum)?.m
     if (cap == null) return { drum, cap: null }
+    // the GT package spells its drums without "PE-"; count both spellings as one drum
+    const key = canonDrum(drum).toUpperCase().replace(/^PE-/, '')
     const me = tag.trim()
     let used = 0
     for (const [cno, e] of Object.entries(fieldData)) {
       if (cno === me) continue
-      if (canonDrum((e?.usedDrum || '').trim()).toUpperCase() !== key) continue
+      if (canonDrum((e?.usedDrum || '').trim()).toUpperCase().replace(/^PE-/, '') !== key) continue
       const v = parseFloat(String(e.pulledLength ?? '').replace(/[^0-9.]/g, ''))
       if (!isNaN(v)) used += v
     }

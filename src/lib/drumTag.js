@@ -31,6 +31,22 @@ export function canonDrum(tag) {
   return `AIS-${m[1]}-${packing}-${m[2].padStart(3, '0')}`
 }
 
+// "-", "X", "N/A" typed into Used Drum mean "no drum number recorded", not a drum.
+export const isPlaceholderDrum = tag => /^(-+|—|x|n\/?a|none|tbd)$/i.test(String(tag || '').trim())
+
+// A bare packing number (PGU-DE-0336) stands in for the drum when the schedule only names
+// the packing (FGSS, HRSG, STG); it cannot be matched to one drum's capacity.
+export const isPackingNo = tag => /^PGU-DE-\d+$/i.test(String(tag || '').trim())
+
+// Capacity of a drum tag. The GT package list (PGU-DE-515) writes its drums without the
+// "PE-" the site uses for every I&C drum (PI-S-2P1-201 vs PE-PI-S-2P1-201), so both
+// spellings are tried. capUpper: Map of upper-case capacity tag → entry.
+export function capacityFor(capUpper, tag) {
+  const key = canonDrum(String(tag || '').trim()).toUpperCase()
+  if (!key) return null
+  return capUpper.get(key) || capUpper.get(key.replace(/^PE-/, '')) || capUpper.get('PE-' + key) || null
+}
+
 // True when two tags name the same drum. The field types tags by hand, sometimes
 // on a Chinese IME, so a trailing space or a full-width dash must not read as a
 // different drum — that false alarm is what the mismatch warning must never raise.

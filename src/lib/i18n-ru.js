@@ -13,6 +13,7 @@ export const EN = {
     'Used (m) = sum of pulled lengths entered in Work Log for each drum. Capacity comes from the packing lists (Detail PL sheets). ' +
     'Rows without capacity data are drums whose packing file does not state a length (e.g. ACC, FFC-CAB, DCS cabinets) or free-text ' +
     "drum names that don't match a packing tag — check spelling against the Drum No. dropdown on the Packing List view. " +
+    'A packing number (e.g. PGU-DE-0336) entered as the drum cannot be matched to one drum; "-" or "X" counts as no drum number. ' +
     'Remaining under 10% is highlighted amber; negative (over-pulled) red.',
   PACKING_NOTE:
     'Click a Document No. or Packing List number to download the source Excel file. Open the Drum No. dropdown to browse or ' +
@@ -395,13 +396,16 @@ export const RU = {
   USAGE: 'РАСХОД',
   CABLES: 'КАБЕЛИ',
   'no capacity data': 'нет данных о ёмкости',
+  'packing no. entered, not a drum': 'указан № упаковки, а не барабана',
+  'No drum no. entered: {n} cables · {m} m': 'Без № барабана: {n} каб. · {m} м',
   'No drums recorded yet — enter a Used Drum in Work Log and it will appear here.':
     'Барабаны ещё не записаны — укажите факт. барабан в журнале работ, и он появится здесь.',
   DRUM_USAGE_NOTE:
     'Использовано (м) = сумма проложенных длин по каждому барабану из журнала работ. Ёмкость берётся из упаковочных листов ' +
     '(листы Detail PL). Строки без ёмкости — это барабаны, для которых в упаковочном файле не указана длина (напр. ACC, FFC-CAB, ' +
     'шкафы DCS), или барабаны, введённые произвольным текстом и не совпадающие с маркировкой упаковки — сверьте написание со списком ' +
-    '№ барабана на вкладке «Упаковочный лист». Остаток менее 10% выделен жёлтым, отрицательный (перерасход) — красным.',
+    '№ барабана на вкладке «Упаковочный лист». № упаковки (напр. PGU-DE-0336), указанный вместо барабана, нельзя сопоставить с одним ' +
+    'барабаном; «-» или «X» считается как отсутствие № барабана. Остаток менее 10% выделен жёлтым, отрицательный (перерасход) — красным.',
   PACKING_NOTE:
     'Нажмите на № документа или № упаковочного листа, чтобы скачать исходный файл Excel. Откройте список «№ барабана», чтобы ' +
     'просмотреть или найти каждый барабан; верхняя строка поиска также ищет номера барабанов во всех строках.',

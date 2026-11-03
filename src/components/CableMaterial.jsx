@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx'
 import { loadFieldData } from '../lib/dataStore'
 import { dataUrl } from '../lib/dataUrl'
 import { stamp, num } from '../lib/format'
-import { canonDrum } from '../lib/drumTag'
+import { canonDrum, capacityFor, isPlaceholderDrum, isPackingNo } from '../lib/drumTag'
 import { t } from '../lib/i18n'
 
 const EXPORT_COLS = [
@@ -292,16 +292,22 @@ function DrumUsage({ capacity }) {
     return m
   }, [capacity])
 
-  const rows = useMemo(() => {
+  const { rows, noDrum } = useMemo(() => {
     const byKey = new Map()
+    const noDrum = { used: 0, cables: [] }
     for (const [cno, e] of Object.entries(fieldData || {})) {
-      const drum = canonDrum((e?.usedDrum || '').trim())
-      if (!drum) continue
-      const cap = capUpper.get(drum.toUpperCase())
-      const pk = cap?.pk || '—'
-      const key = drum.toUpperCase() + '\x00' + pk
+      const raw = (e?.usedDrum || '').trim()
+      if (!raw) continue
+      // a placeholder is a pulled cable without a drum number, not a drum of its own
+      if (isPlaceholderDrum(raw)) { noDrum.used += num(e.pulledLength); noDrum.cables.push(cno); continue }
+      const drum = canonDrum(raw)
+      const packing = isPackingNo(drum)
+      const cap = packing ? null : capacityFor(capUpper, drum)
+      const pk = packing ? drum.toUpperCase() : cap?.pk || '—'
+      // one row per drum: the GT spelling without "PE-" folds into the site spelling
+      const key = (cap ? cap.tag : drum).toUpperCase().replace(/^PE-/, '') + '\x00' + pk
       if (!byKey.has(key)) byKey.set(key, {
-        drum, pk,
+        drum, pk, packing,
         capacity: cap?.m ?? null,
         used: 0, cables: [],
       })
@@ -316,7 +322,7 @@ function DrumUsage({ capacity }) {
     }))
     out.sort((a, b) => b.used - a.used)
     const ql = q.trim().toLowerCase()
-    return ql ? out.filter(r => r.drum.toLowerCase().includes(ql) || r.pk.toLowerCase().includes(ql)) : out
+    return { rows: ql ? out.filter(r => r.drum.toLowerCase().includes(ql) || r.pk.toLowerCase().includes(ql)) : out, noDrum }
   }, [fieldData, capUpper, q])
 
   const totals = useMemo(() => ({
@@ -335,6 +341,11 @@ function DrumUsage({ capacity }) {
           <input type="text" placeholder={t('Search Drum No / Packing List')} value={q} onChange={e => setQ(e.target.value)} />
           {q && <button className="cs-clear" onClick={() => setQ('')}>✕</button>}
         </div>
+        {noDrum.cables.length > 0 && (
+          <span className="du-nodrum" title={noDrum.cables.join(', ')}>
+            {t('No drum no. entered: {n} cables · {m} m', { n: noDrum.cables.length, m: Math.round(noDrum.used).toLocaleString() })}
+          </span>
+        )}
         <span className="du-totals">
           {t('{n} drums in use', { n: totals.drums })} · <b>{Math.round(totals.used).toLocaleString()} m</b> {t('pulled')} ·{' '}
           <b className="du-remain">{Math.round(totals.remaining).toLocaleString()} m</b> {t('remaining')}
@@ -372,7 +383,7 @@ function DrumUsage({ capacity }) {
                       <div className="du-bar-track" title={`${r.pct.toFixed(1)}%`}>
                         <div className={`du-bar-fill${over ? ' over' : low ? ' low' : ''}`} style={{ width: `${r.pct}%` }} />
                       </div>
-                    ) : <span className="cm-muted">{t('no capacity data')}</span>}
+                    ) : <span className="cm-muted">{r.packing ? t('packing no. entered, not a drum') : t('no capacity data')}</span>}
                   </td>
                   <td className="num" title={r.cables.join(', ')}>{r.cables.length}</td>
                 </tr>
