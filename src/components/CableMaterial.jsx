@@ -560,8 +560,8 @@ export default function CableMaterial() {
                         <div className="cm-doc-pair">
                           <span className="cm-doc-no cm-muted">{r.docNo}</span>
                           <div className="cm-dl-row">
-                            <DownloadLink url={r.docUrl} label="220kV" name={r.docName} />
-                            <DownloadLink url={r.docUrl2} label="500kV" name={r.docName2} />
+                            <DownloadLink url={r.docUrl} label={r.docLabel || '220kV'} name={r.docName} />
+                            <DownloadLink url={r.docUrl2} label={r.docLabel2 || '500kV'} name={r.docName2} />
                           </div>
                         </div>
                       ) : (
